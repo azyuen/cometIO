@@ -11,7 +11,6 @@
       font-family: "Courier New", monospace;
       background: #05070c;
     }
-
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; min-height: 100%; background: #05070c; overflow: hidden; }
     body { display: grid; place-items: center; }
@@ -24,7 +23,8 @@
 
   <script>
     const W = 960;
-    const H = 620;
+    const H = 650;
+    const G = 6.67430e-11;
 
     const PALETTE = {
       bg: 0x05070c,
@@ -40,47 +40,84 @@
       divider: 0x29354f
     };
 
+    // Approximate real-world scales. These values are deliberately broad rather than
+    // simulation-grade; the game uses the actual ratios between size, mass and speed.
     const OBJECTS = [
-      { name: 'ATOM', radius: 1, mass: 1, speed: 90, kind: 'matter', hint: 'A tiny building block', color: 0x77e6ff },
-      { name: 'DUST PARTICLE', radius: 4, mass: 5, speed: 76, kind: 'dust', hint: 'Dry, light, easily moved', color: 0xd1c4a3 },
-      { name: 'GRAIN OF SAND', radius: 9, mass: 18, speed: 62, kind: 'rock', hint: 'Silicate-rich', color: 0xe7c477 },
-      { name: 'PEBBLE', radius: 18, mass: 75, speed: 48, kind: 'rock', hint: 'Dense and rocky', color: 0xa8a8a8 },
-      { name: 'BOULDER', radius: 34, mass: 260, speed: 38, kind: 'rock', hint: 'Irregular rocky body', color: 0x9298a3 },
-      { name: 'ASTEROID', radius: 75, mass: 900, speed: 31, kind: 'rock', hint: 'Airless minor body', color: 0x8d7769 },
-      { name: 'MOON', radius: 140, mass: 3500, speed: 24, kind: 'world', hint: 'Natural satellite', color: 0xc9c9c3 },
-      { name: 'PLANET', radius: 310, mass: 13000, speed: 19, kind: 'world', hint: 'Rounded by its own gravity', color: 0x68a6ff },
-      { name: 'SATURN', radius: 520, mass: 27000, speed: 15, kind: 'gas', hint: 'Mostly hydrogen and helium', color: 0xf3d79b },
-      { name: 'STAR', radius: 1100, mass: 92000, speed: 12, kind: 'star', hint: 'Extremely hot plasma', color: 0xffe77e },
-      { name: 'GALAXY', radius: 9000, mass: 800000, speed: 7, kind: 'galaxy', hint: 'Contains billions of stars', color: 0xb792ff }
+      { name: 'ATOM', radiusM: 1e-10, massKg: 1.67e-27, speedMS: 12000, kind: 'matter', hint: 'A tiny building block', color: 0x77e6ff, solid: false },
+      { name: 'DUST PARTICLE', radiusM: 5e-6, massKg: 1e-12, speedMS: 9000, kind: 'dust', hint: 'Dry, light, easily moved', color: 0xd1c4a3, solid: true },
+      { name: 'GRAIN OF SAND', radiusM: 5e-4, massKg: 1e-6, speedMS: 7000, kind: 'rock', hint: 'Silicate-rich', color: 0xe7c477, solid: true },
+      { name: 'PEBBLE', radiusM: 0.025, massKg: 0.18, speedMS: 5000, kind: 'rock', hint: 'Dense and rocky', color: 0xa8a8a8, solid: true },
+      { name: 'BOULDER', radiusM: 1.2, massKg: 1.4e4, speedMS: 4200, kind: 'rock', hint: 'Irregular rocky body', color: 0x9298a3, solid: true },
+      { name: 'METEOROID', radiusM: 18, massKg: 2.2e8, speedMS: 15000, kind: 'rock', hint: 'Fast-moving rocky body', color: 0xa48774, solid: true },
+      { name: 'ASTEROID', radiusM: 5e3, massKg: 1.3e15, speedMS: 18000, kind: 'rock', hint: 'Airless minor body', color: 0x8d7769, solid: true },
+      { name: 'COMET', radiusM: 8e3, massKg: 5e14, speedMS: 42000, kind: 'ice', hint: 'Icy body with volatile material', color: 0xa6e5ef, solid: true },
+      { name: 'MOON', radiusM: 1.737e6, massKg: 7.35e22, speedMS: 1022, kind: 'world', hint: 'Natural satellite', color: 0xc9c9c3, solid: true },
+      { name: 'EARTH-LIKE PLANET', radiusM: 6.371e6, massKg: 5.97e24, speedMS: 29780, kind: 'world', hint: 'Rounded by its own gravity', color: 0x68a6ff, solid: true },
+      { name: 'SATURN', radiusM: 5.823e7, massKg: 5.68e26, speedMS: 9680, kind: 'gas', hint: 'Mostly hydrogen and helium', color: 0xf3d79b, solid: false },
+      { name: 'SUN-LIKE STAR', radiusM: 6.9634e8, massKg: 1.989e30, speedMS: 220000, kind: 'star', hint: 'Extremely hot plasma', color: 0xffe77e, solid: false },
+      { name: 'GALAXY', radiusM: 5e20, massKg: 1e42, speedMS: 600000, kind: 'galaxy', hint: 'Contains billions of stars', color: 0xb792ff, solid: false }
     ];
 
-    const encounters = [
-      ['DUST PARTICLE', 'GRAIN OF SAND'],
-      ['PEBBLE', 'ASTEROID'],
-      ['ATOM', 'SATURN']
+    // This is game progression, not strict astronomical taxonomy.
+    const STAGES = [
+      { minMass: 0, name: 'DUST PARTICLE' },
+      { minMass: 1e-7, name: 'GRAIN OF SAND' },
+      { minMass: 0.02, name: 'PEBBLE' },
+      { minMass: 500, name: 'BOULDER' },
+      { minMass: 1e7, name: 'METEOROID' },
+      { minMass: 5e11, name: 'ASTEROID' },
+      { minMass: 3e14, name: 'COMET' },
+      { minMass: 1e21, name: 'MOON' },
+      { minMass: 1e24, name: 'PLANET' },
+      { minMass: 1e26, name: 'GIANT PLANET' },
+      { minMass: 1e29, name: 'STAR' },
+      { minMass: 1e39, name: 'GALACTIC OBJECT' }
     ];
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function logRatio(a, b) { return Math.log10(Math.max(a, 1e-300) / Math.max(b, 1e-300)); }
+    function escapeVelocity(obj) { return Math.sqrt((2 * G * obj.massKg) / Math.max(obj.radiusM, 1e-20)); }
+    function relativeSpeed(a, b) { return a.speedMS + b.speedMS; }
+    function kineticEnergy(massKg, speedMS) { return 0.5 * massKg * speedMS * speedMS; }
 
     class GameScene extends Phaser.Scene {
       constructor() {
         super('game');
         this.state = 'APPROACH';
-        this.encounterIndex = 0;
         this.score = 0;
-        this.speedPoints = 0;
         this.craters = 0;
+        this.encounters = 0;
+        this.player = null;
       }
 
       create() {
         this.cameras.main.setBackgroundColor(PALETTE.bg);
         this.makeStars();
         this.buildHud();
+        this.resetRun();
+      }
+
+      resetRun() {
+        const base = this.cloneObj(OBJECTS.find(o => o.name === 'DUST PARTICLE'));
+        this.player = {
+          ...base,
+          name: 'DUST PARTICLE',
+          speedMS: 11000,
+          massKg: 1e-12,
+          radiusM: 5e-6
+        };
+        this.score = 0;
+        this.craters = 0;
+        this.encounters = 0;
         this.startEncounter();
       }
+
+      cloneObj(o) { return JSON.parse(JSON.stringify(o)); }
 
       makeStars() {
         const g = this.add.graphics();
         g.setDepth(-10);
-        for (let i = 0; i < 115; i++) {
+        for (let i = 0; i < 120; i++) {
           const x = Phaser.Math.Between(0, W);
           const y = Phaser.Math.Between(0, H);
           const a = Phaser.Math.FloatBetween(0.14, 0.55);
@@ -91,16 +128,12 @@
       }
 
       buildHud() {
-        this.title = this.add.text(30, 22, 'COMET.IO // SCALE COLLISION TEST', {
+        this.title = this.add.text(28, 20, 'COMET.IO // PHYSICS PROTOTYPE', {
           fontFamily: 'Courier New', fontSize: '18px', color: PALETTE.ink
         });
-        this.status = this.add.text(W - 30, 22, '', {
-          fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.muted
+        this.status = this.add.text(W - 28, 20, '', {
+          fontFamily: 'Courier New', fontSize: '13px', color: PALETTE.muted
         }).setOrigin(1, 0);
-      }
-
-      getObj(name) {
-        return OBJECTS.find(o => o.name === name);
       }
 
       clearEncounter() {
@@ -108,55 +141,108 @@
         this.encounterGroup = this.add.container(0, 0);
       }
 
+      updateHud() {
+        this.status.setText(
+          `${this.stageName()}   MASS ${this.formatMass(this.player.massKg)}   SPEED ${this.formatSpeed(this.player.speedMS)}   CRATERS ${this.craters}`
+        );
+      }
+
+      stageName() {
+        let stage = STAGES[0].name;
+        for (const s of STAGES) if (this.player.massKg >= s.minMass) stage = s.name;
+        return stage;
+      }
+
+      syncPlayerAppearance() {
+        const stage = this.stageName();
+        const style =
+          OBJECTS.find(o => o.name === stage) ||
+          (stage === 'PLANET' ? OBJECTS.find(o => o.name === 'EARTH-LIKE PLANET') : null) ||
+          (stage === 'GIANT PLANET' ? OBJECTS.find(o => o.name === 'SATURN') : null) ||
+          (stage === 'STAR' ? OBJECTS.find(o => o.name === 'SUN-LIKE STAR') : null) ||
+          (stage === 'GALACTIC OBJECT' ? OBJECTS.find(o => o.name === 'GALAXY') : null);
+        if (style) {
+          this.player.name = stage;
+          this.player.kind = style.kind;
+          this.player.color = style.color;
+          this.player.solid = style.solid;
+        }
+      }
+
+      pickOpponent() {
+        const pLog = Math.log10(Math.max(this.player.massKg, 1e-30));
+        const weighted = OBJECTS.map(o => {
+          const d = Math.abs(Math.log10(Math.max(o.massKg, 1e-30)) - pLog);
+          let weight = 1 / (1 + d * 0.75);
+          if (d < 4) weight *= 3;
+          if (Math.random() < 0.08) weight *= 2.5;
+          return { o, weight };
+        });
+        const total = weighted.reduce((s, x) => s + x.weight, 0);
+        let r = Math.random() * total;
+        for (const x of weighted) {
+          r -= x.weight;
+          if (r <= 0) return this.cloneObj(x.o);
+        }
+        return this.cloneObj(weighted[weighted.length - 1].o);
+      }
+
       startEncounter() {
         this.clearEncounter();
         this.state = 'APPROACH';
-
-        const pair = encounters[this.encounterIndex % encounters.length];
-        this.you = this.getObj(pair[0]);
-        this.other = this.getObj(pair[1]);
-        this.status.setText(`SCORE ${this.score}   SPEED +${this.speedPoints}   CRATERS ${this.craters}`);
+        this.syncPlayerAppearance();
+        this.other = this.pickOpponent();
+        this.updateHud();
 
         const g = this.add.graphics();
         this.encounterGroup.add(g);
         g.fillStyle(PALETTE.panel, 0.94);
-        g.fillRoundedRect(28, 64, W - 56, 438, 12);
+        g.fillRoundedRect(25, 58, W - 50, 456, 12);
         g.lineStyle(2, PALETTE.divider, 1);
-        g.strokeRoundedRect(28, 64, W - 56, 438, 12);
-        g.lineBetween(W / 2, 89, W / 2, 476);
+        g.strokeRoundedRect(25, 58, W - 50, 456, 12);
+        g.lineBetween(W / 2, 84, W / 2, 420);
 
-        this.label(92, 92, 'YOU', PALETTE.green);
-        this.label(W - 92, 92, 'UNKNOWN OBJECT', PALETTE.amber, 1);
+        this.label(82, 84, 'YOU', PALETTE.green);
+        this.label(W - 82, 84, 'UNKNOWN OBJECT', PALETTE.amber, 1);
 
-        // Deliberately misleading apparent sizes: both are nearly the same on screen.
         const apparentYou = 38;
-        const apparentOther = 42;
-        this.youSprite = this.drawObject(W * 0.27, 244, apparentYou, this.you, 'right');
-        this.otherSprite = this.drawObject(W * 0.73, 244, apparentOther, this.other, 'left', true);
+        const apparentOther = 41;
+        this.youSprite = this.drawObject(W * 0.27, 230, apparentYou, this.player, false);
+        this.otherSprite = this.drawObject(W * 0.73, 230, apparentOther, this.other, true);
 
-        this.arrow(W * 0.34, 244, 1, PALETTE.green);
-        this.arrow(W * 0.66, 244, -1, PALETTE.amber);
+        this.arrow(W * 0.36, 230, 1, PALETTE.green);
+        this.arrow(W * 0.64, 230, -1, PALETTE.amber);
 
-        this.info(W * 0.18, 338, this.you.name, `SPEED: ${this.speedWord(this.you.speed)}`);
-        this.info(W * 0.82, 338, '???', `SPEED: ${this.speedWord(this.other.speed)}`, true);
+        this.infoBlock(W * 0.10, 312, this.player.name, [
+          `SIZE: ${this.formatSize(this.player.radiusM)}`,
+          `MASS: ${this.formatMass(this.player.massKg)}`,
+          `SPEED: ${this.formatSpeed(this.player.speedMS)}`
+        ]);
 
-        const hint = this.add.text(W / 2, 415,
+        this.infoBlock(W * 0.90, 312, '???', [
+          'SIZE: ???',
+          'MASS: ???',
+          `SPEED: ${this.formatSpeed(this.other.speedMS)}`
+        ], true);
+
+        const hint = this.add.text(W / 2, 422,
           `SCAN HINT: ${this.other.hint.toUpperCase()}`,
-          { fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.muted }
+          { fontFamily: 'Courier New', fontSize: '13px', color: PALETTE.muted }
         ).setOrigin(0.5);
         this.encounterGroup.add(hint);
 
-        const prompt = this.add.text(W / 2, 466, 'CHOOSE YOUR COLLISION', {
-          fontFamily: 'Courier New', fontSize: '15px', color: PALETTE.ink
+        const prompt = this.add.text(W / 2, 463, 'DO YOU WANT TO TRY AND…', {
+          fontFamily: 'Courier New', fontSize: '16px', fontStyle: 'bold', color: PALETTE.ink
         }).setOrigin(0.5);
         this.encounterGroup.add(prompt);
 
-        this.makeButton(W / 2 - 126, 548, 220, 54, 'ABSORB', PALETTE.green, () => this.choose('ABSORB'));
-        this.makeButton(W / 2 + 126, 548, 220, 54, 'CRASH', PALETTE.red, () => this.choose('CRASH'));
+        this.makeChoiceButton(172, 570, 250, 82, 'ABSORB', 'HIGH RISK  •  MASS + SPEED', PALETTE.red, () => this.choose('ABSORB'));
+        this.makeChoiceButton(480, 570, 250, 82, 'DEFLECT', 'MEDIUM RISK  •  SPEED + CRATERS', PALETTE.amber, () => this.choose('DEFLECT'));
+        this.makeChoiceButton(788, 570, 250, 82, 'AVOID', 'LOW RISK  •  LOSE SPEED', PALETTE.green, () => this.choose('AVOID'));
 
         this.tweens.add({
           targets: [this.youSprite, this.otherSprite],
-          x: '+=6',
+          x: '+=5',
           duration: 720,
           yoyo: true,
           repeat: -1,
@@ -166,45 +252,44 @@
 
       label(x, y, text, color, origin = 0) {
         const t = this.add.text(x, y, text, {
-          fontFamily: 'Courier New', fontSize: '16px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0')
+          fontFamily: 'Courier New', fontSize: '16px', fontStyle: 'bold',
+          color: '#' + color.toString(16).padStart(6, '0')
         }).setOrigin(origin, 0);
         this.encounterGroup.add(t);
       }
 
-      info(x, y, name, speed, right = false) {
+      infoBlock(x, y, name, lines, right = false) {
         const origin = right ? 1 : 0;
-        const t1 = this.add.text(x, y, name, { fontFamily: 'Courier New', fontSize: '20px', color: PALETTE.ink }).setOrigin(origin, 0);
-        const t2 = this.add.text(x, y + 32, speed, { fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.muted }).setOrigin(origin, 0);
+        const t1 = this.add.text(x, y, name, {
+          fontFamily: 'Courier New', fontSize: '19px', color: PALETTE.ink
+        }).setOrigin(origin, 0);
+        const t2 = this.add.text(x, y + 28, lines.join('\n'), {
+          fontFamily: 'Courier New', fontSize: '13px', color: PALETTE.muted, lineSpacing: 5
+        }).setOrigin(origin, 0);
         this.encounterGroup.add([t1, t2]);
       }
 
-      speedWord(s) {
-        if (s >= 70) return 'VERY FAST';
-        if (s >= 45) return 'FAST';
-        if (s >= 25) return 'MEDIUM';
-        return 'SLOW';
-      }
-
-      drawObject(x, y, radius, obj, direction = 'right', hideIdentity = false) {
+      drawObject(x, y, radius, obj, hideIdentity = false) {
         const c = this.add.container(x, y);
         const g = this.add.graphics();
         const color = hideIdentity ? 0x9aa8bb : obj.color;
-        g.fillStyle(color, 0.15);
+
+        g.fillStyle(color, 0.13);
         g.fillCircle(0, 0, radius + 9);
         g.fillStyle(color, 1);
         g.fillCircle(0, 0, radius);
         g.lineStyle(3, 0xffffff, 0.18);
         g.strokeCircle(0, 0, radius);
 
-        if (!hideIdentity && obj.kind === 'rock') {
-          g.fillStyle(0x000000, 0.15);
-          g.fillCircle(-radius * .23, -radius * .13, Math.max(2, radius * .17));
-          g.fillCircle(radius * .28, radius * .18, Math.max(2, radius * .12));
+        if (!hideIdentity && ['rock', 'ice'].includes(obj.kind)) {
+          g.fillStyle(0x000000, 0.16);
+          g.fillCircle(-radius * 0.24, -radius * 0.10, Math.max(2, radius * 0.16));
+          g.fillCircle(radius * 0.28, radius * 0.20, Math.max(2, radius * 0.11));
         }
 
-        if (!hideIdentity && obj.name === 'SATURN') {
-          g.lineStyle(Math.max(2, radius * .10), 0xe8c981, 0.85);
-          g.strokeEllipse(0, 0, radius * 2.9, radius * .8);
+        if (!hideIdentity && (obj.name === 'SATURN' || obj.kind === 'gas')) {
+          g.lineStyle(Math.max(2, radius * 0.10), 0xe8c981, 0.82);
+          g.strokeEllipse(0, 0, radius * 2.9, radius * 0.8);
         }
 
         c.add(g);
@@ -215,14 +300,38 @@
       arrow(x, y, dir, color) {
         const g = this.add.graphics();
         g.lineStyle(4, color, 0.8);
-        g.lineBetween(x - 28 * dir, y, x + 28 * dir, y);
+        g.lineBetween(x - 27 * dir, y, x + 27 * dir, y);
         g.fillStyle(color, 0.8);
         g.fillTriangle(
-          x + 28 * dir, y,
-          x + 15 * dir, y - 8,
-          x + 15 * dir, y + 8
+          x + 27 * dir, y,
+          x + 14 * dir, y - 8,
+          x + 14 * dir, y + 8
         );
         this.encounterGroup.add(g);
+      }
+
+      makeChoiceButton(x, y, w, h, title, subtitle, color, onClick) {
+        const c = this.add.container(x, y);
+        const g = this.add.graphics();
+        g.fillStyle(color, 0.10);
+        g.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
+        g.lineStyle(2, color, 1);
+        g.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
+
+        const t1 = this.add.text(0, -11, title, {
+          fontFamily: 'Courier New', fontSize: '18px', fontStyle: 'bold',
+          color: '#' + color.toString(16).padStart(6, '0')
+        }).setOrigin(0.5);
+        const t2 = this.add.text(0, 17, subtitle, {
+          fontFamily: 'Courier New', fontSize: '10px', color: PALETTE.muted
+        }).setOrigin(0.5);
+        const hit = this.add.rectangle(0, 0, w, h, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+        hit.on('pointerover', () => c.setScale(1.025));
+        hit.on('pointerout', () => c.setScale(1));
+        hit.on('pointerdown', onClick);
+
+        c.add([g, t1, t2, hit]);
+        this.encounterGroup.add(c);
       }
 
       makeButton(x, y, w, h, text, color, onClick) {
@@ -233,12 +342,11 @@
         g.lineStyle(2, color, 1);
         g.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
         const t = this.add.text(0, 0, text, {
-          fontFamily: 'Courier New', fontSize: '18px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0')
+          fontFamily: 'Courier New', fontSize: '16px', fontStyle: 'bold',
+          color: '#' + color.toString(16).padStart(6, '0')
         }).setOrigin(0.5);
         const hit = this.add.rectangle(0, 0, w, h, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
-        hit.on('pointerover', () => c.setScale(1.04));
-        hit.on('pointerout', () => c.setScale(1));
-        hit.on('pointerdown', () => onClick());
+        hit.on('pointerdown', onClick);
         c.add([g, t, hit]);
         this.encounterGroup.add(c);
       }
@@ -247,153 +355,393 @@
         if (this.state !== 'APPROACH') return;
         this.state = 'SCALE_REVEAL';
         this.tweens.killAll();
+        this.pending = this.calculateOutcome(choice);
         this.reveal(choice);
+      }
+
+      calculateOutcome(choice) {
+        const p = this.player;
+        const o = this.other;
+        const massLog = logRatio(p.massKg, o.massKg);
+        const sizeLog = logRatio(p.radiusM, o.radiusM);
+        const speedLog = logRatio(p.speedMS, o.speedMS);
+        const relV = relativeSpeed(p, o);
+        const targetEscape = escapeVelocity(o);
+        const playerEscape = escapeVelocity(p);
+        const impactEnergy = kineticEnergy(Math.min(p.massKg, o.massKg), relV);
+        const roll = Math.random();
+
+        if (choice === 'ABSORB') {
+          const speedAdvantage = clamp(speedLog, -1.5, 1.5);
+          const violentPenalty = clamp(Math.log10(1 + relV / Math.max(playerEscape + targetEscape, 1000)), 0, 2);
+          const score = 1.35 * massLog + 0.45 * sizeLog + 0.22 * speedAdvantage - 0.55 * violentPenalty;
+          let chance = 1 / (1 + Math.exp(-2.2 * (score - 0.10)));
+          chance = clamp(chance, 0.02, 0.97);
+
+          const success = roll < chance;
+          return {
+            choice, chance, success, relV, targetEscape, impactEnergy,
+            failType: 'ABSORBED',
+            riskText: 'Head-on inelastic collision'
+          };
+        }
+
+        if (choice === 'DEFLECT') {
+          const gravityRatio = targetEscape / Math.max(relV, 1);
+          const danger =
+            0.56 * clamp(-massLog, 0, 12) +
+            0.24 * clamp(-sizeLog, 0, 12) +
+            2.0 * gravityRatio -
+            0.28 * clamp(speedLog, -2, 2);
+
+          let chance = 0.88 - 0.055 * danger;
+          chance = clamp(chance, 0.04, 0.94);
+          const success = roll < chance;
+          return {
+            choice, chance, success, relV, targetEscape, impactEnergy,
+            failType: 'CRASHED',
+            riskText: 'Glancing trajectory / gravity assist'
+          };
+        }
+
+        const gravityRatio = targetEscape / Math.max(p.speedMS, 1);
+        const hugeMassPenalty = clamp(-massLog - 4, 0, 18);
+        const hugeSizePenalty = clamp(-sizeLog - 3, 0, 18);
+        const danger = 1.65 * gravityRatio + 0.055 * hugeMassPenalty + 0.025 * hugeSizePenalty;
+        let chance = 0.985 - 0.11 * danger;
+        chance = clamp(chance, 0.08, 0.995);
+
+        const success = roll < chance;
+        const orbitBias = clamp(gravityRatio / (gravityRatio + 1), 0.15, 0.90);
+        const failType = Math.random() < orbitBias ? 'ORBIT' : 'ORBIT_CRASH';
+
+        return {
+          choice, chance, success, relV, targetEscape, impactEnergy,
+          failType,
+          riskText: 'Early course correction'
+        };
       }
 
       reveal(choice) {
         this.clearEncounter();
+
         const g = this.add.graphics();
         this.encounterGroup.add(g);
         g.fillStyle(PALETTE.panel, 0.94);
-        g.fillRoundedRect(28, 64, W - 56, 494, 12);
+        g.fillRoundedRect(25, 58, W - 50, 536, 12);
         g.lineStyle(2, PALETTE.divider, 1);
-        g.strokeRoundedRect(28, 64, W - 56, 494, 12);
+        g.strokeRoundedRect(25, 58, W - 50, 536, 12);
 
-        const t = this.add.text(W / 2, 92, 'SCALE REVEAL', {
+        const t = this.add.text(W / 2, 83, 'TRUE SCALE REVEAL', {
           fontFamily: 'Courier New', fontSize: '20px', fontStyle: 'bold', color: PALETTE.ink
         }).setOrigin(0.5);
         this.encounterGroup.add(t);
 
-        const ratio = this.other.radius / this.you.radius;
-        const baseYou = 30;
+        const ratio = this.other.radiusM / this.player.radiusM;
+        const baseYou = 38;
         let youR = baseYou;
         let otherR = baseYou * ratio;
 
-        // Keep the reveal visible while preserving the dramatic ratio as much as possible.
-        if (otherR > 170) {
-          const scale = 170 / otherR;
-          otherR *= scale;
-          youR = Math.max(1.5, youR * scale);
+        if (otherR > 155) {
+          const scale = 155 / otherR;
+          otherR = 155;
+          youR = Math.max(1.4, youR * scale);
         }
-        if (otherR < 8) {
-          const scale = 8 / otherR;
-          otherR *= scale;
-          youR = Math.min(170, youR * scale);
+        if (otherR < 5) {
+          const scale = 5 / Math.max(otherR, 0.0001);
+          otherR = 5;
+          youR = Math.min(155, youR * scale);
         }
 
-        const youX = W * .31;
-        const otherX = W * .69;
-        const y = 290;
+        const youX = W * 0.30;
+        const otherX = W * 0.70;
+        const y = 280;
 
-        const you = this.drawObject(youX, y, Math.max(2, youR), this.you);
-        const other = this.drawObject(otherX, y, Math.max(2, otherR), this.other);
-        you.setScale(8);
-        other.setScale(0.18);
-        you.setAlpha(0.3);
-        other.setAlpha(0.3);
+        const you = this.drawObject(youX, y, Math.max(1.5, youR), this.player, false);
+        const other = this.drawObject(otherX, y, Math.max(1.5, otherR), this.other, false);
+        you.setScale(6).setAlpha(0.25);
+        other.setScale(0.18).setAlpha(0.25);
 
-        const youName = this.add.text(youX, 478, this.you.name, { fontFamily: 'Courier New', fontSize: '16px', color: PALETTE.green }).setOrigin(0.5);
-        const otherName = this.add.text(otherX, 478, this.other.name, { fontFamily: 'Courier New', fontSize: '16px', color: PALETTE.amber }).setOrigin(0.5);
-        const ratioText = this.add.text(W / 2, 518, `TRUE SIZE RATIO  1 : ${this.formatRatio(ratio)}`, { fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.muted }).setOrigin(0.5);
-        this.encounterGroup.add([youName, otherName, ratioText]);
-        youName.setAlpha(0); otherName.setAlpha(0); ratioText.setAlpha(0);
+        const youInfo = this.add.text(youX, 455,
+          `${this.player.name}\n${this.formatSize(this.player.radiusM)} • ${this.formatMass(this.player.massKg)}\n${this.formatSpeed(this.player.speedMS)}`,
+          { fontFamily: 'Courier New', fontSize: '13px', color: '#62f5a5', align: 'center', lineSpacing: 4 }
+        ).setOrigin(0.5, 0);
+        const otherInfo = this.add.text(otherX, 455,
+          `${this.other.name}\n${this.formatSize(this.other.radiusM)} • ${this.formatMass(this.other.massKg)}\n${this.formatSpeed(this.other.speedMS)}`,
+          { fontFamily: 'Courier New', fontSize: '13px', color: '#ffc857', align: 'center', lineSpacing: 4 }
+        ).setOrigin(0.5, 0);
+        const ratioText = this.add.text(W / 2, 558,
+          `SIZE RATIO ${this.formatRatio(ratio)}   •   TARGET ESCAPE ${this.formatSpeed(escapeVelocity(this.other))}`,
+          { fontFamily: 'Courier New', fontSize: '12px', color: PALETTE.muted }
+        ).setOrigin(0.5);
 
-        this.tweens.add({ targets: you, scaleX: 1, scaleY: 1, alpha: 1, duration: 1150, ease: 'Cubic.out' });
-        this.tweens.add({ targets: other, scaleX: 1, scaleY: 1, alpha: 1, duration: 1150, ease: 'Cubic.out' });
-        this.tweens.add({ targets: [youName, otherName, ratioText], alpha: 1, delay: 700, duration: 500 });
+        this.encounterGroup.add([youInfo, otherInfo, ratioText]);
+        youInfo.setAlpha(0); otherInfo.setAlpha(0); ratioText.setAlpha(0);
 
-        this.time.delayedCall(2050, () => this.collide(choice, you, other, youR, otherR));
+        this.tweens.add({ targets: you, scaleX: 1, scaleY: 1, alpha: 1, duration: 1100, ease: 'Cubic.out' });
+        this.tweens.add({ targets: other, scaleX: 1, scaleY: 1, alpha: 1, duration: 1100, ease: 'Cubic.out' });
+        this.tweens.add({ targets: [youInfo, otherInfo, ratioText], alpha: 1, delay: 650, duration: 450 });
+
+        this.time.delayedCall(1950, () => this.animateChoice(choice, you, other, youR, otherR));
       }
 
-      formatRatio(ratio) {
-        if (ratio >= 1000) return ratio.toExponential(1).replace('+', '');
-        if (ratio >= 10) return Math.round(ratio).toString();
-        return ratio.toFixed(1);
-      }
-
-      collide(choice, youSprite, otherSprite, youR, otherR) {
-        this.state = 'COLLISION';
-        const midpoint = W / 2;
-        const y = 290;
-        const duration = 650;
-
-        this.tweens.add({ targets: youSprite, x: midpoint - Math.min(youR, 35), y, duration, ease: 'Quad.in' });
-        this.tweens.add({ targets: otherSprite, x: midpoint + Math.min(otherR, 35), y, duration, ease: 'Quad.in' });
-
-        this.time.delayedCall(duration, () => {
-          const flash = this.add.circle(midpoint, y, 12, 0xffffff, 0.9);
-          this.encounterGroup.add(flash);
-          this.tweens.add({ targets: flash, scale: 8, alpha: 0, duration: 420, ease: 'Cubic.out' });
-          this.time.delayedCall(350, () => this.resolve(choice));
-        });
-      }
-
-      resolve(choice) {
-        this.state = 'RESULT';
-        const yourMass = this.you.mass;
-        const otherMass = this.other.mass;
-        let outcome = '';
-        let detail = '';
-        let win = false;
+      animateChoice(choice, you, other, youR, otherR) {
+        this.state = 'ACTION';
+        const midX = W / 2;
+        const y = 280;
 
         if (choice === 'ABSORB') {
-          win = yourMass >= otherMass * 0.65;
-          if (win) {
-            outcome = 'ABSORPTION SUCCESS';
-            detail = `You consumed the ${this.other.name.toLowerCase()} and gained mass.`;
-            this.score += Math.max(10, Math.round(otherMass / 4));
-          } else {
-            outcome = 'YOU WERE ABSORBED';
-            detail = `The ${this.other.name.toLowerCase()} was far too massive.`;
-          }
+          this.tweens.add({ targets: you, x: midX - Math.min(youR, 30), duration: 700, ease: 'Quad.in' });
+          this.tweens.add({ targets: other, x: midX + Math.min(otherR, 30), duration: 700, ease: 'Quad.in' });
+          this.time.delayedCall(690, () => this.impactFlash(midX, y));
+          this.time.delayedCall(1120, () => this.resolveOutcome());
+          return;
+        }
+
+        if (choice === 'DEFLECT') {
+          this.tweens.add({
+            targets: you,
+            x: midX - 10,
+            y: y - 30,
+            angle: -24,
+            duration: 650,
+            ease: 'Quad.in'
+          });
+          this.tweens.add({
+            targets: other,
+            x: midX + 35,
+            duration: 650,
+            ease: 'Sine.inOut'
+          });
+          this.time.delayedCall(630, () => {
+            this.impactFlash(midX, y - 20, 0xffc857);
+            if (this.pending.success) {
+              this.tweens.add({
+                targets: you,
+                x: W - 100,
+                y: 125,
+                angle: -65,
+                duration: 700,
+                ease: 'Cubic.out'
+              });
+            }
+          });
+          this.time.delayedCall(1300, () => this.resolveOutcome());
+          return;
+        }
+
+        if (this.pending.success) {
+          this.tweens.add({
+            targets: you,
+            x: W * 0.46,
+            y: 145,
+            angle: -35,
+            duration: 700,
+            ease: 'Sine.inOut'
+          });
+          this.tweens.add({
+            targets: you,
+            x: W - 95,
+            y: 95,
+            angle: -60,
+            delay: 680,
+            duration: 650,
+            ease: 'Quad.out'
+          });
+          this.time.delayedCall(1450, () => this.resolveOutcome());
         } else {
-          const yourImpact = yourMass * (this.you.speed + 25);
-          const resistance = otherMass * Math.max(12, this.other.radius / 5);
-          win = yourImpact >= resistance * 0.18;
-          if (win) {
-            const gain = Math.max(1, Math.round(this.other.speed / 8));
-            const craterGain = Math.max(1, Math.round(otherMass / Math.max(1, yourMass) / 4));
-            this.speedPoints += gain;
-            this.craters += craterGain;
-            this.score += 20 + gain * 4;
-            outcome = 'CRASH SURVIVED';
-            detail = `Impact scars: +${craterGain} crater${craterGain === 1 ? '' : 's'}   Speed: +${gain}`;
+          this.tweens.add({
+            targets: you,
+            x: midX + 80,
+            y: 210,
+            angle: 180,
+            scaleX: 0.65,
+            scaleY: 0.65,
+            duration: 850,
+            ease: 'Sine.inOut'
+          });
+          this.tweens.add({
+            targets: you,
+            x: midX + 125,
+            y: 315,
+            angle: 420,
+            scaleX: 0.35,
+            scaleY: 0.35,
+            delay: 820,
+            duration: 850,
+            ease: 'Sine.in'
+          });
+          this.time.delayedCall(1770, () => this.resolveOutcome());
+        }
+      }
+
+      impactFlash(x, y, color = 0xffffff) {
+        const flash = this.add.circle(x, y, 12, color, 0.92);
+        this.encounterGroup.add(flash);
+        this.tweens.add({ targets: flash, scale: 8, alpha: 0, duration: 420, ease: 'Cubic.out' });
+      }
+
+      resolveOutcome() {
+        this.state = 'RESULT';
+        const r = this.pending;
+        const oldStage = this.stageName();
+        let outcome = '';
+        let detail = '';
+        let successColor = PALETTE.green;
+
+        if (r.success && r.choice === 'ABSORB') {
+          const oldMass = this.player.massKg;
+          const gainedMass = this.other.massKg * 0.82;
+          const combinedMass = oldMass + gainedMass;
+
+          const momentumSpeed = Math.abs(
+            (oldMass * this.player.speedMS - gainedMass * this.other.speedMS) / combinedMass
+          );
+          const accretionKick = Math.min(this.other.speedMS * 0.18, 25000);
+          this.player.speedMS = clamp(Math.max(this.player.speedMS * 0.82, momentumSpeed) + accretionKick, 200, 1.5e6);
+          this.player.massKg = combinedMass;
+
+          const massGrowth = combinedMass / Math.max(oldMass, 1e-300);
+          this.player.radiusM *= Math.cbrt(massGrowth);
+
+          this.score += 100;
+          this.syncPlayerAppearance();
+          const newStage = this.stageName();
+          outcome = 'ABSORPTION SUCCESS';
+          detail = `+${this.formatMass(gainedMass)} mass  •  speed now ${this.formatSpeed(this.player.speedMS)}`;
+          if (newStage !== oldStage) detail += `\nEVOLUTION: ${oldStage} → ${newStage}`;
+        }
+
+        if (!r.success && r.choice === 'ABSORB') {
+          outcome = 'YOU WERE ABSORBED';
+          detail = `Head-on impact against ${this.other.name}. Your mass/size advantage was not enough.`;
+          successColor = PALETTE.red;
+        }
+
+        if (r.success && r.choice === 'DEFLECT') {
+          const gravAssist = clamp(escapeVelocity(this.other) * 0.06, 40, 45000);
+          const sizePenalty = clamp(logRatio(this.other.radiusM, this.player.radiusM), 0, 12);
+          const speedGain = gravAssist * (0.65 + Math.random() * 0.70);
+          const craterGain = this.other.solid ? Math.max(1, Math.round(1 + sizePenalty * 0.7)) : Math.max(1, Math.round(sizePenalty * 0.25));
+
+          this.player.speedMS = clamp(this.player.speedMS + speedGain, 200, 1.5e6);
+          this.craters += craterGain;
+          this.score += 45 + craterGain * 5;
+
+          outcome = 'DEFLECTION SUCCESS';
+          detail = `Gravity assist: +${this.formatSpeed(speedGain)}  •  +${craterGain} crater${craterGain === 1 ? '' : 's'}\nCraters are banked for future power-ups.`;
+        }
+
+        if (!r.success && r.choice === 'DEFLECT') {
+          outcome = 'DEFLECTION FAILED';
+          detail = `The grazing trajectory collapsed into an impact with ${this.other.name}.`;
+          successColor = PALETTE.red;
+        }
+
+        if (r.success && r.choice === 'AVOID') {
+          const gravityCost = clamp(
+            0.04 + 0.08 * (escapeVelocity(this.other) / Math.max(this.player.speedMS, 1)) +
+            0.012 * clamp(logRatio(this.other.massKg, this.player.massKg), 0, 20),
+            0.03,
+            0.62
+          );
+          const lostSpeed = this.player.speedMS * gravityCost;
+          this.player.speedMS = Math.max(150, this.player.speedMS - lostSpeed);
+          this.score += 12;
+
+          outcome = 'SAFE PASS';
+          detail = `Course correction cost ${Math.round(gravityCost * 100)}% speed  •  now ${this.formatSpeed(this.player.speedMS)}`;
+        }
+
+        if (!r.success && r.choice === 'AVOID') {
+          successColor = PALETTE.red;
+          if (r.failType === 'ORBIT') {
+            outcome = 'CAPTURED IN ORBIT';
+            detail = `${this.other.name}'s gravity captured your trajectory. You remain trapped in orbit.`;
           } else {
-            outcome = 'CATASTROPHIC IMPACT';
-            detail = `You fragmented against the ${this.other.name.toLowerCase()}.`;
+            outcome = 'ORBITAL DECAY';
+            detail = `You were captured by ${this.other.name}, then spiralled inward and crashed.`;
           }
         }
+
+        this.updateHud();
 
         const panel = this.add.graphics();
         this.encounterGroup.add(panel);
-        panel.fillStyle(win ? PALETTE.green : PALETTE.red, 0.08);
-        panel.fillRoundedRect(195, 168, 570, 240, 12);
-        panel.lineStyle(2, win ? PALETTE.green : PALETTE.red, 0.9);
-        panel.strokeRoundedRect(195, 168, 570, 240, 12);
+        panel.fillStyle(successColor, 0.08);
+        panel.fillRoundedRect(155, 145, 650, 315, 12);
+        panel.lineStyle(2, successColor, 0.9);
+        panel.strokeRoundedRect(155, 145, 650, 315, 12);
 
-        const a = this.add.text(W / 2, 218, outcome, {
-          fontFamily: 'Courier New', fontSize: '26px', fontStyle: 'bold', color: win ? '#62f5a5' : '#ff667a', align: 'center'
+        const a = this.add.text(W / 2, 192, outcome, {
+          fontFamily: 'Courier New', fontSize: '25px', fontStyle: 'bold',
+          color: '#' + successColor.toString(16).padStart(6, '0'), align: 'center'
         }).setOrigin(0.5);
-        const b = this.add.text(W / 2, 278, detail, {
-          fontFamily: 'Courier New', fontSize: '15px', color: PALETTE.ink, align: 'center', wordWrap: { width: 480 }
-        }).setOrigin(0.5);
-        this.encounterGroup.add([a, b]);
 
-        if (win) {
-          this.status.setText(`SCORE ${this.score}   SPEED +${this.speedPoints}   CRATERS ${this.craters}`);
-          this.makeButton(W / 2, 365, 250, 52, 'NEXT ENCOUNTER', PALETTE.cyan, () => {
-            this.encounterIndex = (this.encounterIndex + 1) % encounters.length;
-            this.startEncounter();
-          });
+        const chance = this.add.text(W / 2, 235,
+          `RESOLVED CHANCE: ${Math.round(r.chance * 100)}%  •  ${r.riskText.toUpperCase()}`,
+          { fontFamily: 'Courier New', fontSize: '12px', color: PALETTE.muted, align: 'center' }
+        ).setOrigin(0.5);
+
+        const b = this.add.text(W / 2, 305, detail, {
+          fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.ink,
+          align: 'center', wordWrap: { width: 560 }, lineSpacing: 7
+        }).setOrigin(0.5);
+
+        const physics = this.add.text(W / 2, 385,
+          `RELATIVE SPEED ${this.formatSpeed(r.relV)}   •   TARGET ESCAPE ${this.formatSpeed(r.targetEscape)}`,
+          { fontFamily: 'Courier New', fontSize: '11px', color: PALETTE.muted }
+        ).setOrigin(0.5);
+
+        this.encounterGroup.add([a, chance, b, physics]);
+
+        if (r.success) {
+          this.encounters += 1;
+          this.makeButton(W / 2, 500, 250, 52, 'NEXT ENCOUNTER', PALETTE.cyan, () => this.startEncounter());
         } else {
-          this.makeButton(W / 2, 365, 250, 52, 'RESTART RUN', PALETTE.cyan, () => {
-            this.score = 0;
-            this.speedPoints = 0;
-            this.craters = 0;
-            this.encounterIndex = 0;
-            this.startEncounter();
-          });
+          this.makeButton(W / 2, 500, 250, 52, 'RESTART RUN', PALETTE.cyan, () => this.resetRun());
         }
+      }
+
+      formatRatio(ratio) {
+        if (ratio >= 1) return `1 : ${this.compactNumber(ratio)}`;
+        return `${this.compactNumber(1 / ratio)} : 1`;
+      }
+
+      compactNumber(n) {
+        if (!isFinite(n)) return '∞';
+        if (n >= 1e6 || n < 0.001) return n.toExponential(1).replace('+', '');
+        if (n >= 100) return Math.round(n).toLocaleString('en-US');
+        if (n >= 10) return n.toFixed(1);
+        return n.toFixed(2);
+      }
+
+      formatSpeed(ms) {
+        if (ms >= 1e6) return `${(ms / 1e6).toFixed(2)} Mm/s`;
+        if (ms >= 1000) return `${(ms / 1000).toFixed(ms >= 10000 ? 1 : 2)} km/s`;
+        return `${Math.round(ms)} m/s`;
+      }
+
+      formatSize(radiusM) {
+        const diameter = radiusM * 2;
+        if (diameter >= 9.461e15) return `${(diameter / 9.461e15).toPrecision(2)} ly`;
+        if (diameter >= 1e9) return `${(diameter / 1e9).toPrecision(3)} million km`;
+        if (diameter >= 1000) return `${(diameter / 1000).toPrecision(3)} km`;
+        if (diameter >= 1) return `${diameter.toPrecision(3)} m`;
+        if (diameter >= 1e-3) return `${(diameter * 1000).toPrecision(3)} mm`;
+        if (diameter >= 1e-6) return `${(diameter * 1e6).toPrecision(3)} µm`;
+        if (diameter >= 1e-9) return `${(diameter * 1e9).toPrecision(3)} nm`;
+        return `${diameter.toExponential(1)} m`;
+      }
+
+      formatMass(kg) {
+        if (kg >= 1e24) return `${(kg / 5.972e24).toPrecision(3)} M⊕`;
+        if (kg >= 1e15) return `${kg.toExponential(2)} kg`;
+        if (kg >= 1000) return `${(kg / 1000).toPrecision(3)} t`;
+        if (kg >= 1) return `${kg.toPrecision(3)} kg`;
+        if (kg >= 1e-3) return `${(kg * 1000).toPrecision(3)} g`;
+        if (kg >= 1e-6) return `${(kg * 1e6).toPrecision(3)} mg`;
+        return `${kg.toExponential(2)} kg`;
       }
     }
 
