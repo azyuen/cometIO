@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>cometIO prototype</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Courier New", monospace;
+      background: #05070c;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; min-height: 100%; background: #05070c; overflow: hidden; }
+    body { display: grid; place-items: center; }
+    #game { width: 100vw; height: 100dvh; }
+    canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+
+  <script>
+    const W = 960;
+    const H = 620;
+
+    const PALETTE = {
+      bg: 0x05070c,
+      panel: 0x0b1020,
+      panel2: 0x10172a,
+      ink: '#e9f3ff',
+      muted: '#8292ac',
+      cyan: 0x55d9ff,
+      green: 0x62f5a5,
+      amber: 0xffc857,
+      red: 0xff667a,
+      purple: 0xb792ff,
+      divider: 0x29354f
+    };
+
+    const OBJECTS = [
+      { name: 'ATOM', radius: 1, mass: 1, speed: 90, kind: 'matter', hint: 'A tiny building block', color: 0x77e6ff },
+      { name: 'DUST PARTICLE', radius: 4, mass: 5, speed: 76, kind: 'dust', hint: 'Dry, light, easily moved', color: 0xd1c4a3 },
+      { name: 'GRAIN OF SAND', radius: 9, mass: 18, speed: 62, kind: 'rock', hint: 'Silicate-rich', color: 0xe7c477 },
+      { name: 'PEBBLE', radius: 18, mass: 75, speed: 48, kind: 'rock', hint: 'Dense and rocky', color: 0xa8a8a8 },
+      { name: 'BOULDER', radius: 34, mass: 260, speed: 38, kind: 'rock', hint: 'Irregular rocky body', color: 0x9298a3 },
+      { name: 'ASTEROID', radius: 75, mass: 900, speed: 31, kind: 'rock', hint: 'Airless minor body', color: 0x8d7769 },
+      { name: 'MOON', radius: 140, mass: 3500, speed: 24, kind: 'world', hint: 'Natural satellite', color: 0xc9c9c3 },
+      { name: 'PLANET', radius: 310, mass: 13000, speed: 19, kind: 'world', hint: 'Rounded by its own gravity', color: 0x68a6ff },
+      { name: 'SATURN', radius: 520, mass: 27000, speed: 15, kind: 'gas', hint: 'Mostly hydrogen and helium', color: 0xf3d79b },
+      { name: 'STAR', radius: 1100, mass: 92000, speed: 12, kind: 'star', hint: 'Extremely hot plasma', color: 0xffe77e },
+      { name: 'GALAXY', radius: 9000, mass: 800000, speed: 7, kind: 'galaxy', hint: 'Contains billions of stars', color: 0xb792ff }
+    ];
+
+    const encounters = [
+      ['DUST PARTICLE', 'GRAIN OF SAND'],
+      ['PEBBLE', 'ASTEROID'],
+      ['ATOM', 'SATURN']
+    ];
+
+    class GameScene extends Phaser.Scene {
+      constructor() {
+        super('game');
+        this.state = 'APPROACH';
+        this.encounterIndex = 0;
+        this.score = 0;
+        this.speedPoints = 0;
+        this.craters = 0;
+      }
+
+      create() {
+        this.cameras.main.setBackgroundColor(PALETTE.bg);
+        this.makeStars();
+        this.buildHud();
+        this.startEncounter();
+      }
+
+      makeStars() {
+        const g = this.add.graphics();
+        g.setDepth(-10);
+        for (let i = 0; i < 115; i++) {
+          const x = Phaser.Math.Between(0, W);
+          const y = Phaser.Math.Between(0, H);
+          const a = Phaser.Math.FloatBetween(0.14, 0.55);
+          const s = Phaser.Math.RND.pick([1, 1, 1, 2]);
+          g.fillStyle(0xffffff, a);
+          g.fillRect(x, y, s, s);
+        }
+      }
+
+      buildHud() {
+        this.title = this.add.text(30, 22, 'COMET.IO // SCALE COLLISION TEST', {
+          fontFamily: 'Courier New', fontSize: '18px', color: PALETTE.ink
+        });
+        this.status = this.add.text(W - 30, 22, '', {
+          fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.muted
+        }).setOrigin(1, 0);
+      }
+
+      getObj(name) {
+        return OBJECTS.find(o => o.name === name);
+      }
+
+      clearEncounter() {
+        if (this.encounterGroup) this.encounterGroup.destroy(true);
+        this.encounterGroup = this.add.container(0, 0);
+      }
+
+      startEncounter() {
+        this.clearEncounter();
+        this.state = 'APPROACH';
+
+        const pair = encounters[this.encounterIndex % encounters.length];
+        this.you = this.getObj(pair[0]);
+        this.other = this.getObj(pair[1]);
+        this.status.setText(`SCORE ${this.score}   SPEED +${this.speedPoints}   CRATERS ${this.craters}`);
+
+        const g = this.add.graphics();
+        this.encounterGroup.add(g);
+        g.fillStyle(PALETTE.panel, 0.94);
+        g.fillRoundedRect(28, 64, W - 56, 438, 12);
+        g.lineStyle(2, PALETTE.divider, 1);
+        g.strokeRoundedRect(28, 64, W - 56, 438, 12);
+        g.lineBetween(W / 2, 89, W / 2, 476);
+
+        this.label(92, 92, 'YOU', PALETTE.green);
+        this.label(W - 92, 92, 'UNKNOWN OBJECT', PALETTE.amber, 1);
+
+        // Deliberately misleading apparent sizes: both are nearly the same on screen.
+        const apparentYou = 38;
+        const apparentOther = 42;
+        this.youSprite = this.drawObject(W * 0.27, 244, apparentYou, this.you, 'right');
+        this.otherSprite = this.drawObject(W * 0.73, 244, apparentOther, this.other, 'left', true);
+
+        this.arrow(W * 0.34, 244, 1, PALETTE.green);
+        this.arrow(W * 0.66, 244, -1, PALETTE.amber);
+
+        this.info(W * 0.18, 338, this.you.name, `SPEED: ${this.speedWord(this.you.speed)}`);
+        this.info(W * 0.82, 338, '???', `SPEED: ${this.speedWord(this.other.speed)}`, true);
+
+        const hint = this.add.text(W / 2, 415,
+          `SCAN HINT: ${this.other.hint.toUpperCase()}`,
+          { fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.muted }
+        ).setOrigin(0.5);
+        this.encounterGroup.add(hint);
+
+        const prompt = this.add.text(W / 2, 466, 'CHOOSE YOUR COLLISION', {
+          fontFamily: 'Courier New', fontSize: '15px', color: PALETTE.ink
+        }).setOrigin(0.5);
+        this.encounterGroup.add(prompt);
+
+        this.makeButton(W / 2 - 126, 548, 220, 54, 'ABSORB', PALETTE.green, () => this.choose('ABSORB'));
+        this.makeButton(W / 2 + 126, 548, 220, 54, 'CRASH', PALETTE.red, () => this.choose('CRASH'));
+
+        this.tweens.add({
+          targets: [this.youSprite, this.otherSprite],
+          x: '+=6',
+          duration: 720,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.inOut'
+        });
+      }
+
+      label(x, y, text, color, origin = 0) {
+        const t = this.add.text(x, y, text, {
+          fontFamily: 'Courier New', fontSize: '16px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0')
+        }).setOrigin(origin, 0);
+        this.encounterGroup.add(t);
+      }
+
+      info(x, y, name, speed, right = false) {
+        const origin = right ? 1 : 0;
+        const t1 = this.add.text(x, y, name, { fontFamily: 'Courier New', fontSize: '20px', color: PALETTE.ink }).setOrigin(origin, 0);
+        const t2 = this.add.text(x, y + 32, speed, { fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.muted }).setOrigin(origin, 0);
+        this.encounterGroup.add([t1, t2]);
+      }
+
+      speedWord(s) {
+        if (s >= 70) return 'VERY FAST';
+        if (s >= 45) return 'FAST';
+        if (s >= 25) return 'MEDIUM';
+        return 'SLOW';
+      }
+
+      drawObject(x, y, radius, obj, direction = 'right', hideIdentity = false) {
+        const c = this.add.container(x, y);
+        const g = this.add.graphics();
+        const color = hideIdentity ? 0x9aa8bb : obj.color;
+        g.fillStyle(color, 0.15);
+        g.fillCircle(0, 0, radius + 9);
+        g.fillStyle(color, 1);
+        g.fillCircle(0, 0, radius);
+        g.lineStyle(3, 0xffffff, 0.18);
+        g.strokeCircle(0, 0, radius);
+
+        if (!hideIdentity && obj.kind === 'rock') {
+          g.fillStyle(0x000000, 0.15);
+          g.fillCircle(-radius * .23, -radius * .13, Math.max(2, radius * .17));
+          g.fillCircle(radius * .28, radius * .18, Math.max(2, radius * .12));
+        }
+
+        if (!hideIdentity && obj.name === 'SATURN') {
+          g.lineStyle(Math.max(2, radius * .10), 0xe8c981, 0.85);
+          g.strokeEllipse(0, 0, radius * 2.9, radius * .8);
+        }
+
+        c.add(g);
+        this.encounterGroup.add(c);
+        return c;
+      }
+
+      arrow(x, y, dir, color) {
+        const g = this.add.graphics();
+        g.lineStyle(4, color, 0.8);
+        g.lineBetween(x - 28 * dir, y, x + 28 * dir, y);
+        g.fillStyle(color, 0.8);
+        g.fillTriangle(
+          x + 28 * dir, y,
+          x + 15 * dir, y - 8,
+          x + 15 * dir, y + 8
+        );
+        this.encounterGroup.add(g);
+      }
+
+      makeButton(x, y, w, h, text, color, onClick) {
+        const c = this.add.container(x, y);
+        const g = this.add.graphics();
+        g.fillStyle(color, 0.12);
+        g.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
+        g.lineStyle(2, color, 1);
+        g.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
+        const t = this.add.text(0, 0, text, {
+          fontFamily: 'Courier New', fontSize: '18px', fontStyle: 'bold', color: '#' + color.toString(16).padStart(6, '0')
+        }).setOrigin(0.5);
+        const hit = this.add.rectangle(0, 0, w, h, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+        hit.on('pointerover', () => c.setScale(1.04));
+        hit.on('pointerout', () => c.setScale(1));
+        hit.on('pointerdown', () => onClick());
+        c.add([g, t, hit]);
+        this.encounterGroup.add(c);
+      }
+
+      choose(choice) {
+        if (this.state !== 'APPROACH') return;
+        this.state = 'SCALE_REVEAL';
+        this.tweens.killAll();
+        this.reveal(choice);
+      }
+
+      reveal(choice) {
+        this.clearEncounter();
+        const g = this.add.graphics();
+        this.encounterGroup.add(g);
+        g.fillStyle(PALETTE.panel, 0.94);
+        g.fillRoundedRect(28, 64, W - 56, 494, 12);
+        g.lineStyle(2, PALETTE.divider, 1);
+        g.strokeRoundedRect(28, 64, W - 56, 494, 12);
+
+        const t = this.add.text(W / 2, 92, 'SCALE REVEAL', {
+          fontFamily: 'Courier New', fontSize: '20px', fontStyle: 'bold', color: PALETTE.ink
+        }).setOrigin(0.5);
+        this.encounterGroup.add(t);
+
+        const ratio = this.other.radius / this.you.radius;
+        const baseYou = 30;
+        let youR = baseYou;
+        let otherR = baseYou * ratio;
+
+        // Keep the reveal visible while preserving the dramatic ratio as much as possible.
+        if (otherR > 170) {
+          const scale = 170 / otherR;
+          otherR *= scale;
+          youR = Math.max(1.5, youR * scale);
+        }
+        if (otherR < 8) {
+          const scale = 8 / otherR;
+          otherR *= scale;
+          youR = Math.min(170, youR * scale);
+        }
+
+        const youX = W * .31;
+        const otherX = W * .69;
+        const y = 290;
+
+        const you = this.drawObject(youX, y, Math.max(2, youR), this.you);
+        const other = this.drawObject(otherX, y, Math.max(2, otherR), this.other);
+        you.setScale(8);
+        other.setScale(0.18);
+        you.setAlpha(0.3);
+        other.setAlpha(0.3);
+
+        const youName = this.add.text(youX, 478, this.you.name, { fontFamily: 'Courier New', fontSize: '16px', color: PALETTE.green }).setOrigin(0.5);
+        const otherName = this.add.text(otherX, 478, this.other.name, { fontFamily: 'Courier New', fontSize: '16px', color: PALETTE.amber }).setOrigin(0.5);
+        const ratioText = this.add.text(W / 2, 518, `TRUE SIZE RATIO  1 : ${this.formatRatio(ratio)}`, { fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.muted }).setOrigin(0.5);
+        this.encounterGroup.add([youName, otherName, ratioText]);
+        youName.setAlpha(0); otherName.setAlpha(0); ratioText.setAlpha(0);
+
+        this.tweens.add({ targets: you, scaleX: 1, scaleY: 1, alpha: 1, duration: 1150, ease: 'Cubic.out' });
+        this.tweens.add({ targets: other, scaleX: 1, scaleY: 1, alpha: 1, duration: 1150, ease: 'Cubic.out' });
+        this.tweens.add({ targets: [youName, otherName, ratioText], alpha: 1, delay: 700, duration: 500 });
+
+        this.time.delayedCall(2050, () => this.collide(choice, you, other, youR, otherR));
+      }
+
+      formatRatio(ratio) {
+        if (ratio >= 1000) return ratio.toExponential(1).replace('+', '');
+        if (ratio >= 10) return Math.round(ratio).toString();
+        return ratio.toFixed(1);
+      }
+
+      collide(choice, youSprite, otherSprite, youR, otherR) {
+        this.state = 'COLLISION';
+        const midpoint = W / 2;
+        const y = 290;
+        const duration = 650;
+
+        this.tweens.add({ targets: youSprite, x: midpoint - Math.min(youR, 35), y, duration, ease: 'Quad.in' });
+        this.tweens.add({ targets: otherSprite, x: midpoint + Math.min(otherR, 35), y, duration, ease: 'Quad.in' });
+
+        this.time.delayedCall(duration, () => {
+          const flash = this.add.circle(midpoint, y, 12, 0xffffff, 0.9);
+          this.encounterGroup.add(flash);
+          this.tweens.add({ targets: flash, scale: 8, alpha: 0, duration: 420, ease: 'Cubic.out' });
+          this.time.delayedCall(350, () => this.resolve(choice));
+        });
+      }
+
+      resolve(choice) {
+        this.state = 'RESULT';
+        const yourMass = this.you.mass;
+        const otherMass = this.other.mass;
+        let outcome = '';
+        let detail = '';
+        let win = false;
+
+        if (choice === 'ABSORB') {
+          win = yourMass >= otherMass * 0.65;
+          if (win) {
+            outcome = 'ABSORPTION SUCCESS';
+            detail = `You consumed the ${this.other.name.toLowerCase()} and gained mass.`;
+            this.score += Math.max(10, Math.round(otherMass / 4));
+          } else {
+            outcome = 'YOU WERE ABSORBED';
+            detail = `The ${this.other.name.toLowerCase()} was far too massive.`;
+          }
+        } else {
+          const yourImpact = yourMass * (this.you.speed + 25);
+          const resistance = otherMass * Math.max(12, this.other.radius / 5);
+          win = yourImpact >= resistance * 0.18;
+          if (win) {
+            const gain = Math.max(1, Math.round(this.other.speed / 8));
+            const craterGain = Math.max(1, Math.round(otherMass / Math.max(1, yourMass) / 4));
+            this.speedPoints += gain;
+            this.craters += craterGain;
+            this.score += 20 + gain * 4;
+            outcome = 'CRASH SURVIVED';
+            detail = `Impact scars: +${craterGain} crater${craterGain === 1 ? '' : 's'}   Speed: +${gain}`;
+          } else {
+            outcome = 'CATASTROPHIC IMPACT';
+            detail = `You fragmented against the ${this.other.name.toLowerCase()}.`;
+          }
+        }
+
+        const panel = this.add.graphics();
+        this.encounterGroup.add(panel);
+        panel.fillStyle(win ? PALETTE.green : PALETTE.red, 0.08);
+        panel.fillRoundedRect(195, 168, 570, 240, 12);
+        panel.lineStyle(2, win ? PALETTE.green : PALETTE.red, 0.9);
+        panel.strokeRoundedRect(195, 168, 570, 240, 12);
+
+        const a = this.add.text(W / 2, 218, outcome, {
+          fontFamily: 'Courier New', fontSize: '26px', fontStyle: 'bold', color: win ? '#62f5a5' : '#ff667a', align: 'center'
+        }).setOrigin(0.5);
+        const b = this.add.text(W / 2, 278, detail, {
+          fontFamily: 'Courier New', fontSize: '15px', color: PALETTE.ink, align: 'center', wordWrap: { width: 480 }
+        }).setOrigin(0.5);
+        this.encounterGroup.add([a, b]);
+
+        if (win) {
+          this.status.setText(`SCORE ${this.score}   SPEED +${this.speedPoints}   CRATERS ${this.craters}`);
+          this.makeButton(W / 2, 365, 250, 52, 'NEXT ENCOUNTER', PALETTE.cyan, () => {
+            this.encounterIndex = (this.encounterIndex + 1) % encounters.length;
+            this.startEncounter();
+          });
+        } else {
+          this.makeButton(W / 2, 365, 250, 52, 'RESTART RUN', PALETTE.cyan, () => {
+            this.score = 0;
+            this.speedPoints = 0;
+            this.craters = 0;
+            this.encounterIndex = 0;
+            this.startEncounter();
+          });
+        }
+      }
+    }
+
+    const config = {
+      type: Phaser.AUTO,
+      parent: 'game',
+      width: W,
+      height: H,
+      backgroundColor: '#05070c',
+      pixelArt: true,
+      antialias: false,
+      scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: W,
+        height: H
+      },
+      scene: [GameScene]
+    };
+
+    new Phaser.Game(config);
+  </script>
+</body>
+</html>
