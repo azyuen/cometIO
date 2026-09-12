@@ -3,45 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>cometIO prototype</title>
+  <meta name="theme-color" content="#020a19" />
+  <title>cometIO</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   <style>
-    :root {
-      color-scheme: dark;
-      font-family: "Courier New", monospace;
-      background: #05070c;
-    }
+    :root { color-scheme: dark; background: #02060f; }
     * { box-sizing: border-box; }
-    html, body { margin: 0; width: 100%; min-height: 100%; background: #05070c; overflow: hidden; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #02060f; }
     body { display: grid; place-items: center; }
     #game { width: 100vw; height: 100dvh; }
-    canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+    canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
   </style>
 </head>
 <body>
   <div id="game"></div>
-
   <script>
-    const W = 960;
-    const H = 650;
+    // cometIO portrait prototype — mobile UI pass v3
+    const W = 420;
+    const H = 844;
     const G = 6.67430e-11;
 
-    const PALETTE = {
-      bg: 0x05070c,
-      panel: 0x0b1020,
-      panel2: 0x10172a,
-      ink: '#e9f3ff',
-      muted: '#8292ac',
-      cyan: 0x55d9ff,
-      green: 0x62f5a5,
-      amber: 0xffc857,
-      red: 0xff667a,
-      purple: 0xb792ff,
-      divider: 0x29354f
+    const C = {
+      bg: 0x020a19,
+      panel: 0x06162a,
+      panel2: 0x0a2138,
+      cyan: 0x20d9ff,
+      cyanSoft: 0x0b6684,
+      white: 0xf5f7ff,
+      muted: 0x7eb4cc,
+      green: 0x25f29a,
+      orange: 0xff9d3d,
+      blue: 0x45c6ff,
+      red: 0xff5368,
+      purple: 0x8e55d8,
+      rock: 0xa79d9a,
+      rockDark: 0x4f4c57,
+      star: 0xc6e9ff
     };
 
-    // Approximate real-world scales. These values are deliberately broad rather than
-    // simulation-grade; the game uses the actual ratios between size, mass and speed.
     const OBJECTS = [
       { name: 'ATOM', radiusM: 1e-10, massKg: 1.67e-27, speedMS: 12000, kind: 'matter', hint: 'A tiny building block', color: 0x77e6ff, solid: false },
       { name: 'DUST PARTICLE', radiusM: 5e-6, massKg: 1e-12, speedMS: 9000, kind: 'dust', hint: 'Dry, light, easily moved', color: 0xd1c4a3, solid: true },
@@ -58,20 +57,19 @@
       { name: 'GALAXY', radiusM: 5e20, massKg: 1e42, speedMS: 600000, kind: 'galaxy', hint: 'Contains billions of stars', color: 0xb792ff, solid: false }
     ];
 
-    // This is game progression, not strict astronomical taxonomy.
     const STAGES = [
-      { minMass: 0, name: 'DUST PARTICLE' },
-      { minMass: 1e-7, name: 'GRAIN OF SAND' },
-      { minMass: 0.02, name: 'PEBBLE' },
-      { minMass: 500, name: 'BOULDER' },
-      { minMass: 1e7, name: 'METEOROID' },
-      { minMass: 5e11, name: 'ASTEROID' },
-      { minMass: 3e14, name: 'COMET' },
-      { minMass: 1e21, name: 'MOON' },
-      { minMass: 1e24, name: 'PLANET' },
-      { minMass: 1e26, name: 'GIANT PLANET' },
-      { minMass: 1e29, name: 'STAR' },
-      { minMass: 1e39, name: 'GALACTIC OBJECT' }
+      { minMass: 0, name: 'DUST PARTICLE', stage: 1, zone: 'THE DUST RUN' },
+      { minMass: 1e-7, name: 'GRAIN OF SAND', stage: 2, zone: 'THE SHATTERED BELT' },
+      { minMass: 0.02, name: 'PEBBLE', stage: 3, zone: 'ROCK DRIFT' },
+      { minMass: 500, name: 'BOULDER', stage: 4, zone: 'HEAVY DEBRIS' },
+      { minMass: 1e7, name: 'METEOROID', stage: 5, zone: 'THE FAST LANE' },
+      { minMass: 5e11, name: 'ASTEROID', stage: 6, zone: 'THE INNER BELT' },
+      { minMass: 3e14, name: 'COMET', stage: 7, zone: 'THE ICE ROAD' },
+      { minMass: 1e21, name: 'MOON', stage: 8, zone: 'ORBITAL GIANTS' },
+      { minMass: 1e24, name: 'PLANET', stage: 9, zone: 'BIGGER WORLDS' },
+      { minMass: 1e26, name: 'GIANT PLANET', stage: 10, zone: 'DEEP GRAVITY' },
+      { minMass: 1e29, name: 'STAR', stage: 11, zone: 'STELLAR SPACE' },
+      { minMass: 1e39, name: 'GALACTIC OBJECT', stage: 12, zone: 'THE GREAT VOID' }
     ];
 
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -87,25 +85,17 @@
         this.score = 0;
         this.craters = 0;
         this.encounters = 0;
-        this.player = null;
       }
 
       create() {
-        this.cameras.main.setBackgroundColor(PALETTE.bg);
-        this.makeStars();
-        this.buildHud();
+        this.cameras.main.setBackgroundColor(C.bg);
+        this.makeBackdrop();
         this.resetRun();
       }
 
       resetRun() {
         const base = this.cloneObj(OBJECTS.find(o => o.name === 'DUST PARTICLE'));
-        this.player = {
-          ...base,
-          name: 'DUST PARTICLE',
-          speedMS: 11000,
-          massKg: 1e-12,
-          radiusM: 5e-6
-        };
+        this.player = { ...base, speedMS: 11000, massKg: 1e-12, radiusM: 5e-6 };
         this.score = 0;
         this.craters = 0;
         this.encounters = 0;
@@ -114,53 +104,42 @@
 
       cloneObj(o) { return JSON.parse(JSON.stringify(o)); }
 
-      makeStars() {
-        const g = this.add.graphics();
-        g.setDepth(-10);
-        for (let i = 0; i < 120; i++) {
-          const x = Phaser.Math.Between(0, W);
-          const y = Phaser.Math.Between(0, H);
-          const a = Phaser.Math.FloatBetween(0.14, 0.55);
-          const s = Phaser.Math.RND.pick([1, 1, 1, 2]);
-          g.fillStyle(0xffffff, a);
-          g.fillRect(x, y, s, s);
+      makeBackdrop() {
+        this.bgGraphics = this.add.graphics().setDepth(-20);
+        this.bgGraphics.fillStyle(C.bg, 1).fillRect(0, 0, W, H);
+        for (let i = 0; i < 130; i++) {
+          const x = Phaser.Math.Between(8, W - 8);
+          const y = Phaser.Math.Between(6, H - 6);
+          const bright = Phaser.Math.RND.pick([0.25, 0.35, 0.55, 0.8]);
+          const size = Phaser.Math.RND.pick([1, 1, 1, 2]);
+          this.bgGraphics.fillStyle(i % 17 === 0 ? C.blue : C.star, bright).fillRect(x, y, size, size);
         }
-      }
-
-      buildHud() {
-        this.title = this.add.text(28, 20, 'COMET.IO // PHYSICS PROTOTYPE', {
-          fontFamily: 'Courier New', fontSize: '18px', color: PALETTE.ink
-        });
-        this.status = this.add.text(W - 28, 20, '', {
-          fontFamily: 'Courier New', fontSize: '13px', color: PALETTE.muted
-        }).setOrigin(1, 0);
+        this.bgGraphics.lineStyle(18, C.purple, 0.09);
+        this.bgGraphics.beginPath().moveTo(-50, 315).lineTo(150, 250).lineTo(310, 330).lineTo(470, 245).strokePath();
+        this.bgGraphics.lineStyle(10, C.blue, 0.05);
+        this.bgGraphics.beginPath().moveTo(-20, 165).lineTo(130, 215).lineTo(265, 130).lineTo(440, 205).strokePath();
       }
 
       clearEncounter() {
-        if (this.encounterGroup) this.encounterGroup.destroy(true);
-        this.encounterGroup = this.add.container(0, 0);
+        if (this.ui) this.ui.destroy(true);
+        this.ui = this.add.container(0, 0);
       }
 
-      updateHud() {
-        this.status.setText(
-          `${this.stageName()}   MASS ${this.formatMass(this.player.massKg)}   SPEED ${this.formatSpeed(this.player.speedMS)}   CRATERS ${this.craters}`
-        );
-      }
-
-      stageName() {
-        let stage = STAGES[0].name;
-        for (const s of STAGES) if (this.player.massKg >= s.minMass) stage = s.name;
+      stageData() {
+        let stage = STAGES[0];
+        for (const s of STAGES) if (this.player.massKg >= s.minMass) stage = s;
         return stage;
       }
 
+      stageName() { return this.stageData().name; }
+
       syncPlayerAppearance() {
         const stage = this.stageName();
-        const style =
-          OBJECTS.find(o => o.name === stage) ||
-          (stage === 'PLANET' ? OBJECTS.find(o => o.name === 'EARTH-LIKE PLANET') : null) ||
-          (stage === 'GIANT PLANET' ? OBJECTS.find(o => o.name === 'SATURN') : null) ||
-          (stage === 'STAR' ? OBJECTS.find(o => o.name === 'SUN-LIKE STAR') : null) ||
-          (stage === 'GALACTIC OBJECT' ? OBJECTS.find(o => o.name === 'GALAXY') : null);
+        const style = OBJECTS.find(o => o.name === stage)
+          || (stage === 'PLANET' ? OBJECTS.find(o => o.name === 'EARTH-LIKE PLANET') : null)
+          || (stage === 'GIANT PLANET' ? OBJECTS.find(o => o.name === 'SATURN') : null)
+          || (stage === 'STAR' ? OBJECTS.find(o => o.name === 'SUN-LIKE STAR') : null)
+          || (stage === 'GALACTIC OBJECT' ? OBJECTS.find(o => o.name === 'GALAXY') : null);
         if (style) {
           this.player.name = stage;
           this.player.kind = style.kind;
@@ -173,9 +152,9 @@
         const pLog = Math.log10(Math.max(this.player.massKg, 1e-30));
         const weighted = OBJECTS.map(o => {
           const d = Math.abs(Math.log10(Math.max(o.massKg, 1e-30)) - pLog);
-          let weight = 1 / (1 + d * 0.75);
-          if (d < 4) weight *= 3;
-          if (Math.random() < 0.08) weight *= 2.5;
+          let weight = 1 / (1 + d * 0.7);
+          if (d < 4) weight *= 3.2;
+          if (Math.random() < 0.09) weight *= 2.5;
           return { o, weight };
         });
         const total = weighted.reduce((s, x) => s + x.weight, 0);
@@ -192,168 +171,221 @@
         this.state = 'APPROACH';
         this.syncPlayerAppearance();
         this.other = this.pickOpponent();
-        this.updateHud();
-
-        const g = this.add.graphics();
-        this.encounterGroup.add(g);
-        g.fillStyle(PALETTE.panel, 0.94);
-        g.fillRoundedRect(25, 58, W - 50, 456, 12);
-        g.lineStyle(2, PALETTE.divider, 1);
-        g.strokeRoundedRect(25, 58, W - 50, 456, 12);
-        g.lineBetween(W / 2, 84, W / 2, 420);
-
-        this.label(82, 84, 'YOU', PALETTE.green);
-        this.label(W - 82, 84, 'UNKNOWN OBJECT', PALETTE.amber, 1);
-
-        const apparentYou = 38;
-        const apparentOther = 41;
-        this.youSprite = this.drawObject(W * 0.27, 230, apparentYou, this.player, false);
-        this.otherSprite = this.drawObject(W * 0.73, 230, apparentOther, this.other, true);
-
-        this.arrow(W * 0.36, 230, 1, PALETTE.green);
-        this.arrow(W * 0.64, 230, -1, PALETTE.amber);
-
-        this.infoBlock(W * 0.10, 312, this.player.name, [
-          `SIZE: ${this.formatSize(this.player.radiusM)}`,
-          `MASS: ${this.formatMass(this.player.massKg)}`,
-          `SPEED: ${this.formatSpeed(this.player.speedMS)}`
-        ]);
-
-        this.infoBlock(W * 0.90, 312, '???', [
-          'SIZE: ???',
-          'MASS: ???',
-          `SPEED: ${this.formatSpeed(this.other.speedMS)}`
-        ], true);
-
-        const hint = this.add.text(W / 2, 422,
-          `SCAN HINT: ${this.other.hint.toUpperCase()}`,
-          { fontFamily: 'Courier New', fontSize: '13px', color: PALETTE.muted }
-        ).setOrigin(0.5);
-        this.encounterGroup.add(hint);
-
-        const prompt = this.add.text(W / 2, 463, 'DO YOU WANT TO TRY AND…', {
-          fontFamily: 'Courier New', fontSize: '16px', fontStyle: 'bold', color: PALETTE.ink
-        }).setOrigin(0.5);
-        this.encounterGroup.add(prompt);
-
-        this.makeChoiceButton(172, 570, 250, 82, 'ABSORB', 'HIGH RISK  •  MASS + SPEED', PALETTE.red, () => this.choose('ABSORB'));
-        this.makeChoiceButton(480, 570, 250, 82, 'DEFLECT', 'MEDIUM RISK  •  SPEED + CRATERS', PALETTE.amber, () => this.choose('DEFLECT'));
-        this.makeChoiceButton(788, 570, 250, 82, 'AVOID', 'LOW RISK  •  LOSE SPEED', PALETTE.green, () => this.choose('AVOID'));
-
-        this.tweens.add({
-          targets: [this.youSprite, this.otherSprite],
-          x: '+=5',
-          duration: 720,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.inOut'
-        });
+        this.drawTopHud();
+        this.drawArena();
+        this.drawPrompt();
       }
 
-      label(x, y, text, color, origin = 0) {
+      addText(x, y, text, size, color = C.white, opts = {}) {
         const t = this.add.text(x, y, text, {
-          fontFamily: 'Courier New', fontSize: '16px', fontStyle: 'bold',
-          color: '#' + color.toString(16).padStart(6, '0')
-        }).setOrigin(origin, 0);
-        this.encounterGroup.add(t);
+          fontFamily: 'Courier New, monospace',
+          fontSize: `${size}px`,
+          fontStyle: opts.bold ? 'bold' : 'normal',
+          color: `#${color.toString(16).padStart(6, '0')}`,
+          align: opts.align || 'left',
+          lineSpacing: opts.lineSpacing || 0,
+          wordWrap: opts.width ? { width: opts.width } : undefined
+        });
+        t.setOrigin(opts.ox ?? 0, opts.oy ?? 0);
+        this.ui.add(t);
+        return t;
       }
 
-      infoBlock(x, y, name, lines, right = false) {
-        const origin = right ? 1 : 0;
-        const t1 = this.add.text(x, y, name, {
-          fontFamily: 'Courier New', fontSize: '19px', color: PALETTE.ink
-        }).setOrigin(origin, 0);
-        const t2 = this.add.text(x, y + 28, lines.join('\n'), {
-          fontFamily: 'Courier New', fontSize: '13px', color: PALETTE.muted, lineSpacing: 5
-        }).setOrigin(origin, 0);
-        this.encounterGroup.add([t1, t2]);
+      drawTopHud() {
+        const y = 18;
+        const gap = 5;
+        const x0 = 10;
+        const cardW = 96.25;
+        const cardH = 62;
+        const labels = [
+          ['MASS', this.formatMassShort(this.player.massKg), C.white],
+          ['SPEED', this.formatSpeed(this.player.speedMS), C.white],
+          ['CRATERS', String(this.craters), C.white],
+          [`LEVEL ${Math.max(1, this.encounters + 1)}`, 'WANDERER', C.white]
+        ];
+
+        labels.forEach((row, i) => {
+          const x = x0 + i * (cardW + gap);
+          const g = this.add.graphics();
+          g.fillStyle(C.panel, 0.94).fillRoundedRect(x, y, cardW, cardH, 7);
+          g.lineStyle(2, C.cyan, 0.82).strokeRoundedRect(x, y, cardW, cardH, 7);
+          this.ui.add(g);
+
+          if (i === 0) this.drawMiniRock(x + 17, y + 30, 10, C.rock);
+          if (i === 1) this.drawSpeedGauge(x + 17, y + 30);
+          if (i === 2) this.drawMiniRock(x + 17, y + 30, 10, 0x9da4b6, true);
+          if (i === 3) {
+            const bar = this.add.graphics();
+            bar.fillStyle(0x20364a, 1).fillRoundedRect(x + 10, y + 49, cardW - 20, 5, 2);
+            bar.fillStyle(C.cyan, 1).fillRoundedRect(x + 10, y + 49, (cardW - 20) * clamp((this.encounters % 5 + 1) / 5, 0.1, 1), 5, 2);
+            this.ui.add(bar);
+          }
+
+          const tx = i < 3 ? x + 34 : x + 9;
+          this.addText(tx, y + 9, row[0], i === 3 ? 12 : 10, C.muted, { bold: i === 3 });
+          this.addText(tx, y + 28, row[1], i === 3 ? 9 : 11, row[2], { bold: i !== 3 });
+        });
+
+        const stage = this.stageData();
+        this.addText(13, 92, `STAGE ${stage.stage}`, 11, C.muted, { bold: true });
+        this.addText(13, 108, stage.zone, 10, C.white, { bold: true });
+        const lg = this.add.graphics();
+        lg.lineStyle(2, C.cyan, 0.8).lineBetween(13, 128, 72, 128);
+        lg.lineStyle(2, C.cyan, 0.8).lineBetween(W - 72, 128, W - 13, 128);
+        this.ui.add(lg);
+        this.addText(W - 13, 93, 'BIGGER\nWORLDS\nAHEAD', 9, C.muted, { ox: 1, align: 'right', bold: true, lineSpacing: 1 });
       }
 
-      drawObject(x, y, radius, obj, hideIdentity = false) {
+      drawMiniRock(x, y, r, color, crater = false) {
+        const g = this.add.graphics();
+        g.fillStyle(color, 1).fillCircle(x, y, r);
+        g.fillStyle(C.rockDark, 0.75).fillCircle(x - 3, y - 2, 3);
+        g.fillCircle(x + 3, y + 3, crater ? 4 : 2);
+        g.lineStyle(1, C.white, 0.25).strokeCircle(x, y, r);
+        this.ui.add(g);
+      }
+
+      drawSpeedGauge(x, y) {
+        const g = this.add.graphics();
+        g.lineStyle(3, C.cyan, 1).arc(x, y + 3, 10, Phaser.Math.DegToRad(195), Phaser.Math.DegToRad(345), false).strokePath();
+        g.lineStyle(2, C.white, 0.8).lineBetween(x, y + 3, x + 6, y - 5);
+        g.fillStyle(C.red, 1).fillRect(x + 8, y - 3, 3, 8);
+        this.ui.add(g);
+      }
+
+      drawArena() {
+        const top = 142;
+        const bottom = 622;
+        const dividerX1 = 0;
+        const dividerY1 = 610;
+        const dividerX2 = W;
+        const dividerY2 = 226;
+
+        const frame = this.add.graphics();
+        frame.fillStyle(0x020a19, 0.12).fillRect(0, top, W, bottom - top);
+        frame.lineStyle(2, C.cyan, 0.12).lineBetween(0, top, W, top);
+        this.ui.add(frame);
+
+        const dg = this.add.graphics();
+        dg.lineStyle(8, C.cyan, 0.08).lineBetween(dividerX1, dividerY1, dividerX2, dividerY2);
+        dg.lineStyle(3, C.cyan, 0.95).lineBetween(dividerX1, dividerY1, dividerX2, dividerY2);
+        this.ui.add(dg);
+
+        this.youSprite = this.drawObject(128, 330, 36, this.player, false, true);
+        this.otherSprite = this.drawObject(303, 480, 42, this.other, true, false);
+
+        this.drawPlayerTrail(128, 330);
+        this.drawIncomingSpecks(303, 480);
+
+        const leftTag = this.addText(14, 151, 'YOU', 9, C.green, { bold: true });
+        const rightTag = this.addText(W - 14, 604, 'UNKNOWN', 9, C.orange, { bold: true, ox: 1 });
+        leftTag.setAlpha(0.85); rightTag.setAlpha(0.85);
+
+        this.tweens.add({ targets: this.youSprite, x: '+=4', y: '-=2', duration: 650, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        this.tweens.add({ targets: this.otherSprite, x: '-=3', y: '+=2', duration: 760, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
+
+      drawObject(x, y, radius, obj, hideIdentity = false, glow = false) {
         const c = this.add.container(x, y);
         const g = this.add.graphics();
-        const color = hideIdentity ? 0x9aa8bb : obj.color;
+        const color = hideIdentity ? C.rock : obj.color;
 
-        g.fillStyle(color, 0.13);
-        g.fillCircle(0, 0, radius + 9);
-        g.fillStyle(color, 1);
-        g.fillCircle(0, 0, radius);
-        g.lineStyle(3, 0xffffff, 0.18);
-        g.strokeCircle(0, 0, radius);
+        if (glow) g.fillStyle(C.orange, 0.10).fillCircle(0, 0, radius + 11);
+        g.fillStyle(color, 1).fillCircle(0, 0, radius);
+        g.lineStyle(2, C.white, 0.20).strokeCircle(0, 0, radius);
 
-        if (!hideIdentity && ['rock', 'ice'].includes(obj.kind)) {
-          g.fillStyle(0x000000, 0.16);
-          g.fillCircle(-radius * 0.24, -radius * 0.10, Math.max(2, radius * 0.16));
-          g.fillCircle(radius * 0.28, radius * 0.20, Math.max(2, radius * 0.11));
+        if (hideIdentity || ['rock', 'ice', 'world', 'dust'].includes(obj.kind)) {
+          const cr = C.rockDark;
+          g.fillStyle(cr, 0.55).fillCircle(-radius * 0.26, -radius * 0.12, Math.max(3, radius * 0.16));
+          g.fillCircle(radius * 0.24, radius * 0.22, Math.max(3, radius * 0.12));
+          g.fillCircle(radius * 0.18, -radius * 0.28, Math.max(2, radius * 0.09));
         }
 
-        if (!hideIdentity && (obj.name === 'SATURN' || obj.kind === 'gas')) {
-          g.lineStyle(Math.max(2, radius * 0.10), 0xe8c981, 0.82);
-          g.strokeEllipse(0, 0, radius * 2.9, radius * 0.8);
+        if (!hideIdentity && obj.kind === 'gas') {
+          g.lineStyle(Math.max(2, radius * 0.11), 0xe8c981, 0.85).strokeEllipse(0, 0, radius * 2.7, radius * 0.75);
         }
 
         c.add(g);
-        this.encounterGroup.add(c);
+        this.ui.add(c);
         return c;
       }
 
-      arrow(x, y, dir, color) {
+      drawPlayerTrail(x, y) {
         const g = this.add.graphics();
-        g.lineStyle(4, color, 0.8);
-        g.lineBetween(x - 27 * dir, y, x + 27 * dir, y);
-        g.fillStyle(color, 0.8);
-        g.fillTriangle(
-          x + 27 * dir, y,
-          x + 14 * dir, y - 8,
-          x + 14 * dir, y + 8
-        );
-        this.encounterGroup.add(g);
+        const backX = x - 92;
+        const backY = y + 48;
+        g.lineStyle(18, C.orange, 0.11).lineBetween(backX, backY, x - 27, y + 13);
+        g.lineStyle(9, 0xff6633, 0.42).lineBetween(backX + 12, backY - 4, x - 30, y + 10);
+        g.lineStyle(5, 0xffc34e, 0.70).lineBetween(backX + 25, backY - 8, x - 32, y + 7);
+        for (let i = 0; i < 18; i++) {
+          const px = Phaser.Math.Between(backX, x - 28);
+          const py = Phaser.Math.Between(y + 6, backY + 15);
+          g.fillStyle(i % 2 ? C.orange : C.red, Phaser.Math.FloatBetween(0.35, 0.9)).fillRect(px, py, Phaser.Math.Between(2, 4), Phaser.Math.Between(2, 4));
+        }
+        this.ui.addAt(g, Math.max(0, this.ui.length - 2));
       }
 
-      makeChoiceButton(x, y, w, h, title, subtitle, color, onClick) {
+      drawIncomingSpecks(x, y) {
+        const g = this.add.graphics();
+        for (let i = 0; i < 9; i++) {
+          const a = Phaser.Math.FloatBetween(0, Math.PI * 2);
+          const d = Phaser.Math.Between(50, 105);
+          const px = x + Math.cos(a) * d;
+          const py = y + Math.sin(a) * d;
+          g.fillStyle(C.rock, Phaser.Math.FloatBetween(0.25, 0.7)).fillCircle(px, py, Phaser.Math.Between(2, 5));
+        }
+        this.ui.add(g);
+      }
+
+      drawPrompt() {
+        const panelY = 636;
+        const pg = this.add.graphics();
+        pg.fillStyle(C.panel, 0.97).fillRoundedRect(10, panelY, 400, 78, 8);
+        pg.lineStyle(2, C.cyan, 0.9).strokeRoundedRect(10, panelY, 400, 78, 8);
+        this.ui.add(pg);
+
+        this.addText(W / 2, panelY + 18, 'AN OBJECT IS AHEAD.', 15, C.white, { ox: 0.5, bold: true });
+        this.addText(W / 2, panelY + 44, 'DO YOU WANT TO TRY AND…', 11, C.muted, { ox: 0.5, bold: true });
+
+        this.makeChoiceButton(73, 771, 122, 96, 'ABSORB', C.green, 'HIGH RISK', () => this.choose('ABSORB'));
+        this.makeChoiceButton(210, 771, 122, 96, 'DEFLECT', C.orange, 'MEDIUM', () => this.choose('DEFLECT'));
+        this.makeChoiceButton(347, 771, 122, 96, 'AVOID', C.blue, 'SAFEST', () => this.choose('AVOID'));
+      }
+
+      makeChoiceButton(x, y, w, h, label, color, risk, callback) {
         const c = this.add.container(x, y);
         const g = this.add.graphics();
-        g.fillStyle(color, 0.10);
-        g.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
-        g.lineStyle(2, color, 1);
-        g.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
+        g.fillStyle(color, 0.17).fillRoundedRect(-w / 2, -h / 2, w, h, 7);
+        g.lineStyle(3, color, 0.95).strokeRoundedRect(-w / 2, -h / 2, w, h, 7);
+        const icon = this.add.graphics();
+        if (label === 'ABSORB') {
+          icon.lineStyle(4, color, 1).arc(0, -14, 17, 0.25, Math.PI * 1.78, false).strokePath();
+          icon.lineStyle(3, color, 1).arc(0, -14, 10, Math.PI, Math.PI * 2.4, false).strokePath();
+          icon.fillStyle(color, 1).fillCircle(0, -14, 3);
+        } else if (label === 'DEFLECT') {
+          icon.fillStyle(color, 1).fillCircle(-7, -15, 10);
+          icon.lineStyle(4, color, 1).lineBetween(7, -22, 23, -36);
+          icon.fillTriangle(23, -36, 13, -33, 20, -25);
+          for (let i = 0; i < 4; i++) icon.fillCircle(7 + i * 6, -9 - i * 4, 2);
+        } else {
+          icon.lineStyle(6, color, 1).arc(0, -13, 19, 0.3, 2.0, false).strokePath();
+          icon.fillStyle(color, 1).fillTriangle(18, -25, 7, -26, 14, -16);
+        }
+        c.add([g, icon]);
 
-        const t1 = this.add.text(0, -11, title, {
-          fontFamily: 'Courier New', fontSize: '18px', fontStyle: 'bold',
-          color: '#' + color.toString(16).padStart(6, '0')
-        }).setOrigin(0.5);
-        const t2 = this.add.text(0, 17, subtitle, {
-          fontFamily: 'Courier New', fontSize: '10px', color: PALETTE.muted
-        }).setOrigin(0.5);
+        const t1 = this.add.text(0, 24, label, { fontFamily: 'Courier New, monospace', fontSize: '16px', fontStyle: 'bold', color: '#f7fbff' }).setOrigin(0.5);
+        const t2 = this.add.text(0, 42, risk, { fontFamily: 'Courier New, monospace', fontSize: '7px', color: `#${color.toString(16).padStart(6, '0')}` }).setOrigin(0.5);
         const hit = this.add.rectangle(0, 0, w, h, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+        hit.on('pointerdown', callback);
         hit.on('pointerover', () => c.setScale(1.025));
         hit.on('pointerout', () => c.setScale(1));
-        hit.on('pointerdown', onClick);
-
-        c.add([g, t1, t2, hit]);
-        this.encounterGroup.add(c);
-      }
-
-      makeButton(x, y, w, h, text, color, onClick) {
-        const c = this.add.container(x, y);
-        const g = this.add.graphics();
-        g.fillStyle(color, 0.12);
-        g.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
-        g.lineStyle(2, color, 1);
-        g.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
-        const t = this.add.text(0, 0, text, {
-          fontFamily: 'Courier New', fontSize: '16px', fontStyle: 'bold',
-          color: '#' + color.toString(16).padStart(6, '0')
-        }).setOrigin(0.5);
-        const hit = this.add.rectangle(0, 0, w, h, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
-        hit.on('pointerdown', onClick);
-        c.add([g, t, hit]);
-        this.encounterGroup.add(c);
+        c.add([t1, t2, hit]);
+        this.ui.add(c);
       }
 
       choose(choice) {
         if (this.state !== 'APPROACH') return;
-        this.state = 'SCALE_REVEAL';
+        this.state = 'REVEAL';
         this.tweens.killAll();
         this.pending = this.calculateOutcome(choice);
         this.reveal(choice);
@@ -375,247 +407,143 @@
           const speedAdvantage = clamp(speedLog, -1.5, 1.5);
           const violentPenalty = clamp(Math.log10(1 + relV / Math.max(playerEscape + targetEscape, 1000)), 0, 2);
           const score = 1.35 * massLog + 0.45 * sizeLog + 0.22 * speedAdvantage - 0.55 * violentPenalty;
-          let chance = 1 / (1 + Math.exp(-2.2 * (score - 0.10)));
-          chance = clamp(chance, 0.02, 0.97);
-
-          const success = roll < chance;
-          return {
-            choice, chance, success, relV, targetEscape, impactEnergy,
-            failType: 'ABSORBED',
-            riskText: 'Head-on inelastic collision'
-          };
+          const chance = clamp(1 / (1 + Math.exp(-2.2 * (score - 0.10))), 0.02, 0.97);
+          return { choice, chance, success: roll < chance, relV, targetEscape, impactEnergy, failType: 'ABSORBED' };
         }
 
         if (choice === 'DEFLECT') {
           const gravityRatio = targetEscape / Math.max(relV, 1);
-          const danger =
-            0.56 * clamp(-massLog, 0, 12) +
-            0.24 * clamp(-sizeLog, 0, 12) +
-            2.0 * gravityRatio -
-            0.28 * clamp(speedLog, -2, 2);
-
-          let chance = 0.88 - 0.055 * danger;
-          chance = clamp(chance, 0.04, 0.94);
-          const success = roll < chance;
-          return {
-            choice, chance, success, relV, targetEscape, impactEnergy,
-            failType: 'CRASHED',
-            riskText: 'Glancing trajectory / gravity assist'
-          };
+          const danger = 0.56 * clamp(-massLog, 0, 12) + 0.24 * clamp(-sizeLog, 0, 12) + 2.0 * gravityRatio - 0.28 * clamp(speedLog, -2, 2);
+          const chance = clamp(0.88 - 0.055 * danger, 0.04, 0.94);
+          return { choice, chance, success: roll < chance, relV, targetEscape, impactEnergy, failType: 'CRASHED' };
         }
 
         const gravityRatio = targetEscape / Math.max(p.speedMS, 1);
         const hugeMassPenalty = clamp(-massLog - 4, 0, 18);
         const hugeSizePenalty = clamp(-sizeLog - 3, 0, 18);
         const danger = 1.65 * gravityRatio + 0.055 * hugeMassPenalty + 0.025 * hugeSizePenalty;
-        let chance = 0.985 - 0.11 * danger;
-        chance = clamp(chance, 0.08, 0.995);
-
+        const chance = clamp(0.985 - 0.11 * danger, 0.08, 0.995);
         const success = roll < chance;
         const orbitBias = clamp(gravityRatio / (gravityRatio + 1), 0.15, 0.90);
-        const failType = Math.random() < orbitBias ? 'ORBIT' : 'ORBIT_CRASH';
-
-        return {
-          choice, chance, success, relV, targetEscape, impactEnergy,
-          failType,
-          riskText: 'Early course correction'
-        };
+        return { choice, chance, success, relV, targetEscape, impactEnergy, failType: Math.random() < orbitBias ? 'ORBIT' : 'ORBIT_CRASH' };
       }
 
       reveal(choice) {
         this.clearEncounter();
+        this.drawTopHud();
 
+        const stage = this.stageData();
+        this.addText(13, 93, `STAGE ${stage.stage}`, 11, C.muted, { bold: true });
+        this.addText(13, 109, 'TRUE SCALE REVEAL', 10, C.white, { bold: true });
+
+        const arenaTop = 140;
+        const arenaBottom = 636;
         const g = this.add.graphics();
-        this.encounterGroup.add(g);
-        g.fillStyle(PALETTE.panel, 0.94);
-        g.fillRoundedRect(25, 58, W - 50, 536, 12);
-        g.lineStyle(2, PALETTE.divider, 1);
-        g.strokeRoundedRect(25, 58, W - 50, 536, 12);
-
-        const t = this.add.text(W / 2, 83, 'TRUE SCALE REVEAL', {
-          fontFamily: 'Courier New', fontSize: '20px', fontStyle: 'bold', color: PALETTE.ink
-        }).setOrigin(0.5);
-        this.encounterGroup.add(t);
+        g.fillStyle(C.bg, 0.55).fillRect(0, arenaTop, W, arenaBottom - arenaTop);
+        this.ui.add(g);
 
         const ratio = this.other.radiusM / this.player.radiusM;
-        const baseYou = 38;
-        let youR = baseYou;
-        let otherR = baseYou * ratio;
-
-        if (otherR > 155) {
-          const scale = 155 / otherR;
-          otherR = 155;
-          youR = Math.max(1.4, youR * scale);
+        let pR = 34;
+        let oR = pR * ratio;
+        if (oR > 145) {
+          const s = 145 / oR;
+          oR = 145;
+          pR = Math.max(1.4, pR * s);
         }
-        if (otherR < 5) {
-          const scale = 5 / Math.max(otherR, 0.0001);
-          otherR = 5;
-          youR = Math.min(155, youR * scale);
+        if (oR < 5) {
+          const s = 5 / Math.max(oR, 0.00001);
+          oR = 5;
+          pR = Math.min(145, pR * s);
         }
 
-        const youX = W * 0.30;
-        const otherX = W * 0.70;
-        const y = 280;
+        const py = 345;
+        const oy = 410;
+        const p = this.drawObject(102, py, Math.max(1.5, pR), this.player, false, false);
+        const o = this.drawObject(318, oy, Math.max(1.5, oR), this.other, false, false);
+        p.setScale(5).setAlpha(0.25);
+        o.setScale(0.18).setAlpha(0.25);
 
-        const you = this.drawObject(youX, y, Math.max(1.5, youR), this.player, false);
-        const other = this.drawObject(otherX, y, Math.max(1.5, otherR), this.other, false);
-        you.setScale(6).setAlpha(0.25);
-        other.setScale(0.18).setAlpha(0.25);
+        const pInfo = this.addText(18, 542, `${this.player.name}\n${this.formatSize(this.player.radiusM)}  •  ${this.formatMassShort(this.player.massKg)}\n${this.formatSpeed(this.player.speedMS)}`, 9, C.green, { bold: true, lineSpacing: 3 });
+        const oInfo = this.addText(W - 18, 542, `${this.other.name}\n${this.formatSize(this.other.radiusM)}  •  ${this.formatMassShort(this.other.massKg)}\n${this.formatSpeed(this.other.speedMS)}`, 9, C.orange, { ox: 1, align: 'right', bold: true, lineSpacing: 3 });
+        const rInfo = this.addText(W / 2, 610, `SIZE RATIO ${this.formatRatio(ratio)}`, 9, C.muted, { ox: 0.5, bold: true });
+        pInfo.setAlpha(0); oInfo.setAlpha(0); rInfo.setAlpha(0);
 
-        const youInfo = this.add.text(youX, 455,
-          `${this.player.name}\n${this.formatSize(this.player.radiusM)} • ${this.formatMass(this.player.massKg)}\n${this.formatSpeed(this.player.speedMS)}`,
-          { fontFamily: 'Courier New', fontSize: '13px', color: '#62f5a5', align: 'center', lineSpacing: 4 }
-        ).setOrigin(0.5, 0);
-        const otherInfo = this.add.text(otherX, 455,
-          `${this.other.name}\n${this.formatSize(this.other.radiusM)} • ${this.formatMass(this.other.massKg)}\n${this.formatSpeed(this.other.speedMS)}`,
-          { fontFamily: 'Courier New', fontSize: '13px', color: '#ffc857', align: 'center', lineSpacing: 4 }
-        ).setOrigin(0.5, 0);
-        const ratioText = this.add.text(W / 2, 558,
-          `SIZE RATIO ${this.formatRatio(ratio)}   •   TARGET ESCAPE ${this.formatSpeed(escapeVelocity(this.other))}`,
-          { fontFamily: 'Courier New', fontSize: '12px', color: PALETTE.muted }
-        ).setOrigin(0.5);
+        this.tweens.add({ targets: p, scaleX: 1, scaleY: 1, alpha: 1, duration: 950, ease: 'Cubic.out' });
+        this.tweens.add({ targets: o, scaleX: 1, scaleY: 1, alpha: 1, duration: 950, ease: 'Cubic.out' });
+        this.tweens.add({ targets: [pInfo, oInfo, rInfo], alpha: 1, delay: 500, duration: 400 });
 
-        this.encounterGroup.add([youInfo, otherInfo, ratioText]);
-        youInfo.setAlpha(0); otherInfo.setAlpha(0); ratioText.setAlpha(0);
+        const pg = this.add.graphics();
+        pg.fillStyle(C.panel, 0.97).fillRoundedRect(10, 646, 400, 68, 8);
+        pg.lineStyle(2, C.cyan, 0.86).strokeRoundedRect(10, 646, 400, 68, 8);
+        this.ui.add(pg);
+        this.addText(W / 2, 666, `${choice} LOCKED IN`, 13, C.white, { ox: 0.5, bold: true });
+        this.addText(W / 2, 690, 'RELATIVE SCALE REVEALED', 9, C.muted, { ox: 0.5, bold: true });
 
-        this.tweens.add({ targets: you, scaleX: 1, scaleY: 1, alpha: 1, duration: 1100, ease: 'Cubic.out' });
-        this.tweens.add({ targets: other, scaleX: 1, scaleY: 1, alpha: 1, duration: 1100, ease: 'Cubic.out' });
-        this.tweens.add({ targets: [youInfo, otherInfo, ratioText], alpha: 1, delay: 650, duration: 450 });
-
-        this.time.delayedCall(1950, () => this.animateChoice(choice, you, other, youR, otherR));
+        this.time.delayedCall(1700, () => this.animateChoice(choice, p, o, pR, oR));
       }
 
-      animateChoice(choice, you, other, youR, otherR) {
-        this.state = 'ACTION';
+      animateChoice(choice, p, o, pR, oR) {
         const midX = W / 2;
-        const y = 280;
-
         if (choice === 'ABSORB') {
-          this.tweens.add({ targets: you, x: midX - Math.min(youR, 30), duration: 700, ease: 'Quad.in' });
-          this.tweens.add({ targets: other, x: midX + Math.min(otherR, 30), duration: 700, ease: 'Quad.in' });
-          this.time.delayedCall(690, () => this.impactFlash(midX, y));
-          this.time.delayedCall(1120, () => this.resolveOutcome());
+          this.tweens.add({ targets: p, x: midX - Math.min(pR, 22), y: 375, duration: 620, ease: 'Quad.in' });
+          this.tweens.add({ targets: o, x: midX + Math.min(oR, 22), y: 375, duration: 620, ease: 'Quad.in' });
+          this.time.delayedCall(610, () => this.flash(midX, 375, C.orange));
+          this.time.delayedCall(960, () => this.resolveOutcome());
           return;
         }
 
         if (choice === 'DEFLECT') {
-          this.tweens.add({
-            targets: you,
-            x: midX - 10,
-            y: y - 30,
-            angle: -24,
-            duration: 650,
-            ease: 'Quad.in'
+          this.tweens.add({ targets: p, x: 198, y: 340, angle: -25, duration: 600, ease: 'Quad.in' });
+          this.tweens.add({ targets: o, x: 245, y: 400, duration: 600, ease: 'Sine.inOut' });
+          this.time.delayedCall(590, () => {
+            this.flash(218, 365, C.orange);
+            if (this.pending.success) this.tweens.add({ targets: p, x: 390, y: 205, angle: -70, duration: 620, ease: 'Cubic.out' });
           });
-          this.tweens.add({
-            targets: other,
-            x: midX + 35,
-            duration: 650,
-            ease: 'Sine.inOut'
-          });
-          this.time.delayedCall(630, () => {
-            this.impactFlash(midX, y - 20, 0xffc857);
-            if (this.pending.success) {
-              this.tweens.add({
-                targets: you,
-                x: W - 100,
-                y: 125,
-                angle: -65,
-                duration: 700,
-                ease: 'Cubic.out'
-              });
-            }
-          });
-          this.time.delayedCall(1300, () => this.resolveOutcome());
+          this.time.delayedCall(1150, () => this.resolveOutcome());
           return;
         }
 
         if (this.pending.success) {
-          this.tweens.add({
-            targets: you,
-            x: W * 0.46,
-            y: 145,
-            angle: -35,
-            duration: 700,
-            ease: 'Sine.inOut'
-          });
-          this.tweens.add({
-            targets: you,
-            x: W - 95,
-            y: 95,
-            angle: -60,
-            delay: 680,
-            duration: 650,
-            ease: 'Quad.out'
-          });
-          this.time.delayedCall(1450, () => this.resolveOutcome());
+          this.tweens.add({ targets: p, x: 210, y: 270, angle: -30, duration: 600, ease: 'Sine.inOut' });
+          this.tweens.add({ targets: p, x: 395, y: 185, angle: -60, delay: 560, duration: 560, ease: 'Quad.out' });
+          this.time.delayedCall(1200, () => this.resolveOutcome());
         } else {
-          this.tweens.add({
-            targets: you,
-            x: midX + 80,
-            y: 210,
-            angle: 180,
-            scaleX: 0.65,
-            scaleY: 0.65,
-            duration: 850,
-            ease: 'Sine.inOut'
-          });
-          this.tweens.add({
-            targets: you,
-            x: midX + 125,
-            y: 315,
-            angle: 420,
-            scaleX: 0.35,
-            scaleY: 0.35,
-            delay: 820,
-            duration: 850,
-            ease: 'Sine.in'
-          });
-          this.time.delayedCall(1770, () => this.resolveOutcome());
+          this.tweens.add({ targets: p, x: 255, y: 330, angle: 200, scale: 0.65, duration: 650, ease: 'Sine.inOut' });
+          this.tweens.add({ targets: p, x: 300, y: 415, angle: 470, scale: 0.3, delay: 620, duration: 620, ease: 'Sine.in' });
+          this.time.delayedCall(1320, () => this.resolveOutcome());
         }
       }
 
-      impactFlash(x, y, color = 0xffffff) {
-        const flash = this.add.circle(x, y, 12, color, 0.92);
-        this.encounterGroup.add(flash);
-        this.tweens.add({ targets: flash, scale: 8, alpha: 0, duration: 420, ease: 'Cubic.out' });
+      flash(x, y, color) {
+        const f = this.add.circle(x, y, 9, color, 0.95);
+        this.ui.add(f);
+        this.tweens.add({ targets: f, scale: 7, alpha: 0, duration: 360, ease: 'Cubic.out' });
       }
 
       resolveOutcome() {
-        this.state = 'RESULT';
         const r = this.pending;
         const oldStage = this.stageName();
-        let outcome = '';
+        let title = '';
         let detail = '';
-        let successColor = PALETTE.green;
+        let color = C.green;
 
         if (r.success && r.choice === 'ABSORB') {
           const oldMass = this.player.massKg;
           const gainedMass = this.other.massKg * 0.82;
           const combinedMass = oldMass + gainedMass;
-
-          const momentumSpeed = Math.abs(
-            (oldMass * this.player.speedMS - gainedMass * this.other.speedMS) / combinedMass
-          );
+          const momentumSpeed = Math.abs((oldMass * this.player.speedMS - gainedMass * this.other.speedMS) / combinedMass);
           const accretionKick = Math.min(this.other.speedMS * 0.18, 25000);
           this.player.speedMS = clamp(Math.max(this.player.speedMS * 0.82, momentumSpeed) + accretionKick, 200, 1.5e6);
           this.player.massKg = combinedMass;
-
-          const massGrowth = combinedMass / Math.max(oldMass, 1e-300);
-          this.player.radiusM *= Math.cbrt(massGrowth);
-
-          this.score += 100;
+          this.player.radiusM *= Math.cbrt(combinedMass / Math.max(oldMass, 1e-300));
           this.syncPlayerAppearance();
-          const newStage = this.stageName();
-          outcome = 'ABSORPTION SUCCESS';
-          detail = `+${this.formatMass(gainedMass)} mass  •  speed now ${this.formatSpeed(this.player.speedMS)}`;
-          if (newStage !== oldStage) detail += `\nEVOLUTION: ${oldStage} → ${newStage}`;
-        }
-
-        if (!r.success && r.choice === 'ABSORB') {
-          outcome = 'YOU WERE ABSORBED';
-          detail = `Head-on impact against ${this.other.name}. Your mass/size advantage was not enough.`;
-          successColor = PALETTE.red;
+          title = 'ABSORPTION SUCCESS';
+          detail = `MASS +${this.formatMassShort(gainedMass)}   SPEED ${this.formatSpeed(this.player.speedMS)}`;
+          if (this.stageName() !== oldStage) detail += `\nEVOLVED: ${oldStage} → ${this.stageName()}`;
+        } else if (!r.success && r.choice === 'ABSORB') {
+          title = 'YOU WERE ABSORBED';
+          detail = `${this.other.name} was too massive to take head-on.`;
+          color = C.red;
         }
 
         if (r.success && r.choice === 'DEFLECT') {
@@ -623,84 +551,65 @@
           const sizePenalty = clamp(logRatio(this.other.radiusM, this.player.radiusM), 0, 12);
           const speedGain = gravAssist * (0.65 + Math.random() * 0.70);
           const craterGain = this.other.solid ? Math.max(1, Math.round(1 + sizePenalty * 0.7)) : Math.max(1, Math.round(sizePenalty * 0.25));
-
           this.player.speedMS = clamp(this.player.speedMS + speedGain, 200, 1.5e6);
           this.craters += craterGain;
-          this.score += 45 + craterGain * 5;
-
-          outcome = 'DEFLECTION SUCCESS';
-          detail = `Gravity assist: +${this.formatSpeed(speedGain)}  •  +${craterGain} crater${craterGain === 1 ? '' : 's'}\nCraters are banked for future power-ups.`;
-        }
-
-        if (!r.success && r.choice === 'DEFLECT') {
-          outcome = 'DEFLECTION FAILED';
-          detail = `The grazing trajectory collapsed into an impact with ${this.other.name}.`;
-          successColor = PALETTE.red;
+          title = 'DEFLECTION SUCCESS';
+          detail = `SPEED +${this.formatSpeed(speedGain)}   CRATERS +${craterGain}`;
+        } else if (!r.success && r.choice === 'DEFLECT') {
+          title = 'DEFLECTION FAILED';
+          detail = `The grazing pass collapsed into ${this.other.name}.`;
+          color = C.red;
         }
 
         if (r.success && r.choice === 'AVOID') {
-          const gravityCost = clamp(
-            0.04 + 0.08 * (escapeVelocity(this.other) / Math.max(this.player.speedMS, 1)) +
-            0.012 * clamp(logRatio(this.other.massKg, this.player.massKg), 0, 20),
-            0.03,
-            0.62
-          );
+          const gravityCost = clamp(0.04 + 0.08 * (escapeVelocity(this.other) / Math.max(this.player.speedMS, 1)) + 0.012 * clamp(logRatio(this.other.massKg, this.player.massKg), 0, 20), 0.03, 0.62);
           const lostSpeed = this.player.speedMS * gravityCost;
           this.player.speedMS = Math.max(150, this.player.speedMS - lostSpeed);
-          this.score += 12;
-
-          outcome = 'SAFE PASS';
-          detail = `Course correction cost ${Math.round(gravityCost * 100)}% speed  •  now ${this.formatSpeed(this.player.speedMS)}`;
+          title = 'SAFE PASS';
+          detail = `COURSE CORRECTION COST ${Math.round(gravityCost * 100)}% SPEED`;
+        } else if (!r.success && r.choice === 'AVOID') {
+          title = r.failType === 'ORBIT' ? 'CAPTURED IN ORBIT' : 'ORBITAL DECAY';
+          detail = r.failType === 'ORBIT' ? `${this.other.name}'s gravity trapped you.` : `Captured by ${this.other.name}, then pulled inward.`;
+          color = C.red;
         }
 
-        if (!r.success && r.choice === 'AVOID') {
-          successColor = PALETTE.red;
-          if (r.failType === 'ORBIT') {
-            outcome = 'CAPTURED IN ORBIT';
-            detail = `${this.other.name}'s gravity captured your trajectory. You remain trapped in orbit.`;
+        this.clearEncounter();
+        this.drawTopHud();
+
+        const g = this.add.graphics();
+        g.fillStyle(C.panel, 0.94).fillRoundedRect(20, 160, 380, 490, 10);
+        g.lineStyle(2, color, 0.92).strokeRoundedRect(20, 160, 380, 490, 10);
+        this.ui.add(g);
+
+        this.addText(W / 2, 205, title, 18, color, { ox: 0.5, bold: true, align: 'center', width: 350 });
+        this.addText(W / 2, 255, this.other.name, 13, C.orange, { ox: 0.5, bold: true });
+        this.drawObject(W / 2, 365, 70, this.other, false, false);
+        this.addText(W / 2, 470, detail, 11, C.white, { ox: 0.5, align: 'center', width: 330, lineSpacing: 5, bold: true });
+        this.addText(W / 2, 535, `OUTCOME CHANCE ${Math.round(r.chance * 100)}%`, 9, C.muted, { ox: 0.5, bold: true });
+        this.addText(W / 2, 558, `RELATIVE SPEED ${this.formatSpeed(r.relV)}\nTARGET ESCAPE ${this.formatSpeed(r.targetEscape)}`, 8, C.muted, { ox: 0.5, align: 'center', lineSpacing: 3 });
+
+        const btnColor = r.success ? C.cyan : C.red;
+        const btnText = r.success ? 'NEXT ENCOUNTER' : 'RESTART RUN';
+        this.makeWideButton(W / 2, 711, 330, 58, btnText, btnColor, () => {
+          if (r.success) {
+            this.encounters += 1;
+            this.startEncounter();
           } else {
-            outcome = 'ORBITAL DECAY';
-            detail = `You were captured by ${this.other.name}, then spiralled inward and crashed.`;
+            this.resetRun();
           }
-        }
+        });
+      }
 
-        this.updateHud();
-
-        const panel = this.add.graphics();
-        this.encounterGroup.add(panel);
-        panel.fillStyle(successColor, 0.08);
-        panel.fillRoundedRect(155, 145, 650, 315, 12);
-        panel.lineStyle(2, successColor, 0.9);
-        panel.strokeRoundedRect(155, 145, 650, 315, 12);
-
-        const a = this.add.text(W / 2, 192, outcome, {
-          fontFamily: 'Courier New', fontSize: '25px', fontStyle: 'bold',
-          color: '#' + successColor.toString(16).padStart(6, '0'), align: 'center'
-        }).setOrigin(0.5);
-
-        const chance = this.add.text(W / 2, 235,
-          `RESOLVED CHANCE: ${Math.round(r.chance * 100)}%  •  ${r.riskText.toUpperCase()}`,
-          { fontFamily: 'Courier New', fontSize: '12px', color: PALETTE.muted, align: 'center' }
-        ).setOrigin(0.5);
-
-        const b = this.add.text(W / 2, 305, detail, {
-          fontFamily: 'Courier New', fontSize: '14px', color: PALETTE.ink,
-          align: 'center', wordWrap: { width: 560 }, lineSpacing: 7
-        }).setOrigin(0.5);
-
-        const physics = this.add.text(W / 2, 385,
-          `RELATIVE SPEED ${this.formatSpeed(r.relV)}   •   TARGET ESCAPE ${this.formatSpeed(r.targetEscape)}`,
-          { fontFamily: 'Courier New', fontSize: '11px', color: PALETTE.muted }
-        ).setOrigin(0.5);
-
-        this.encounterGroup.add([a, chance, b, physics]);
-
-        if (r.success) {
-          this.encounters += 1;
-          this.makeButton(W / 2, 500, 250, 52, 'NEXT ENCOUNTER', PALETTE.cyan, () => this.startEncounter());
-        } else {
-          this.makeButton(W / 2, 500, 250, 52, 'RESTART RUN', PALETTE.cyan, () => this.resetRun());
-        }
+      makeWideButton(x, y, w, h, label, color, cb) {
+        const c = this.add.container(x, y);
+        const g = this.add.graphics();
+        g.fillStyle(color, 0.17).fillRoundedRect(-w / 2, -h / 2, w, h, 8);
+        g.lineStyle(2, color, 0.95).strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
+        const t = this.add.text(0, 0, label, { fontFamily: 'Courier New, monospace', fontSize: '15px', fontStyle: 'bold', color: '#f5f7ff' }).setOrigin(0.5);
+        const hit = this.add.rectangle(0, 0, w, h, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+        hit.on('pointerdown', cb);
+        c.add([g, t, hit]);
+        this.ui.add(c);
       }
 
       formatRatio(ratio) {
@@ -734,14 +643,15 @@
         return `${diameter.toExponential(1)} m`;
       }
 
-      formatMass(kg) {
+      formatMassShort(kg) {
         if (kg >= 1e24) return `${(kg / 5.972e24).toPrecision(3)} M⊕`;
-        if (kg >= 1e15) return `${kg.toExponential(2)} kg`;
+        if (kg >= 1e15) return `${kg.toExponential(1)} kg`;
+        if (kg >= 1e9) return `${(kg / 1e9).toPrecision(3)} Gkg`;
         if (kg >= 1000) return `${(kg / 1000).toPrecision(3)} t`;
         if (kg >= 1) return `${kg.toPrecision(3)} kg`;
         if (kg >= 1e-3) return `${(kg * 1000).toPrecision(3)} g`;
         if (kg >= 1e-6) return `${(kg * 1e6).toPrecision(3)} mg`;
-        return `${kg.toExponential(2)} kg`;
+        return `${kg.toExponential(1)} kg`;
       }
     }
 
@@ -750,7 +660,7 @@
       parent: 'game',
       width: W,
       height: H,
-      backgroundColor: '#05070c',
+      backgroundColor: '#020a19',
       pixelArt: true,
       antialias: false,
       scale: {
