@@ -18,7 +18,6 @@ const COMET_VISUAL_FAMILIES = {
     mysteryVariants: ['atom_01'],
     sharedVariants: ['atom_01'],
     fixedLods: { mystery: 32, normal: 64 },
-    // Keep real PNG sprites unmodified in WebGL. The palette remains here for future procedural/effect use.
     tintEnabled: false,
     tintPalette: [0x93ecff, 0xc9f7ff, 0x78dfff],
     mysteryTintPalette: [0xaebbc5],
@@ -33,7 +32,6 @@ const COMET_VISUAL_FAMILIES = {
     mysteryVariants: ['dust_01', 'dust_02', 'dust_03'],
     sharedVariants: ['dust_01', 'dust_02', 'dust_03'],
     fixedLods: { mystery: 32, normal: 64 },
-    // Variant/rotation/flip supply enough visual variety without tinting the raster texture itself.
     tintEnabled: false,
     tintPalette: [0xc6b895, 0xaaa18d, 0x8f8b83],
     mysteryTintPalette: [0xa8a39a],
@@ -47,18 +45,12 @@ const COMET_VISUAL_FAMILIES = {
     collisionFamily: 'rocky',
     normalVariants: ['rock_01', 'rock_02', 'rock_03'],
     mysteryVariants: ['rock_01', 'rock_02', 'rock_03'],
-    // A single variant is selected per encounter and reused for hidden/revealed/result renders.
     sharedVariants: ['rock_01', 'rock_02', 'rock_03'],
-    // These first assets intentionally use 32px for the mystery silhouette and 64px once revealed.
     fixedLods: { mystery: 32, normal: 64 },
-    // Runtime tinting of transparent pixel sprites can produce black texture quads on iOS WebGL.
-    // Keep the palette metadata for later procedural/effect use, but render the supplied PNG unchanged.
     tintEnabled: false,
     tintPalette: [0x5c6068, 0x85888d, 0x8c715e, 0x8e5749, 0x687884],
     mysteryTintPalette: [0x777b80, 0x85888d],
     allowRotation: true,
-    // Arbitrary-angle rotation of 32/64px art can create ugly WebGL sampling blocks.
-    // Quarter-turns keep visual variety while preserving crisp pixel structure.
     rotationStep: 90,
     allowFlip: true,
     alphaRange: [1, 1],
@@ -68,18 +60,16 @@ const COMET_VISUAL_FAMILIES = {
     collisionFamily: 'icy',
     normalVariants: ['comet_01', 'comet_02', 'comet_03'],
     mysteryVariants: ['comet_01', 'comet_02', 'comet_03'],
-    // Small Comet and Larger Comet intentionally draw from the exact same pool.
     sharedVariants: ['comet_01', 'comet_02', 'comet_03'],
     fixedLods: { mystery: 32, normal: 64 },
+    lodByDisplayedSize: true,
     tintEnabled: true,
-    // Very restrained near-white palette so white ice remains white-looking.
     tintPalette: [0xffffff, 0xf0f4f5, 0xe5eef2, 0xd9dddc, 0xe7e0d8, 0xe3eae5],
     mysteryTintPalette: [0xf0f4f5, 0xe5eef2, 0xe3eae5],
     allowRotation: true,
     rotationStep: 90,
     allowFlip: true,
     alphaRange: [1, 1],
-    // No visible tail during normal rendering. These are metadata hooks only for future action FX.
     effects: { back: null, front: null },
     futureEffects: { reveal: 'cometTail', collision: 'cometTail', absorb: 'cometTail' }
   },
