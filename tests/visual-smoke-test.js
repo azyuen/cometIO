@@ -4,170 +4,103 @@ const vm = require('vm');
 
 const ROOT = path.resolve(__dirname, '..');
 const tierNames = [
-  'ATOM', 'DUST PARTICLE', 'TINY METEORITE', 'LARGE METEORITE',
-  'SMALL COMET', 'LARGER COMET', 'ASTEROID', 'DWARF PLANET',
-  'ROCKY PLANET', 'GAS PLANET', 'YELLOW DWARF STAR', 'BLUE GIANT STAR',
-  'RED HYPERGIANT STAR', 'NEBULA', 'PULSAR', 'BLACK HOLE',
-  'SUPER MASSIVE BLACK HOLE'
+  'ATOM','DUST PARTICLE','TINY METEORITE','LARGE METEORITE','SMALL COMET','LARGER COMET',
+  'ASTEROID','DWARF PLANET','ROCKY PLANET','GAS PLANET','YELLOW DWARF STAR','BLUE GIANT STAR',
+  'RED HYPERGIANT STAR','NEBULA','PULSAR','BLACK HOLE','SUPER MASSIVE BLACK HOLE'
 ];
 
 global.TIERS = tierNames.map(name => ({ name }));
 global.C = { orange: 0xff9d3d };
 global.window = {};
+global.Phaser = { Textures: { FilterMode: { NEAREST: 0 } } };
 
 class MockContainer {
-  constructor(x = 0, y = 0) {
-    this.x = x;
-    this.y = y;
-    this.scaleX = 1;
-    this.scaleY = 1;
-    this.active = true;
-    this.children = [];
-  }
-  add(items) {
-    this.children.push(...(Array.isArray(items) ? items : [items]));
-    return this;
-  }
+  constructor(x=0,y=0){this.x=x;this.y=y;this.scaleX=1;this.scaleY=1;this.active=true;this.children=[];}
+  add(items){this.children.push(...(Array.isArray(items)?items:[items]));return this;}
 }
-
 class MockImage {
-  constructor(key) {
-    this.key = key;
-    this.width = 64;
-    this.height = 64;
-    this.displayWidth = 64;
-    this.displayHeight = 64;
-  }
-  setAngle(v) { this.angle = v; return this; }
-  setFlipX(v) { this.flipX = v; return this; }
-  setAlpha(v) { this.alpha = v; return this; }
-  setTint(v) { this.tint = v; return this; }
-  setDisplaySize(w, h) { this.displayWidth = w; this.displayHeight = h; return this; }
-  setTexture(key) {
-    this.key = key;
-    const lod = Number(key.split(':').pop());
-    this.width = lod;
-    this.height = lod;
-    return this;
-  }
+  constructor(key){this.key=key;this.width=Number(key.split(':').pop())||64;this.height=this.width;this.displayWidth=this.width;this.displayHeight=this.height;}
+  setAngle(v){this.angle=v;return this;} setFlipX(v){this.flipX=v;return this;} setAlpha(v){this.alpha=v;return this;}
+  setTint(v){this.tint=v;return this;} setDisplaySize(w,h){this.displayWidth=w;this.displayHeight=h;return this;}
+  setTexture(key){this.key=key;this.width=Number(key.split(':').pop())||64;this.height=this.width;return this;}
 }
-
-class MockGraphics {
-  fillStyle() { return this; }
-  fillCircle() { return this; }
-}
-
-class MockText {
-  setOrigin() { return this; }
-  setResolution() { return this; }
-  setText(text) { this.text = text; return this; }
-}
+class MockGraphics { fillStyle(){return this;} fillCircle(){return this;} }
+class MockText { setOrigin(){return this;} setResolution(){return this;} setText(t){this.text=t;return this;} }
 
 class GameScene {}
-GameScene.prototype.drawObject = function (x, y, radius, object, mystery) {
-  const container = new MockContainer(x, y);
-  container.fallbackProcedural = true;
-  container.radius = radius;
-  container.object = object;
-  container.mystery = mystery;
-  this.ui.add(container);
-  return container;
+GameScene.prototype.drawObject = function(x,y,radius,object,mystery){
+  const c=new MockContainer(x,y);c.fallbackProcedural=true;c.radius=radius;c.object=object;c.mystery=mystery;this.ui.add(c);return c;
 };
 global.GameScene = GameScene;
 
-function load(file) {
-  vm.runInThisContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), { filename: file });
-}
-
+function load(file){vm.runInThisContext(fs.readFileSync(path.join(ROOT,file),'utf8'),{filename:file});}
 load('comet-visual-config.js');
 load('assets/sprites/sprite-manifest.js');
 load('comet-visual-renderer.js');
+load('comet-family-lod-policy.js');
 
-function makeScene(textureKeys = []) {
-  const scene = new GameScene();
-  scene.textures = { exists: key => textureKeys.includes(key) };
-  scene.ui = {
-    items: [],
-    add(object) { this.items.push(object); },
-    addAt(object) { this.items.push(object); }
-  };
-  scene.add = {
-    container: (x, y) => new MockContainer(x, y),
-    image: (x, y, key) => new MockImage(key),
-    graphics: () => new MockGraphics(),
-    text: () => new MockText()
-  };
-  scene.load = {
-    calls: [],
-    image(key, assetPath) { this.calls.push([key, assetPath]); }
-  };
+function makeScene(textureKeys=[]){
+  const scene=new GameScene();
+  scene.textures={exists:key=>textureKeys.includes(key),get:()=>({setFilter(){}})};
+  scene.ui={items:[],add(o){this.items.push(o);},addAt(o){this.items.push(o);}};
+  scene.add={container:(x,y)=>new MockContainer(x,y),image:(x,y,key)=>new MockImage(key),graphics:()=>new MockGraphics(),text:()=>new MockText()};
+  scene.load={calls:[],image(key,assetPath){this.calls.push([key,assetPath]);}};
   return scene;
 }
+function assert(condition,message){if(!condition)throw new Error(message);}
 
-function assert(condition, message) {
-  if (!condition) throw new Error(message);
-}
-
-const expectedFamilies = [
-  'atomic', 'dust', 'rock', 'rock', 'comet', 'comet', 'rock',
-  'rockyPlanet', 'rockyPlanet', 'gasPlanet', 'star', 'star', 'star',
-  'nebula', 'pulsar', 'blackHole', 'blackHole'
-];
-
-tierNames.forEach((name, index) => {
-  const definition = window.CometVisuals.getDefinition({ name, tier: index });
-  assert(definition.visualFamily === expectedFamilies[index], `visual family mismatch: ${name}`);
-  assert(definition.collisionFamily, `missing collision family: ${name}`);
+const expectedFamilies=['atomic','dust','rock','rock','comet','comet','rock','rockyPlanet','rockyPlanet','gasPlanet','star','star','star','nebula','pulsar','blackHole','blackHole'];
+tierNames.forEach((name,index)=>{
+  const def=window.CometVisuals.getDefinition({name,tier:index});
+  assert(def.visualFamily===expectedFamilies[index],`visual family mismatch: ${name}`);
+  assert(def.collisionFamily,`missing collision family: ${name}`);
 });
 
-// With no PNGs registered, there must be zero preload requests and procedural fallback must work.
-let scene = makeScene([]);
-scene.preload();
-assert(scene.load.calls.length === 0, 'empty asset manifest should preload zero PNGs');
-let asteroid = { name: 'ASTEROID', tier: 6 };
-let rendered = scene.drawObject(10, 20, 42, asteroid, true, false);
-assert(rendered.fallbackProcedural === true, 'missing mystery sprite should use procedural fallback');
-assert(rendered.cometCollisionFamily === 'rocky', 'fallback should expose collision family metadata');
+// Registered files should preload through the normal manifest-driven loader.
+let scene=makeScene([]);scene.preload();
+const rockLoads=scene.load.calls.filter(([key])=>key.includes('rock_0'));
+assert(rockLoads.length===6,'expected six rock PNG preload requests');
 
-// Register only normal rock art. It must NOT leak into mystery mode.
-COMET_SPRITE_ASSETS.rock_01.lods = [32, 64, 128];
-const rockTextures = [
-  'comet-sprite:rock_01:32',
-  'comet-sprite:rock_01:64',
-  'comet-sprite:rock_01:128'
-];
-scene = makeScene(rockTextures);
-rendered = scene.drawObject(10, 20, 42, { name: 'ASTEROID', tier: 6 }, true, false);
-assert(rendered.fallbackProcedural === true, 'normal sprite must never substitute for missing mystery art');
+// If textures fail to load, the established procedural graphic remains the fallback.
+let rock={name:'ASTEROID',tier:6};
+let rendered=scene.drawObject(10,20,55,rock,true,false);
+assert(rendered.fallbackProcedural===true,'missing rock sprite should fall back procedurally');
 
-// Normal render: 110px display should choose 128 LOD without changing its 110px displayed width.
-const object = { name: 'ASTEROID', tier: 6 };
-rendered = scene.drawObject(10, 20, 55, object, false, false);
-assert(!rendered.fallbackProcedural, 'available normal sprite should render');
-assert(rendered.cometVisual.lod === 128, '110px display should prefer 128 LOD');
-assert(Math.round(rendered.cometVisual.image.displayWidth) === 110, 'LOD selection changed display width');
+const rockTextures=[];
+for(const variant of ['rock_01','rock_02','rock_03'])for(const lod of [32,64])rockTextures.push(`comet-sprite:${variant}:${lod}`);
+scene=makeScene(rockTextures);
+rock={name:'ASTEROID',tier:6};
 
-// Existing game result snapshots use {...object}; visual selection must survive that copy.
-const snapshot = { ...object };
-const snapshotRender = scene.drawObject(10, 20, 55, snapshot, false, false);
-assert(snapshotRender.cometVisual.visualState === rendered.cometVisual.visualState, 'encounter snapshot rerolled visual state');
-assert(snapshotRender.cometVisual.variant === rendered.cometVisual.variant, 'encounter snapshot changed sprite variant');
-assert(snapshotRender.cometVisual.tint === rendered.cometVisual.tint, 'encounter snapshot changed tint');
+// Same displayed size: mystery 32px -> revealed 64px must not change on-screen dimensions.
+const mystery=scene.drawObject(10,20,55,rock,true,false);
+assert(mystery.cometVisual.lod===32,'rock mystery should use 32px texture');
+assert(mystery.cometVisual.image.displayWidth===110,'mystery display size changed');
+const revealed=scene.drawObject(10,20,55,rock,false,false);
+assert(revealed.cometVisual.lod===64,'revealed rock should use 64px texture');
+assert(revealed.cometVisual.variant===mystery.cometVisual.variant,'rock variant changed during encounter');
+assert(revealed.cometVisual.tint===mystery.cometVisual.tint,'rock tint changed during encounter');
+assert(revealed.cometVisual.image.displayWidth===110,'32->64 switch caused a visible size jump');
 
-// Simulate Phaser scaling tween: effective 44px display should select 32 LOD, still without a base-size jump.
-rendered.scaleX = rendered.scaleY = 0.4;
-scene.update(0, 16);
-assert(rendered.cometVisual.lod === 32, '44px effective display should switch to 32 LOD');
-assert(Math.round(rendered.cometVisual.image.displayWidth) === 110, 'LOD texture swap changed base display width');
+// Existing {...object} snapshots must retain the same visual state on result screens.
+const snapshot={...rock};
+const result=scene.drawObject(10,20,55,snapshot,false,false);
+assert(result.cometVisual.variant===revealed.cometVisual.variant,'result snapshot changed rock variant');
 
-// Growth helper: explicit 70px display should choose 64 LOD and remain exactly 70px wide.
-rendered.scaleX = rendered.scaleY = 1;
-rendered.setVisualDisplayDiameter(70);
-assert(rendered.cometVisual.lod === 64, '70px display should choose 64 LOD');
-assert(Math.round(rendered.cometVisual.image.displayWidth) === 70, 'growth helper changed requested display width');
+// Very small/large display sizes and relative zoom scaling remain authoritative.
+const tiny=scene.drawObject(10,20,5,{name:'TINY METEORITE',tier:2},false,false);
+assert(tiny.cometVisual.lod===64 && tiny.cometVisual.image.displayWidth===10,'tiny displayed rock size incorrect');
+const huge=scene.drawObject(10,20,150,{name:'LARGE METEORITE',tier:3},false,false);
+assert(huge.cometVisual.lod===64 && huge.cometVisual.image.displayWidth===300,'large displayed rock size incorrect');
+huge.scaleX=huge.scaleY=0.2;
+assert(huge.cometVisual.image.displayWidth===300,'container zoom mutated sprite base display size');
+huge.setVisualDisplayDiameter(92);
+assert(huge.cometVisual.image.displayWidth===92,'growth/display-size helper failed');
 
-assert(window.CometVisuals.desiredLod(40) === 32, 'small LOD threshold failed');
-assert(window.CometVisuals.desiredLod(70) === 64, 'normal LOD threshold failed');
-assert(window.CometVisuals.desiredLod(110) === 128, 'detail LOD threshold failed');
+// Missing detail texture for the selected stable variant must use the procedural fallback.
+const brokenKeys=rockTextures.filter(key=>!key.endsWith(':64'));
+const brokenScene=makeScene(brokenKeys);const brokenRock={name:'ASTEROID',tier:6};
+brokenScene.drawObject(0,0,55,brokenRock,true,false);
+const brokenReveal=brokenScene.drawObject(0,0,55,brokenRock,false,false);
+assert(brokenReveal.fallbackProcedural===true,'missing 64px detail should fall back procedurally');
 
 console.log('visual architecture smoke tests passed');
