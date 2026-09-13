@@ -9,9 +9,10 @@ const COMET_SPRITE_ASSETS = {
   dust_02:              { family: 'dust',        lods: [] },
   dust_mystery_01:      { family: 'dust',        lods: [] },
 
-  rock_01:              { family: 'rock',        lods: [32, 64] },
-  rock_02:              { family: 'rock',        lods: [32, 64] },
-  rock_03:              { family: 'rock',        lods: [32, 64] },
+  // v2 forces iOS/Home Screen mode to fetch the cleaned hard-alpha sprite bytes.
+  rock_01:              { family: 'rock',        lods: [32, 64], version: 2 },
+  rock_02:              { family: 'rock',        lods: [32, 64], version: 2 },
+  rock_03:              { family: 'rock',        lods: [32, 64], version: 2 },
   rock_mystery_01:      { family: 'rock',        lods: [] },
   rock_mystery_02:      { family: 'rock',        lods: [] },
 
@@ -49,5 +50,6 @@ function cometSpriteAssetPath(variant, lod) {
   const entry = COMET_SPRITE_ASSETS[variant];
   if (!entry) return null;
   if (entry.files && entry.files[lod]) return entry.files[lod];
-  return `assets/sprites/${entry.family}/${variant}_${lod}.png`;
+  const version = entry.version ? `?v=${entry.version}` : '';
+  return `assets/sprites/${entry.family}/${variant}_${lod}.png${version}`;
 }
