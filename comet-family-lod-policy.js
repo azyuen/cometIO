@@ -8,8 +8,27 @@
     return Array.isArray(list) && list.length ? list[Math.floor(Math.random() * list.length)] : null;
   }
 
-  function textureExists(scene, variant, lod) {
-    return !!variant && !!lod && scene.textures.exists(cometSpriteTextureKey(variant, lod));
+  function textureReady(scene, variant, lod) {
+    if (!variant || !lod) return false;
+    const key = cometSpriteTextureKey(variant, lod);
+    if (!scene.textures.exists(key)) return false;
+
+    const texture = scene.textures.get?.(key);
+    if (!texture || texture.key === '__MISSING') return false;
+
+    // Mobile/WebGL can occasionally leave a registered texture key whose underlying image/frame
+    // is not actually usable. Refuse to draw that quad and let the procedural fallback handle it.
+    try {
+      const source = typeof texture.getSourceImage === 'function' ? texture.getSourceImage() : null;
+      const frame = typeof texture.get === 'function' ? texture.get() : null;
+      const width = frame?.realWidth || frame?.cutWidth || source?.naturalWidth || source?.width || null;
+      const height = frame?.realHeight || frame?.cutHeight || source?.naturalHeight || source?.height || null;
+      if ((width != null && width <= 0) || (height != null && height <= 0)) return false;
+    } catch (e) {
+      return false;
+    }
+
+    return true;
   }
 
   function chooseTint(def) {
@@ -33,7 +52,7 @@
 
     const pool = def.sharedVariants || def.normalVariants || [];
     const initialLod = mystery ? def.fixedLods?.mystery : def.fixedLods?.normal;
-    const loadable = pool.filter(variant => textureExists(scene, variant, initialLod));
+    const loadable = pool.filter(variant => textureReady(scene, variant, initialLod));
     const variant = randomFrom(loadable.length ? loadable : pool);
 
     state = {
@@ -107,7 +126,7 @@
     const lod = mystery ? def.fixedLods.mystery : def.fixedLods.normal;
     const key = state.variant ? cometSpriteTextureKey(state.variant, lod) : null;
 
-    if (!key || !this.textures.exists(key)) {
+    if (!key || !textureReady(this, state.variant, lod)) {
       return forceProceduralFallback(this, [x, y, radius, object, mystery, glow], def.sharedVariants);
     }
 
@@ -126,6 +145,9 @@
     image.setFlipX(state.flipX);
     image.setAlpha(state.alpha);
     if (state.tint != null) image.setTint(state.tint);
+    if (image.setBlendMode && typeof Phaser !== 'undefined' && Phaser.BlendModes) {
+      image.setBlendMode(Phaser.BlendModes.NORMAL);
+    }
     setDisplayDiameter(image, diameter);
 
     // Do not reproduce the old placeholder glow here. On real transparent PNG sprites it appears
