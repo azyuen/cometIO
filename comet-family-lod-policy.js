@@ -17,6 +17,16 @@
     return randomFrom(def.tintPalette || []);
   }
 
+  function chooseRotation(def) {
+    if (!def.allowRotation) return 0;
+    const rotationStep = Number(def.rotationStep) || 0;
+    if (rotationStep > 0) {
+      const steps = Math.max(1, Math.round(360 / rotationStep));
+      return Math.floor(Math.random() * steps) * rotationStep;
+    }
+    return Math.random() * 360;
+  }
+
   function getState(scene, object, def, mystery) {
     let state = object?.[FAMILY_STATE];
     if (state) return state;
@@ -29,7 +39,7 @@
     state = {
       variant,
       tint: chooseTint(def),
-      rotation: def.allowRotation ? Math.random() * 360 : 0,
+      rotation: chooseRotation(def),
       flipX: def.allowFlip ? Math.random() < (def.flipChance ?? COMET_VISUAL_SETTINGS.defaultFlipChance) : false,
       alpha: (def.alphaRange?.[0] ?? 1) + Math.random() * ((def.alphaRange?.[1] ?? 1) - (def.alphaRange?.[0] ?? 1))
     };
@@ -118,12 +128,9 @@
     if (state.tint != null) image.setTint(state.tint);
     setDisplayDiameter(image, diameter);
 
-    if (glow) {
-      const legacyGlow = this.add.graphics();
-      legacyGlow.fillStyle(C.orange, 0.10).fillCircle(0, 0, radius + 11);
-      back.add(legacyGlow);
-    }
-
+    // Do not reproduce the old placeholder glow here. On real transparent PNG sprites it appears
+    // as an unwanted translucent circle behind the player's object. Future sprite effects belong
+    // in the family effect layers instead.
     container.add([back, image, front]);
     this.ui.add(container);
 
