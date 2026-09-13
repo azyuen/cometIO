@@ -3,7 +3,6 @@
 (() => {
   const baseDrawObject = GameScene.prototype.drawObject;
   const FAMILY_STATE = Symbol('cometFamilyVisualState');
-  const MAX_SAFE_SPRITE_SCALE = 3; // 64px detail art can safely display to ~192px; larger uses procedural fallback.
 
   function randomFrom(list) {
     return Array.isArray(list) && list.length ? list[Math.floor(Math.random() * list.length)] : null;
@@ -29,13 +28,19 @@
     return true;
   }
 
+  // Safari standalone mode has shown intermittent corruption when combining tiny transparent PNGs
+  // with tint + flip + rotation. Keep the same artwork/variant there, but use the source pixels as-is.
+  function isStandaloneSafeMode() {
+    return typeof window !== 'undefined' && window.COMET_STANDALONE === true;
+  }
+
   function chooseTint(def) {
-    if (!def.tintEnabled) return null;
+    if (isStandaloneSafeMode() || !def.tintEnabled) return null;
     return randomFrom(def.tintPalette || []);
   }
 
   function chooseRotation(def) {
-    if (!def.allowRotation) return 0;
+    if (isStandaloneSafeMode() || !def.allowRotation) return 0;
     const rotationStep = Number(def.rotationStep) || 0;
     if (rotationStep > 0) {
       const steps = Math.max(1, Math.round(360 / rotationStep));
@@ -57,7 +62,9 @@
       variant,
       tint: chooseTint(def),
       rotation: chooseRotation(def),
-      flipX: def.allowFlip ? Math.random() < (def.flipChance ?? COMET_VISUAL_SETTINGS.defaultFlipChance) : false,
+      flipX: !isStandaloneSafeMode() && def.allowFlip
+        ? Math.random() < (def.flipChance ?? COMET_VISUAL_SETTINGS.defaultFlipChance)
+        : false,
       alpha: (def.alphaRange?.[0] ?? 1) + Math.random() * ((def.alphaRange?.[1] ?? 1) - (def.alphaRange?.[0] ?? 1))
     };
 
@@ -133,12 +140,8 @@
     const lod = selectLod(def, mystery, diameter);
     const key = state.variant ? cometSpriteTextureKey(state.variant, lod) : null;
 
-    // Never stretch low-resolution transparent sprites into enormous WebGL quads.
-    // The true calculated display size remains authoritative; only the rendering method changes.
-    if (diameter > lod * MAX_SAFE_SPRITE_SCALE) {
-      return forceProceduralFallback(this, [x, y, radius, object, mystery, glow], def.sharedVariants);
-    }
-
+    // A real sprite should stay a real sprite at every game-calculated display size.
+    // Only a genuinely missing/bad texture falls back to the legacy procedural renderer.
     if (!key || !textureReady(this, state.variant, lod)) {
       return forceProceduralFallback(this, [x, y, radius, object, mystery, glow], def.sharedVariants);
     }
