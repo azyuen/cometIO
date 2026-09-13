@@ -15,10 +15,10 @@ assert(!renderMode.includes('Phaser.CANVAS'), 'legacy renderer shim must never f
 assert(!renderMode.includes('Phaser.Game ='), 'legacy renderer shim must not patch Phaser.Game');
 assert(renderMode.includes('LEGACY_NOOP'), 'legacy renderer URL should remain an explicit no-op for stale cached indexes');
 
-// Force fresh PWA copies of the files involved in this fix.
+// Force fresh PWA copies of files involved in the latest sprite stability work.
 for (const src of [
-  'assets/sprites/sprite-manifest.js?v=3',
-  'comet-family-lod-policy.js?v=3',
+  'assets/sprites/sprite-manifest.js?v=4',
+  'comet-family-lod-policy.js?v=4',
   'comet-named-visuals.js?v=3',
   'comet-sprite-stability.js?v=3'
 ]) {
@@ -41,20 +41,24 @@ assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.tintEnabled) re
 assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.allowRotation) return 0'), 'standalone rotation disable missing');
 assert(familyPolicy.includes('!isStandaloneSafeMode() && def.allowFlip'), 'standalone flip disable missing');
 
-// Atom wasn't implicated in this regression and remains on its current replacement pack.
+// Atom textures get a fresh request and are converted to hard-alpha CanvasTextures only in standalone mode.
 for (const variant of ['atom_01', 'atom_02', 'atom_03']) {
-  const re = new RegExp(`${variant}:\\s+\\{ family: 'atomic',\\s+lods: \\[32, 64\\], version: 2 \\}`);
-  assert(re.test(manifest), `${variant} should remain on version 2`);
+  const re = new RegExp(`${variant}:\\s+\\{ family: 'atomic',\\s+lods: \\[32, 64\\], version: 3 \\}`);
+  assert(re.test(manifest), `${variant} must be cache-busted to version 3`);
 }
+assert(familyPolicy.includes("def.visualFamily !== 'atomic'"), 'Atom-only standalone hard-alpha guard missing');
+assert(familyPolicy.includes('scene.textures.createCanvas'), 'Atom hard-alpha CanvasTexture creation missing');
+assert(familyPolicy.includes('data[i + 3] < 128'), 'Atom alpha threshold missing');
+assert(familyPolicy.includes('data[i + 3] = 255'), 'Atom opaque alpha normalization missing');
 
-// Corrected rock/comet packs are cache-busted so Home Screen mode cannot reuse bad image bytes.
+// Corrected rock/comet packs remain cache-busted so Home Screen mode cannot reuse bad image bytes.
 for (const [family, variants] of Object.entries({
   rock: ['rock_01', 'rock_02', 'rock_03'],
   comet: ['comet_01', 'comet_02', 'comet_03']
 })) {
   for (const variant of variants) {
     const re = new RegExp(`${variant}:\\s+\\{ family: '${family}',\\s+lods: \\[32, 64\\], version: 3 \\}`);
-    assert(re.test(manifest), `${variant} must be cache-busted to version 3`);
+    assert(re.test(manifest), `${variant} must remain on version 3`);
   }
 }
 
