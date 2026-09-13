@@ -18,12 +18,13 @@ const COMET_VISUAL_FAMILIES = {
     mysteryVariants: ['atom_01'],
     sharedVariants: ['atom_01'],
     fixedLods: { mystery: 32, normal: 64 },
-    tintEnabled: true,
+    // Keep real PNG sprites unmodified in WebGL. The palette remains here for future procedural/effect use.
+    tintEnabled: false,
     tintPalette: [0x93ecff, 0xc9f7ff, 0x78dfff],
     mysteryTintPalette: [0xaebbc5],
     allowRotation: false,
     allowFlip: false,
-    alphaRange: [0.97, 1],
+    alphaRange: [1, 1],
     effects: { back: null, front: null }
   },
   dust: {
@@ -32,13 +33,14 @@ const COMET_VISUAL_FAMILIES = {
     mysteryVariants: ['dust_01', 'dust_02', 'dust_03'],
     sharedVariants: ['dust_01', 'dust_02', 'dust_03'],
     fixedLods: { mystery: 32, normal: 64 },
-    tintEnabled: true,
+    // Variant/rotation/flip supply enough visual variety without tinting the raster texture itself.
+    tintEnabled: false,
     tintPalette: [0xc6b895, 0xaaa18d, 0x8f8b83],
     mysteryTintPalette: [0xa8a39a],
     allowRotation: true,
     rotationStep: 90,
     allowFlip: true,
-    alphaRange: [0.94, 1],
+    alphaRange: [1, 1],
     effects: { back: null, front: null }
   },
   rock: {
@@ -49,7 +51,9 @@ const COMET_VISUAL_FAMILIES = {
     sharedVariants: ['rock_01', 'rock_02', 'rock_03'],
     // These first assets intentionally use 32px for the mystery silhouette and 64px once revealed.
     fixedLods: { mystery: 32, normal: 64 },
-    tintEnabled: true,
+    // Runtime tinting of transparent pixel sprites can produce black texture quads on iOS WebGL.
+    // Keep the palette metadata for later procedural/effect use, but render the supplied PNG unchanged.
+    tintEnabled: false,
     tintPalette: [0x5c6068, 0x85888d, 0x8c715e, 0x8e5749, 0x687884],
     mysteryTintPalette: [0x777b80, 0x85888d],
     allowRotation: true,
@@ -57,7 +61,6 @@ const COMET_VISUAL_FAMILIES = {
     // Quarter-turns keep visual variety while preserving crisp pixel structure.
     rotationStep: 90,
     allowFlip: true,
-    // Keep sprite-backed rocks fully opaque; transparency is already encoded in PNG edge pixels.
     alphaRange: [1, 1],
     effects: { back: null, front: 'rockDebris' }
   },
