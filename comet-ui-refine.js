@@ -2,7 +2,7 @@
 (() => {
   const originalText = Phaser.GameObjects.GameObjectFactory.prototype.text;
   const SCALE = 1.28;
-  const UI_FONT = "Helvetica Neue, Helvetica, Arial, sans-serif";
+  const UI_FONT = "Avenir Next, Avenir, Helvetica Neue, Helvetica, Arial, sans-serif";
 
   Phaser.GameObjects.GameObjectFactory.prototype.text = function (x, y, text, style) {
     const next = { ...(style || {}) };
