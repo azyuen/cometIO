@@ -66,15 +66,22 @@ const COMET_VISUAL_FAMILIES = {
   },
   comet: {
     collisionFamily: 'icy',
-    normalVariants: ['comet_01', 'comet_02'],
-    mysteryVariants: ['comet_mystery_01'],
+    normalVariants: ['comet_01', 'comet_02', 'comet_03'],
+    mysteryVariants: ['comet_01', 'comet_02', 'comet_03'],
+    // Small Comet and Larger Comet intentionally draw from the exact same pool.
+    sharedVariants: ['comet_01', 'comet_02', 'comet_03'],
+    fixedLods: { mystery: 32, normal: 64 },
     tintEnabled: true,
-    tintPalette: [0x9ba5aa, 0xaedcf2, 0xe5f4ff],
-    mysteryTintPalette: [0xa4adb3],
+    // Very restrained near-white palette so white ice remains white-looking.
+    tintPalette: [0xffffff, 0xf0f4f5, 0xe5eef2, 0xd9dddc, 0xe7e0d8, 0xe3eae5],
+    mysteryTintPalette: [0xf0f4f5, 0xe5eef2, 0xe3eae5],
     allowRotation: true,
+    rotationStep: 90,
     allowFlip: true,
-    alphaRange: [0.98, 1],
-    effects: { back: 'cometTail', front: null }
+    alphaRange: [1, 1],
+    // No visible tail during normal rendering. These are metadata hooks only for future action FX.
+    effects: { back: null, front: null },
+    futureEffects: { reveal: 'cometTail', collision: 'cometTail', absorb: 'cometTail' }
   },
   rockyPlanet: {
     collisionFamily: 'planetary',
