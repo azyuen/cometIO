@@ -1,35 +1,29 @@
 # cometIO
 
-A Phaser web-game prototype about deceptive cosmic scale and risk/reward collisions.
+A portrait-mobile Phaser web-game prototype about deceptive cosmic scale, incomplete information and risk/reward encounters.
 
 ## Core loop
 
-Two objects approach in separate panes and appear roughly the same size on screen. The player knows their own size, mass and speed, but the approaching object's true size and mass are hidden until after a decision.
+Two objects approach in separate panes at misleadingly similar apparent sizes. The player sees their own mass, speed and tier, but the target's true scale is hidden until a choice is locked in.
 
-The player chooses:
+- **Absorb** — highest risk and reward. A head-on attempt to gain growth, mass and speed. Failure is game over.
+- **Deflect** — medium risk. A grazing encounter can produce a clean slingshot with speed/craters, a rough but survivable deflection that strips speed/mass, or—mainly against extreme mismatches—a catastrophic collision.
+- **Avoid** — safest option. Early course correction usually survives but costs speed; sufficiently powerful gravity can still capture the player.
 
-- **Absorb** — highest risk/highest reward. Attempt a head-on absorption. Success adds mass and speed and can evolve the player's object into a larger class. Failure means being absorbed and game over.
-- **Deflect** — medium risk. Attempt a grazing encounter or gravitational slingshot. Success can add speed and award **craters**, a currency intended for future power-ups. Failure means impact and game over.
-- **Avoid** — lowest risk. Change course early. Successful avoidance costs speed, with larger/more massive targets generally imposing a larger penalty. Failure can result in orbital capture or orbital decay and impact.
+After the action, the result screen compares the two objects' real size, mass and speed and explains why the outcome occurred.
 
-## Physics model
+## Progression and regions
 
-The prototype stores approximate physical values for each object:
+Progression uses 17 game tiers from Atom through Super Massive Black Hole. Growth is intentionally game-balanced rather than proportional to literal astronomical mass.
 
-- size (radius)
-- mass
-- speed
+Every four successful encounters, the player chooses a region: Outer Heliosphere, Oort Cloud, Scattered Disk, Kuiper Belt, Asteroid Belt, Inner Solar System, Outer Solar System or Hyperspace. Each region biases the encounter table toward scientifically plausible object populations while still allowing progression.
 
-Outcome probabilities are based on relative size, relative mass, relative speed, collision energy and the target's escape velocity. The system is deliberately game-friendly rather than a full orbital simulation, but very large bodies can overwhelm strategies that work against smaller objects.
+Larger encounters are identified with representative real objects such as Ceres, Jupiter, the Sun, Rigel, the Orion Nebula, the Crab Pulsar, Cygnus X-1 and Sagittarius A*.
 
-Excessive relative speed makes head-on absorption harder because kinetic energy rises with speed squared. Higher speed is more useful for escape and deflection.
+## Persistence
 
-## Current progression
+Runs can be saved and loaded in browser local storage. The best five local scores record player name, score, mass, object/tier reached and successful action streak.
 
-The player begins as a dust particle. Successful absorption increases mass and can move through game stages such as grain of sand, pebble, boulder, meteoroid, asteroid, comet, moon, planet and beyond.
+## Mobile web app
 
-These progression labels are a game abstraction rather than strict astronomical taxonomy.
-
-## Deployment
-
-The game is a static `index.html` and is suitable for GitHub Pages. Phaser is loaded from a CDN, so there is currently no build step.
+The game includes a web-app manifest and Apple Home Screen icon. The UI reserves a black status-bar area at the top for phone HUD elements and renders interface text at high resolution while keeping the space objects visually game-like.
