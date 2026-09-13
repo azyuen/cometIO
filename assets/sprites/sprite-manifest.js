@@ -36,15 +36,15 @@ const COMET_SPRITE_ASSETS = {
   rockyPlanet_02:       { family: 'rockyPlanet', lods: [] },
   rockyPlanet_mystery_01:{ family: 'rockyPlanet',lods: [] },
 
-  // Named dwarf-planet reveal art.
-  dwarf_ceres:          { family: 'rockyPlanet', lods: [] },
-  dwarf_pluto:          { family: 'rockyPlanet', lods: [] },
-  dwarf_eris:           { family: 'rockyPlanet', lods: [] },
-  dwarf_haumea:         { family: 'rockyPlanet', lods: [] },
-  dwarf_makemake:       { family: 'rockyPlanet', lods: [] },
-  dwarf_gonggong:       { family: 'rockyPlanet', lods: [] },
-  dwarf_quaoar:         { family: 'rockyPlanet', lods: [] },
-  dwarf_sedna:          { family: 'rockyPlanet', lods: [] },
+  // Named dwarf-planet reveal art. Mystery/decision stage still uses the generic rocky-planet path.
+  dwarf_ceres:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  dwarf_pluto:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  dwarf_eris:           { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  dwarf_haumea:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  dwarf_makemake:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  dwarf_gonggong:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  dwarf_quaoar:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  dwarf_sedna:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
 
   // Named terrestrial planet reveal art.
   planet_mercury:       { family: 'rockyPlanet', lods: [] },
