@@ -1,0 +1,19 @@
+{
+  "name": "cometIO",
+  "short_name": "cometIO",
+  "description": "A pixel-art cosmic scale and collision game.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#02060f",
+  "theme_color": "#020a19",
+  "icons": [
+    {
+      "src": "icons/cometio-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
