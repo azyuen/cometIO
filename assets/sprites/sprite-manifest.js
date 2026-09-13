@@ -18,8 +18,9 @@ const COMET_SPRITE_ASSETS = {
   rock_mystery_01:      { family: 'rock',        lods: [] },
   rock_mystery_02:      { family: 'rock',        lods: [] },
 
-  comet_01:             { family: 'comet',       lods: [] },
-  comet_02:             { family: 'comet',       lods: [] },
+  comet_01:             { family: 'comet',       lods: [32, 64], version: 1 },
+  comet_02:             { family: 'comet',       lods: [32, 64], version: 1 },
+  comet_03:             { family: 'comet',       lods: [32, 64], version: 1 },
   comet_mystery_01:     { family: 'comet',       lods: [] },
 
   rockyPlanet_01:       { family: 'rockyPlanet', lods: [] },
