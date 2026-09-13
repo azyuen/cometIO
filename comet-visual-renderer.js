@@ -5,6 +5,7 @@
   const previousPreload = GameScene.prototype.preload;
   const previousUpdate = GameScene.prototype.update;
   const effectRegistry = Object.create(null);
+  const VISUAL_STATE = Symbol('cometVisualState');
 
   function randomFrom(list) {
     if (!Array.isArray(list) || !list.length) return null;
@@ -71,8 +72,15 @@
 
   function ensureObjectVisualState(scene, object) {
     ensureSceneVisualState(scene);
-    let state = scene._cometVisualStates.get(object);
-    if (state) return state;
+
+    // The symbol is enumerable so the game's existing {...object} encounter snapshot carries
+    // the visual state into the result screen. JSON.stringify ignores symbol keys, so saves and
+    // gameplay data remain unaffected.
+    let state = object?.[VISUAL_STATE] || scene._cometVisualStates.get(object);
+    if (state) {
+      scene._cometVisualStates.set(object, state);
+      return state;
+    }
 
     const def = getCometVisualDefinition(object);
     state = {
@@ -86,6 +94,15 @@
       alpha: randomBetween(def.alphaRange || [1, 1])
     };
     scene._cometVisualStates.set(object, state);
+    try {
+      Object.defineProperty(object, VISUAL_STATE, {
+        value: state,
+        enumerable: true,
+        configurable: true
+      });
+    } catch (e) {
+      // WeakMap storage is still enough for normal game objects if a future object is non-extensible.
+    }
     return state;
   }
 
