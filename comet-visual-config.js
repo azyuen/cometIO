@@ -14,16 +14,20 @@ const COMET_VISUAL_SETTINGS = {
 const COMET_VISUAL_FAMILIES = {
   atomic: {
     collisionFamily: 'atomic',
-    normalVariants: ['atom_01'],
-    mysteryVariants: ['atom_01'],
-    sharedVariants: ['atom_01'],
+    normalVariants: ['atom_01', 'atom_02', 'atom_03'],
+    mysteryVariants: ['atom_01', 'atom_02', 'atom_03'],
+    sharedVariants: ['atom_01', 'atom_02', 'atom_03'],
     fixedLods: { mystery: 32, normal: 64 },
-    tintEnabled: false,
-    tintPalette: [0x93ecff, 0xc9f7ff, 0x78dfff],
-    mysteryTintPalette: [0xaebbc5],
-    allowRotation: false,
-    allowFlip: false,
+    lodByDisplayedSize: true,
+    // Near-neutral multipliers keep the clustered nucleon artwork natural and early-game ambiguous.
+    tintEnabled: true,
+    tintPalette: [0xffffff, 0xe7e8e6, 0xdce3e6, 0xe7e2d9, 0xd7d9d7, 0xe9e8e2],
+    mysteryTintPalette: [0xe7e8e6, 0xdce3e6, 0xe7e2d9, 0xe9e8e2],
+    allowRotation: true,
+    rotationStep: 90,
+    allowFlip: true,
     alphaRange: [1, 1],
+    // The replacement Atom art is deliberately just the compact blob cluster: no orbit/halo FX.
     effects: { back: null, front: null }
   },
   dust: {
