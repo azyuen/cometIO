@@ -1,4 +1,4 @@
-const W=420,H=880,SAFE_TOP=36,G=6.67430e-11;
+const W=420,H=880,SAFE_TOP=56,G=6.67430e-11;
 const C={bg:0x020a19,panel:0x071829,panel2:0x0b2238,cyan:0x20d9ff,white:0xf7fbff,muted:0x8db7ca,green:0x25f29a,orange:0xff9d3d,blue:0x45c6ff,red:0xff5368,purple:0x8e55d8,rock:0xa79d9a,rockDark:0x4f4c57,star:0xc6e9ff,black:0x000000};
 const FONT="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif";
 const TIERS=[
