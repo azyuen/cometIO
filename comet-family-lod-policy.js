@@ -17,8 +17,6 @@
     const texture = scene.textures.get?.(key);
     if (!texture || texture.key === '__MISSING') return false;
 
-    // Mobile/WebGL can occasionally leave a registered texture key whose underlying image/frame
-    // is not actually usable. Refuse to draw that quad and let the procedural fallback handle it.
     try {
       const source = typeof texture.getSourceImage === 'function' ? texture.getSourceImage() : null;
       const frame = typeof texture.get === 'function' ? texture.get() : null;
@@ -28,7 +26,6 @@
     } catch (e) {
       return false;
     }
-
     return true;
   }
 
@@ -97,6 +94,14 @@
     image.setDisplaySize(diameterPx, diameterPx * (height / width));
   }
 
+  function selectLod(def, mystery, diameter) {
+    if (!def.lodByDisplayedSize) return mystery ? def.fixedLods.mystery : def.fixedLods.normal;
+    if (mystery) return def.fixedLods.mystery;
+    return diameter <= COMET_VISUAL_SETTINGS.lodThresholds.smallMaxPx
+      ? def.fixedLods.mystery
+      : def.fixedLods.normal;
+  }
+
   function addDebug(scene, container, object, def, state, lod, diameter, tint) {
     if (!COMET_VISUAL_SETTINGS.debug) return;
     const tintText = tint == null ? 'none' : `#${tint.toString(16).padStart(6, '0')}`;
@@ -123,14 +128,13 @@
       return baseDrawObject.call(this, x, y, radius, object, mystery, glow);
     }
 
-    const state = getState(this, object, def, mystery);
-    const lod = mystery ? def.fixedLods.mystery : def.fixedLods.normal;
-    const key = state.variant ? cometSpriteTextureKey(state.variant, lod) : null;
     const diameter = Math.max(1, radius * 2);
+    const state = getState(this, object, def, mystery);
+    const lod = selectLod(def, mystery, diameter);
+    const key = state.variant ? cometSpriteTextureKey(state.variant, lod) : null;
 
-    // A 32/64px transparent texture should not become a many-hundreds- or thousands-pixel WebGL
-    // quad during true-scale reveals. iOS can render that oversized quad as an opaque black block.
-    // Keep the game's calculated display size authoritative; only switch the rendering method.
+    // Never stretch low-resolution transparent sprites into enormous WebGL quads.
+    // The true calculated display size remains authoritative; only the rendering method changes.
     if (diameter > lod * MAX_SAFE_SPRITE_SCALE) {
       return forceProceduralFallback(this, [x, y, radius, object, mystery, glow], def.sharedVariants);
     }
@@ -158,9 +162,6 @@
     }
     setDisplayDiameter(image, diameter);
 
-    // Do not reproduce the old placeholder glow here. On real transparent PNG sprites it appears
-    // as an unwanted translucent circle behind the player's object. Future sprite effects belong
-    // in the family effect layers instead.
     container.add([back, image, front]);
     this.ui.add(container);
 
@@ -184,8 +185,6 @@
     container.cometCollisionFamily = def.collisionFamily;
     container.setVisualDisplayDiameter = function (diameterPx) {
       handle.baseDisplayDiameterPx = Math.max(1, diameterPx);
-      // Preserve the exact requested display size for normal sprite-scale changes.
-      // Very large reveal objects are already routed to procedural rendering at creation time.
       setDisplayDiameter(image, handle.baseDisplayDiameterPx);
       return container;
     };
