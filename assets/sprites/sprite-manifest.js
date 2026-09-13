@@ -2,22 +2,24 @@
 // Only LODs listed here are preloaded. Missing textures still fall back procedurally.
 
 const COMET_SPRITE_ASSETS = {
-  // v3 uses stripped hard-alpha PNGs for more reliable iOS/Home Screen rendering.
-  atom_01:              { family: 'atomic',      lods: [32, 64], version: 3 },
-  atom_02:              { family: 'atomic',      lods: [32, 64], version: 3 },
-  atom_03:              { family: 'atomic',      lods: [32, 64], version: 3 },
+  // Atom replacement pack remains unchanged by this rendering fix.
+  atom_01:              { family: 'atomic',      lods: [32, 64], version: 2 },
+  atom_02:              { family: 'atomic',      lods: [32, 64], version: 2 },
+  atom_03:              { family: 'atomic',      lods: [32, 64], version: 2 },
 
   dust_01:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_02:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_03:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_mystery_01:      { family: 'dust',        lods: [] },
 
+  // v3 refreshes the corrected rock detail texture and current clean rock pack.
   rock_01:              { family: 'rock',        lods: [32, 64], version: 3 },
   rock_02:              { family: 'rock',        lods: [32, 64], version: 3 },
   rock_03:              { family: 'rock',        lods: [32, 64], version: 3 },
   rock_mystery_01:      { family: 'rock',        lods: [] },
   rock_mystery_02:      { family: 'rock',        lods: [] },
 
+  // v3 refreshes hard-alpha comet PNGs on cached Home Screen installs.
   comet_01:             { family: 'comet',       lods: [32, 64], version: 3 },
   comet_02:             { family: 'comet',       lods: [32, 64], version: 3 },
   comet_03:             { family: 'comet',       lods: [32, 64], version: 3 },
