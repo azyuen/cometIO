@@ -147,6 +147,13 @@ assert(!rendered.fallbackProcedural, 'available normal sprite should render');
 assert(rendered.cometVisual.lod === 128, '110px display should prefer 128 LOD');
 assert(Math.round(rendered.cometVisual.image.displayWidth) === 110, 'LOD selection changed display width');
 
+// Existing game result snapshots use {...object}; visual selection must survive that copy.
+const snapshot = { ...object };
+const snapshotRender = scene.drawObject(10, 20, 55, snapshot, false, false);
+assert(snapshotRender.cometVisual.visualState === rendered.cometVisual.visualState, 'encounter snapshot rerolled visual state');
+assert(snapshotRender.cometVisual.variant === rendered.cometVisual.variant, 'encounter snapshot changed sprite variant');
+assert(snapshotRender.cometVisual.tint === rendered.cometVisual.tint, 'encounter snapshot changed tint');
+
 // Simulate Phaser scaling tween: effective 44px display should select 32 LOD, still without a base-size jump.
 rendered.scaleX = rendered.scaleY = 0.4;
 scene.update(0, 16);
