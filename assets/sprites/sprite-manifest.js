@@ -19,9 +19,10 @@ const COMET_SPRITE_ASSETS = {
   rock_mystery_01:      { family: 'rock',        lods: [] },
   rock_mystery_02:      { family: 'rock',        lods: [] },
 
-  comet_01:             { family: 'comet',       lods: [32, 64], version: 1 },
-  comet_02:             { family: 'comet',       lods: [32, 64], version: 1 },
-  comet_03:             { family: 'comet',       lods: [32, 64], version: 1 },
+  // v2 refreshes the alpha-cleaned comet PNGs on cached Home Screen installs.
+  comet_01:             { family: 'comet',       lods: [32, 64], version: 2 },
+  comet_02:             { family: 'comet',       lods: [32, 64], version: 2 },
+  comet_03:             { family: 'comet',       lods: [32, 64], version: 2 },
   comet_mystery_01:     { family: 'comet',       lods: [] },
 
   // Named comet reveal art. Leave lods empty until each PNG is supplied.
