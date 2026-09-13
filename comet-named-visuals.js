@@ -3,7 +3,6 @@
 (() => {
   const baseDrawObject = GameScene.prototype.drawObject;
   const NAMED_STATE = Symbol('cometNamedVisualState');
-  const MAX_SAFE_NAMED_SCALE = 3;
 
   function availableNamedTexture(scene, variant) {
     const entry = COMET_SPRITE_ASSETS[variant];
@@ -20,8 +19,9 @@
     let state = object?.[NAMED_STATE];
     if (state) return state;
 
+    const standalone = typeof window !== 'undefined' && window.COMET_STANDALONE === true;
     let rotation = 0;
-    if (identity?.allowRotation) {
+    if (!standalone && identity?.allowRotation) {
       const step = Number(identity.rotationStep) || 0;
       if (step > 0) rotation = Math.floor(Math.random() * Math.max(1, Math.round(360 / step))) * step;
       else rotation = Math.random() * 360;
@@ -29,7 +29,7 @@
 
     state = {
       rotation,
-      flipX: !!identity?.allowFlip && Math.random() < COMET_VISUAL_SETTINGS.defaultFlipChance
+      flipX: !standalone && !!identity?.allowFlip && Math.random() < COMET_VISUAL_SETTINGS.defaultFlipChance
     };
 
     try {
@@ -56,10 +56,6 @@
     if (!named) return baseDrawObject.call(this, x, y, radius, object, mystery, glow);
 
     const diameter = Math.max(1, radius * 2);
-    if (diameter > named.lod * MAX_SAFE_NAMED_SCALE) {
-      return baseDrawObject.call(this, x, y, radius, object, mystery, glow);
-    }
-
     const identity = getCometNamedIdentity(object.identityId);
     const state = getNamedState(object, identity);
     const container = this.add.container(x, y);
