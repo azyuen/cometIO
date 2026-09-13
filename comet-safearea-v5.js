@@ -1,5 +1,20 @@
 // Safe-area refinement for iPhone/Home Screen mode.
 (() => {
+  const baseClearUI = GameScene.prototype.clearUI;
+  const STANDALONE_UI_SHIFT_Y = -10;
+
+  // The installed iPhone webapp sits slightly lower than the browser version because the
+  // standalone viewport includes its own status-bar handling. Shift the full UI container up
+  // together rather than changing individual screens. The black status area/background remains
+  // in place because it is drawn outside this UI container. Browser mode is unchanged.
+  GameScene.prototype.clearUI = function () {
+    const result = baseClearUI.call(this);
+    if (typeof window !== 'undefined' && window.COMET_STANDALONE === true && this.ui) {
+      this.ui.y = STANDALONE_UI_SHIFT_Y;
+    }
+    return result;
+  };
+
   GameScene.prototype.drawHud = function (controls = false) {
     const t = TIERS[this.tierIndex];
 
