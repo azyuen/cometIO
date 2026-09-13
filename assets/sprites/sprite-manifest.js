@@ -2,10 +2,10 @@
 // Only LODs listed here are preloaded. Missing textures still fall back procedurally.
 
 const COMET_SPRITE_ASSETS = {
-  // Atom replacement pack remains unchanged by this rendering fix.
-  atom_01:              { family: 'atomic',      lods: [32, 64], version: 2 },
-  atom_02:              { family: 'atomic',      lods: [32, 64], version: 2 },
-  atom_03:              { family: 'atomic',      lods: [32, 64], version: 2 },
+  // v3 refreshes hard-alpha atom PNGs to reduce rare iOS/Home Screen texture artefacts.
+  atom_01:              { family: 'atomic',      lods: [32, 64], version: 3 },
+  atom_02:              { family: 'atomic',      lods: [32, 64], version: 3 },
+  atom_03:              { family: 'atomic',      lods: [32, 64], version: 3 },
 
   dust_01:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_02:              { family: 'dust',        lods: [32, 64], version: 1 },
