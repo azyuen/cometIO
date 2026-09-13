@@ -1,7 +1,7 @@
-// Mobile readability pass: keep sprites stylised, but render all UI text as crisp modern type.
+// Mobile readability pass: UI text is modern, large and high-resolution.
 (() => {
   const originalText = Phaser.GameObjects.GameObjectFactory.prototype.text;
-  const SCALE = 1.14;
+  const SCALE = 1.28;
   const UI_FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif";
 
   Phaser.GameObjects.GameObjectFactory.prototype.text = function (x, y, text, style) {
@@ -13,7 +13,8 @@
     }
     next.fontFamily = UI_FONT;
     const obj = originalText.call(this, x, y, text, next);
-    if (obj.setResolution) obj.setResolution(4);
+    if (obj.setResolution) obj.setResolution(6);
+    if (obj.setPadding) obj.setPadding(2, 2, 2, 2);
     return obj;
   };
 })();
