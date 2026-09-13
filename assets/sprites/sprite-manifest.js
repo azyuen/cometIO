@@ -2,11 +2,13 @@
 // Only LODs listed here are preloaded. Missing textures still fall back procedurally.
 
 const COMET_SPRITE_ASSETS = {
+  atom_01:              { family: 'atomic',      lods: [32, 64], version: 1 },
   atomic_01:            { family: 'atomic',      lods: [] },
   atomic_mystery_01:    { family: 'atomic',      lods: [] },
 
-  dust_01:              { family: 'dust',        lods: [] },
-  dust_02:              { family: 'dust',        lods: [] },
+  dust_01:              { family: 'dust',        lods: [32, 64], version: 1 },
+  dust_02:              { family: 'dust',        lods: [32, 64], version: 1 },
+  dust_03:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_mystery_01:      { family: 'dust',        lods: [] },
 
   // v2 forces iOS/Home Screen mode to fetch the cleaned hard-alpha sprite bytes.
