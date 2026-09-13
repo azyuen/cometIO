@@ -28,9 +28,14 @@ assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.tintEnabled) re
 assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.allowRotation) return 0'), 'standalone rotation disable missing');
 assert(familyPolicy.includes('!isStandaloneSafeMode() && def.allowFlip'), 'standalone flip disable missing');
 
-// Cache bust the normalized current sprite packs.
+// Atom wasn't implicated in this regression and remains on its current replacement pack.
+for (const variant of ['atom_01', 'atom_02', 'atom_03']) {
+  const re = new RegExp(`${variant}:\\s+\\{ family: 'atomic',\\s+lods: \\[32, 64\\], version: 2 \\}`);
+  assert(re.test(manifest), `${variant} should remain on version 2`);
+}
+
+// Corrected rock/comet packs are cache-busted so Home Screen mode cannot reuse bad image bytes.
 for (const [family, variants] of Object.entries({
-  atomic: ['atom_01', 'atom_02', 'atom_03'],
   rock: ['rock_01', 'rock_02', 'rock_03'],
   comet: ['comet_01', 'comet_02', 'comet_03']
 })) {
