@@ -5,8 +5,8 @@ const COMET_VISUAL_SETTINGS = {
   debug: false,
   lodThresholds: {
     // Selection is based only on current DISPLAYED diameter in screen pixels.
-    smallMaxPx: 48,   // prefer 32px texture
-    normalMaxPx: 96   // prefer 64px texture; above this prefer 128px
+    smallMaxPx: 48,
+    normalMaxPx: 96
   },
   defaultFlipChance: 0.5
 };
@@ -39,7 +39,11 @@ const COMET_VISUAL_FAMILIES = {
   rock: {
     collisionFamily: 'rocky',
     normalVariants: ['rock_01', 'rock_02', 'rock_03'],
-    mysteryVariants: ['rock_mystery_01', 'rock_mystery_02'],
+    mysteryVariants: ['rock_01', 'rock_02', 'rock_03'],
+    // A single variant is selected per encounter and reused for hidden/revealed/result renders.
+    sharedVariants: ['rock_01', 'rock_02', 'rock_03'],
+    // These first assets intentionally use 32px for the mystery silhouette and 64px once revealed.
+    fixedLods: { mystery: 32, normal: 64 },
     tintEnabled: true,
     tintPalette: [0x5c6068, 0x85888d, 0x8c715e, 0x8e5749, 0x687884],
     mysteryTintPalette: [0x777b80, 0x85888d],
@@ -87,7 +91,6 @@ const COMET_VISUAL_FAMILIES = {
   star: {
     collisionFamily: 'stellar',
     normalVariants: ['star_01', 'star_02'],
-    // Deliberately shared across yellow/blue/red stars during uncertainty.
     mysteryVariants: ['star_mystery_01'],
     tintEnabled: true,
     tintPalette: [0xffe59a],
@@ -124,7 +127,6 @@ const COMET_VISUAL_FAMILIES = {
   blackHole: {
     collisionFamily: 'blackHole',
     normalVariants: ['blackHole_01'],
-    // Stellar and supermassive black holes may share mystery art.
     mysteryVariants: ['blackHole_mystery_01'],
     tintEnabled: false,
     tintPalette: [],
@@ -147,18 +149,9 @@ const COMET_OBJECT_VISUALS = {
   'DWARF PLANET': { visualFamily: 'rockyPlanet' },
   'ROCKY PLANET': { visualFamily: 'rockyPlanet' },
   'GAS PLANET': { visualFamily: 'gasPlanet' },
-  'YELLOW DWARF STAR': {
-    visualFamily: 'star',
-    tintPalette: [0xffd766, 0xffe69a, 0xffefb7]
-  },
-  'BLUE GIANT STAR': {
-    visualFamily: 'star',
-    tintPalette: [0x9ed7ff, 0xc1e6ff, 0xe0f3ff]
-  },
-  'RED HYPERGIANT STAR': {
-    visualFamily: 'star',
-    tintPalette: [0xff765e, 0xff9a70, 0xffb078]
-  },
+  'YELLOW DWARF STAR': { visualFamily: 'star', tintPalette: [0xffd766, 0xffe69a, 0xffefb7] },
+  'BLUE GIANT STAR': { visualFamily: 'star', tintPalette: [0x9ed7ff, 0xc1e6ff, 0xe0f3ff] },
+  'RED HYPERGIANT STAR': { visualFamily: 'star', tintPalette: [0xff765e, 0xff9a70, 0xffb078] },
   'NEBULA': { visualFamily: 'nebula' },
   'PULSAR': { visualFamily: 'pulsar' },
   'BLACK HOLE': { visualFamily: 'blackHole' },
