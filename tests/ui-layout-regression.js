@@ -20,7 +20,12 @@ assert(hud.includes('const w = 188, h = 94'), 'region card size changed unexpect
 assert(!hud.includes('COMMON:'), 'region cards must not display COMMON hints');
 assert(!hud.includes('r.common'), 'region cards must not render region.common');
 
+// Installed Home Screen mode shifts the whole UI upward without changing browser coordinates.
+assert(hud.includes('const STANDALONE_UI_SHIFT_Y = -10'), 'standalone UI should be nudged upward by 10px');
+assert(hud.includes('window.COMET_STANDALONE === true'), 'standalone-only guard missing');
+assert(hud.includes('this.ui.y = STANDALONE_UI_SHIFT_Y'), 'full UI container shift missing');
+
 // PWA must fetch the updated layout file rather than an older cached copy.
-assert(index.includes('comet-safearea-v5.js?v=6'), 'updated HUD/region layout cache bust missing');
+assert(index.includes('comet-safearea-v5.js?v=7'), 'updated standalone layout cache bust missing');
 
 console.log('HUD and region layout regression checks passed');
