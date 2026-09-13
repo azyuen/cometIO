@@ -1,12 +1,5 @@
 // Sprite asset manifest.
-// Only LODs listed here are preloaded. This prevents absent art from breaking the game.
-// Conventional path: assets/sprites/<family>/<variant>_<lod>.png
-// Example: assets/sprites/rock/rock_01_64.png
-//
-// To add art:
-//   1. Put the PNG in the matching family folder.
-//   2. Add the available pixel sizes to that variant's lods array.
-// No Phaser preload code needs to be edited.
+// Only LODs listed here are preloaded. Missing textures still fall back procedurally.
 
 const COMET_SPRITE_ASSETS = {
   atomic_01:            { family: 'atomic',      lods: [] },
@@ -16,9 +9,9 @@ const COMET_SPRITE_ASSETS = {
   dust_02:              { family: 'dust',        lods: [] },
   dust_mystery_01:      { family: 'dust',        lods: [] },
 
-  rock_01:              { family: 'rock',        lods: [] },
-  rock_02:              { family: 'rock',        lods: [] },
-  rock_03:              { family: 'rock',        lods: [] },
+  rock_01:              { family: 'rock',        lods: [32, 64] },
+  rock_02:              { family: 'rock',        lods: [32, 64] },
+  rock_03:              { family: 'rock',        lods: [32, 64] },
   rock_mystery_01:      { family: 'rock',        lods: [] },
   rock_mystery_02:      { family: 'rock',        lods: [] },
 
