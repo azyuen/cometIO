@@ -2,9 +2,10 @@
 // Only LODs listed here are preloaded. Missing textures still fall back procedurally.
 
 const COMET_SPRITE_ASSETS = {
-  atom_01:              { family: 'atomic',      lods: [32, 64], version: 1 },
-  atomic_01:            { family: 'atomic',      lods: [] },
-  atomic_mystery_01:    { family: 'atomic',      lods: [] },
+  // Atom replacement pack. v2 forces clients to discard the superseded atom_01 cache.
+  atom_01:              { family: 'atomic',      lods: [32, 64], version: 2 },
+  atom_02:              { family: 'atomic',      lods: [32, 64], version: 2 },
+  atom_03:              { family: 'atomic',      lods: [32, 64], version: 2 },
 
   dust_01:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_02:              { family: 'dust',        lods: [32, 64], version: 1 },
