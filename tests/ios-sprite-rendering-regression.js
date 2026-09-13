@@ -1,6 +1,7 @@
 const fs = require('fs');
 
 const index = fs.readFileSync('index.html', 'utf8');
+const renderMode = fs.readFileSync('comet-render-mode.js', 'utf8');
 const familyPolicy = fs.readFileSync('comet-family-lod-policy.js', 'utf8');
 const namedVisuals = fs.readFileSync('comet-named-visuals.js', 'utf8');
 const stability = fs.readFileSync('comet-sprite-stability.js', 'utf8');
@@ -9,13 +10,25 @@ const manifest = fs.readFileSync('assets/sprites/sprite-manifest.js', 'utf8');
 function assert(ok, message) { if (!ok) throw new Error(message); }
 
 // Home Screen mode must use the same Phaser renderer/scaling path as browser mode.
-assert(!index.includes('comet-render-mode.js'), 'standalone Canvas renderer override must not be loaded');
-assert(!fs.existsSync('comet-render-mode.js'), 'standalone Canvas renderer override file should be removed');
+assert(!index.includes('comet-render-mode.js'), 'legacy renderer shim must not be loaded by current index');
+assert(!renderMode.includes('Phaser.CANVAS'), 'legacy renderer shim must never force Canvas');
+assert(!renderMode.includes('Phaser.Game ='), 'legacy renderer shim must not patch Phaser.Game');
+assert(renderMode.includes('LEGACY_NOOP'), 'legacy renderer URL should remain an explicit no-op for stale cached indexes');
+
+// Force fresh PWA copies of the files involved in this fix.
+for (const src of [
+  'assets/sprites/sprite-manifest.js?v=3',
+  'comet-family-lod-policy.js?v=3',
+  'comet-named-visuals.js?v=3',
+  'comet-sprite-stability.js?v=3'
+]) {
+  assert(index.includes(src), `${src} cache bust missing`);
+}
 
 // Sprite reveal animation still avoids large container-scale resampling.
 assert(stability.includes('setVisualDisplayDiameter(startDiameter)'), 'sprite reveal must initialize via display diameter');
 assert(stability.includes('setVisualDisplayDiameter(tween.getValue())'), 'sprite reveal must tween display diameter');
-assert(index.indexOf('comet-sprite-stability.js') > index.indexOf('comet-approach-visuals-v8.js'), 'stability reveal patch must load last');
+assert(index.indexOf('comet-sprite-stability.js?v=3') > index.indexOf('comet-approach-visuals-v8.js'), 'stability reveal patch must load last');
 
 // Real sprites stay real sprites at large display sizes; procedural fallback is missing-texture only.
 assert(!familyPolicy.includes('MAX_SAFE_SPRITE_SCALE'), 'large fixed-LOD sprites must not revert to prototype graphics');
