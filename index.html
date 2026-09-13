@@ -12,9 +12,29 @@
   <link rel="apple-touch-icon" href="icons/cometio-icon.png" />
   <link rel="icon" type="image/png" href="icons/cometio-icon.png" />
   <title>cometIO</title>
+  <script>
+    (() => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      window.COMET_STANDALONE = standalone;
+      if (!standalone) return;
+
+      document.documentElement.classList.add('standalone');
+      const syncStandaloneHeight = () => {
+        // iOS standalone mode can report 100dvh taller than the actually visible content area.
+        // window.innerHeight matches the usable viewport below the black status bar.
+        document.documentElement.style.setProperty('--app-height', `${Math.round(window.innerHeight)}px`);
+      };
+      syncStandaloneHeight();
+      window.addEventListener('resize', syncStandaloneHeight, { passive: true });
+      window.addEventListener('orientationchange', () => setTimeout(syncStandaloneHeight, 80), { passive: true });
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   <style>
     :root{color-scheme:dark;background:#000}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}body{display:grid;place-items:center}#game{width:100vw;height:100dvh;background:#000}canvas{display:block;image-rendering:auto}
+    html.standalone,html.standalone body{height:var(--app-height);min-height:var(--app-height)}
+    html.standalone body{display:block}
+    html.standalone #game{width:100vw;height:var(--app-height);max-height:var(--app-height)}
   </style>
 </head>
 <body>
