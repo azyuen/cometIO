@@ -14,26 +14,31 @@ const COMET_VISUAL_SETTINGS = {
 const COMET_VISUAL_FAMILIES = {
   atomic: {
     collisionFamily: 'atomic',
-    normalVariants: ['atomic_01'],
-    mysteryVariants: ['atomic_mystery_01'],
+    normalVariants: ['atom_01'],
+    mysteryVariants: ['atom_01'],
+    sharedVariants: ['atom_01'],
+    fixedLods: { mystery: 32, normal: 64 },
     tintEnabled: true,
     tintPalette: [0x93ecff, 0xc9f7ff, 0x78dfff],
     mysteryTintPalette: [0xaebbc5],
     allowRotation: false,
     allowFlip: false,
-    alphaRange: [0.95, 1],
+    alphaRange: [0.97, 1],
     effects: { back: null, front: null }
   },
   dust: {
     collisionFamily: 'dust',
-    normalVariants: ['dust_01', 'dust_02'],
-    mysteryVariants: ['dust_mystery_01'],
+    normalVariants: ['dust_01', 'dust_02', 'dust_03'],
+    mysteryVariants: ['dust_01', 'dust_02', 'dust_03'],
+    sharedVariants: ['dust_01', 'dust_02', 'dust_03'],
+    fixedLods: { mystery: 32, normal: 64 },
     tintEnabled: true,
     tintPalette: [0xc6b895, 0xaaa18d, 0x8f8b83],
     mysteryTintPalette: [0xa8a39a],
     allowRotation: true,
+    rotationStep: 90,
     allowFlip: true,
-    alphaRange: [0.90, 1],
+    alphaRange: [0.94, 1],
     effects: { back: null, front: null }
   },
   rock: {
