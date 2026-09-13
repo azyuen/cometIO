@@ -3,6 +3,7 @@
 (() => {
   const baseDrawObject = GameScene.prototype.drawObject;
   const FAMILY_STATE = Symbol('cometFamilyVisualState');
+  const MAX_SAFE_SPRITE_SCALE = 3; // 64px detail art can safely display to ~192px; larger uses procedural fallback.
 
   function randomFrom(list) {
     return Array.isArray(list) && list.length ? list[Math.floor(Math.random() * list.length)] : null;
@@ -125,6 +126,14 @@
     const state = getState(this, object, def, mystery);
     const lod = mystery ? def.fixedLods.mystery : def.fixedLods.normal;
     const key = state.variant ? cometSpriteTextureKey(state.variant, lod) : null;
+    const diameter = Math.max(1, radius * 2);
+
+    // A 32/64px transparent texture should not become a many-hundreds- or thousands-pixel WebGL
+    // quad during true-scale reveals. iOS can render that oversized quad as an opaque black block.
+    // Keep the game's calculated display size authoritative; only switch the rendering method.
+    if (diameter > lod * MAX_SAFE_SPRITE_SCALE) {
+      return forceProceduralFallback(this, [x, y, radius, object, mystery, glow], def.sharedVariants);
+    }
 
     if (!key || !textureReady(this, state.variant, lod)) {
       return forceProceduralFallback(this, [x, y, radius, object, mystery, glow], def.sharedVariants);
@@ -134,7 +143,6 @@
     const back = this.add.container(0, 0);
     const front = this.add.container(0, 0);
     const image = this.add.image(0, 0, key);
-    const diameter = Math.max(1, radius * 2);
 
     const texture = this.textures.get?.(key);
     if (texture?.setFilter && typeof Phaser !== 'undefined' && Phaser.Textures?.FilterMode) {
@@ -176,6 +184,8 @@
     container.cometCollisionFamily = def.collisionFamily;
     container.setVisualDisplayDiameter = function (diameterPx) {
       handle.baseDisplayDiameterPx = Math.max(1, diameterPx);
+      // Preserve the exact requested display size for normal sprite-scale changes.
+      // Very large reveal objects are already routed to procedural rendering at creation time.
       setDisplayDiameter(image, handle.baseDisplayDiameterPx);
       return container;
     };
