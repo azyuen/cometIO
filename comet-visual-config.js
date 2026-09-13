@@ -48,8 +48,12 @@ const COMET_VISUAL_FAMILIES = {
     tintPalette: [0x5c6068, 0x85888d, 0x8c715e, 0x8e5749, 0x687884],
     mysteryTintPalette: [0x777b80, 0x85888d],
     allowRotation: true,
+    // Arbitrary-angle rotation of 32/64px art can create ugly WebGL sampling blocks.
+    // Quarter-turns keep visual variety while preserving crisp pixel structure.
+    rotationStep: 90,
     allowFlip: true,
-    alphaRange: [0.98, 1],
+    // Keep sprite-backed rocks fully opaque; transparency is already encoded in PNG edge pixels.
+    alphaRange: [1, 1],
     effects: { back: null, front: 'rockDebris' }
   },
   comet: {
