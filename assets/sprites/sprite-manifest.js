@@ -23,13 +23,43 @@ const COMET_SPRITE_ASSETS = {
   comet_03:             { family: 'comet',       lods: [32, 64], version: 1 },
   comet_mystery_01:     { family: 'comet',       lods: [] },
 
+  // Named comet reveal art. Leave lods empty until each PNG is supplied.
+  comet_halley:         { family: 'comet',       lods: [] },
+  comet_tempel1:        { family: 'comet',       lods: [] },
+  comet_borrelly:       { family: 'comet',       lods: [] },
+  comet_67p:            { family: 'comet',       lods: [] },
+  comet_wild2:          { family: 'comet',       lods: [] },
+
   rockyPlanet_01:       { family: 'rockyPlanet', lods: [] },
   rockyPlanet_02:       { family: 'rockyPlanet', lods: [] },
   rockyPlanet_mystery_01:{ family: 'rockyPlanet',lods: [] },
 
+  // Named dwarf-planet reveal art.
+  dwarf_ceres:          { family: 'rockyPlanet', lods: [] },
+  dwarf_pluto:          { family: 'rockyPlanet', lods: [] },
+  dwarf_eris:           { family: 'rockyPlanet', lods: [] },
+  dwarf_haumea:         { family: 'rockyPlanet', lods: [] },
+  dwarf_makemake:       { family: 'rockyPlanet', lods: [] },
+  dwarf_gonggong:       { family: 'rockyPlanet', lods: [] },
+  dwarf_quaoar:         { family: 'rockyPlanet', lods: [] },
+  dwarf_sedna:          { family: 'rockyPlanet', lods: [] },
+
+  // Named terrestrial planet reveal art.
+  planet_mercury:       { family: 'rockyPlanet', lods: [] },
+  planet_venus:         { family: 'rockyPlanet', lods: [] },
+  planet_earth:         { family: 'rockyPlanet', lods: [] },
+  planet_mars:          { family: 'rockyPlanet', lods: [] },
+
   gasPlanet_01:         { family: 'gasPlanet',   lods: [] },
   gasPlanet_02:         { family: 'gasPlanet',   lods: [] },
   gasPlanet_mystery_01: { family: 'gasPlanet',   lods: [] },
+
+  // Named giant planet reveal art. Uranus/Neptune are scientifically ice giants but remain in
+  // the existing GAS PLANET gameplay/visual family until a separate ice-giant family is desired.
+  planet_jupiter:       { family: 'gasPlanet',   lods: [] },
+  planet_saturn:        { family: 'gasPlanet',   lods: [] },
+  planet_uranus:        { family: 'gasPlanet',   lods: [] },
+  planet_neptune:       { family: 'gasPlanet',   lods: [] },
 
   star_01:              { family: 'star',        lods: [] },
   star_02:              { family: 'star',        lods: [] },
