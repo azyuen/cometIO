@@ -4,15 +4,35 @@
   const baseDrawObject = GameScene.prototype.drawObject;
   const NAMED_STATE = Symbol('cometNamedVisualState');
 
-  function availableNamedTexture(scene, variant) {
+  function namedLodOrder(entry, diameterPx) {
+    const lods = Array.isArray(entry?.lods) ? [...entry.lods] : [];
+    if (!lods.length) return [];
+
+    const threshold = COMET_VISUAL_SETTINGS?.lodThresholds?.smallMaxPx ?? 48;
+    const preferred = diameterPx <= threshold ? 32 : 64;
+    return lods.sort((a, b) => {
+      if (a === preferred) return -1;
+      if (b === preferred) return 1;
+      return Math.abs(a - preferred) - Math.abs(b - preferred);
+    });
+  }
+
+  function availableNamedTexture(scene, variant, diameterPx) {
     const entry = COMET_SPRITE_ASSETS[variant];
     if (!entry || !Array.isArray(entry.lods) || !entry.lods.length) return null;
-    const lods = [...entry.lods].sort((a, b) => b - a);
-    for (const lod of lods) {
+
+    for (const lod of namedLodOrder(entry, diameterPx)) {
       const key = cometSpriteTextureKey(variant, lod);
       if (scene.textures.exists(key)) return { key, lod };
     }
     return null;
+  }
+
+  function applyNearestFilter(scene, key) {
+    const texture = scene.textures.get?.(key);
+    if (texture?.setFilter && typeof Phaser !== 'undefined' && Phaser.Textures?.FilterMode) {
+      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
   }
 
   function getNamedState(object, identity) {
@@ -52,20 +72,16 @@
       return baseDrawObject.call(this, x, y, radius, object, mystery, glow);
     }
 
-    const named = availableNamedTexture(this, object.namedSpriteBase);
+    const diameter = Math.max(1, radius * 2);
+    const named = availableNamedTexture(this, object.namedSpriteBase, diameter);
     if (!named) return baseDrawObject.call(this, x, y, radius, object, mystery, glow);
 
-    const diameter = Math.max(1, radius * 2);
     const identity = getCometNamedIdentity(object.identityId);
     const state = getNamedState(object, identity);
     const container = this.add.container(x, y);
     const image = this.add.image(0, 0, named.key);
-    const texture = this.textures.get?.(named.key);
 
-    if (texture?.setFilter && typeof Phaser !== 'undefined' && Phaser.Textures?.FilterMode) {
-      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
-    }
-
+    applyNearestFilter(this, named.key);
     image.setAngle(state.rotation);
     image.setFlipX(state.flipX);
     image.setAlpha(1);
@@ -92,11 +108,25 @@
     };
     container.cometCollisionFamily = getCometVisualDefinition(object).collisionFamily;
     container.setVisualDisplayDiameter = function (diameterPx) {
-      container.cometVisual.baseDisplayDiameterPx = Math.max(1, diameterPx);
-      setDisplayDiameter(image, container.cometVisual.baseDisplayDiameterPx);
+      const nextDiameter = Math.max(1, diameterPx);
+      const nextNamed = availableNamedTexture(container.cometVisual.scene, object.namedSpriteBase, nextDiameter);
+
+      // LOD is allowed to change as the object animates, but display size remains authoritative.
+      // Swap the source texture first, then immediately reapply the exact requested dimensions.
+      if (nextNamed && nextNamed.key !== image.texture.key) {
+        image.setTexture(nextNamed.key);
+        applyNearestFilter(container.cometVisual.scene, nextNamed.key);
+        container.cometVisual.lod = nextNamed.lod;
+      }
+
+      container.cometVisual.baseDisplayDiameterPx = nextDiameter;
+      setDisplayDiameter(image, nextDiameter);
       return container;
     };
-    container.refreshVisualLOD = () => container;
+    container.refreshVisualLOD = () => {
+      container.setVisualDisplayDiameter(container.cometVisual.baseDisplayDiameterPx);
+      return container;
+    };
     return container;
   };
 })();
