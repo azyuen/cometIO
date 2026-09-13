@@ -2,27 +2,25 @@
 // Only LODs listed here are preloaded. Missing textures still fall back procedurally.
 
 const COMET_SPRITE_ASSETS = {
-  // Atom replacement pack. v2 forces clients to discard the superseded atom_01 cache.
-  atom_01:              { family: 'atomic',      lods: [32, 64], version: 2 },
-  atom_02:              { family: 'atomic',      lods: [32, 64], version: 2 },
-  atom_03:              { family: 'atomic',      lods: [32, 64], version: 2 },
+  // v3 uses stripped hard-alpha PNGs for more reliable iOS/Home Screen rendering.
+  atom_01:              { family: 'atomic',      lods: [32, 64], version: 3 },
+  atom_02:              { family: 'atomic',      lods: [32, 64], version: 3 },
+  atom_03:              { family: 'atomic',      lods: [32, 64], version: 3 },
 
   dust_01:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_02:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_03:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_mystery_01:      { family: 'dust',        lods: [] },
 
-  // v2 forces iOS/Home Screen mode to fetch the cleaned hard-alpha sprite bytes.
-  rock_01:              { family: 'rock',        lods: [32, 64], version: 2 },
-  rock_02:              { family: 'rock',        lods: [32, 64], version: 2 },
-  rock_03:              { family: 'rock',        lods: [32, 64], version: 2 },
+  rock_01:              { family: 'rock',        lods: [32, 64], version: 3 },
+  rock_02:              { family: 'rock',        lods: [32, 64], version: 3 },
+  rock_03:              { family: 'rock',        lods: [32, 64], version: 3 },
   rock_mystery_01:      { family: 'rock',        lods: [] },
   rock_mystery_02:      { family: 'rock',        lods: [] },
 
-  // v2 refreshes the alpha-cleaned comet PNGs on cached Home Screen installs.
-  comet_01:             { family: 'comet',       lods: [32, 64], version: 2 },
-  comet_02:             { family: 'comet',       lods: [32, 64], version: 2 },
-  comet_03:             { family: 'comet',       lods: [32, 64], version: 2 },
+  comet_01:             { family: 'comet',       lods: [32, 64], version: 3 },
+  comet_02:             { family: 'comet',       lods: [32, 64], version: 3 },
+  comet_03:             { family: 'comet',       lods: [32, 64], version: 3 },
   comet_mystery_01:     { family: 'comet',       lods: [] },
 
   // Named comet reveal art. Leave lods empty until each PNG is supplied.
