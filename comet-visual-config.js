@@ -1,0 +1,179 @@
+// cometIO visual metadata — deliberately separate from gameplay/mass/progression data.
+// Add new art/variants here and in assets/sprites/sprite-manifest.js; encounter rules should not care.
+
+const COMET_VISUAL_SETTINGS = {
+  debug: false,
+  lodThresholds: {
+    // Selection is based only on current DISPLAYED diameter in screen pixels.
+    smallMaxPx: 48,   // prefer 32px texture
+    normalMaxPx: 96   // prefer 64px texture; above this prefer 128px
+  },
+  defaultFlipChance: 0.5
+};
+
+const COMET_VISUAL_FAMILIES = {
+  atomic: {
+    collisionFamily: 'atomic',
+    normalVariants: ['atomic_01'],
+    mysteryVariants: ['atomic_mystery_01'],
+    tintEnabled: true,
+    tintPalette: [0x93ecff, 0xc9f7ff, 0x78dfff],
+    mysteryTintPalette: [0xaebbc5],
+    allowRotation: false,
+    allowFlip: false,
+    alphaRange: [0.95, 1],
+    effects: { back: null, front: null }
+  },
+  dust: {
+    collisionFamily: 'dust',
+    normalVariants: ['dust_01', 'dust_02'],
+    mysteryVariants: ['dust_mystery_01'],
+    tintEnabled: true,
+    tintPalette: [0xc6b895, 0xaaa18d, 0x8f8b83],
+    mysteryTintPalette: [0xa8a39a],
+    allowRotation: true,
+    allowFlip: true,
+    alphaRange: [0.90, 1],
+    effects: { back: null, front: null }
+  },
+  rock: {
+    collisionFamily: 'rocky',
+    normalVariants: ['rock_01', 'rock_02', 'rock_03'],
+    mysteryVariants: ['rock_mystery_01', 'rock_mystery_02'],
+    tintEnabled: true,
+    tintPalette: [0x5c6068, 0x85888d, 0x8c715e, 0x8e5749, 0x687884],
+    mysteryTintPalette: [0x777b80, 0x85888d],
+    allowRotation: true,
+    allowFlip: true,
+    alphaRange: [0.98, 1],
+    effects: { back: null, front: 'rockDebris' }
+  },
+  comet: {
+    collisionFamily: 'icy',
+    normalVariants: ['comet_01', 'comet_02'],
+    mysteryVariants: ['comet_mystery_01'],
+    tintEnabled: true,
+    tintPalette: [0x9ba5aa, 0xaedcf2, 0xe5f4ff],
+    mysteryTintPalette: [0xa4adb3],
+    allowRotation: true,
+    allowFlip: true,
+    alphaRange: [0.98, 1],
+    effects: { back: 'cometTail', front: null }
+  },
+  rockyPlanet: {
+    collisionFamily: 'planetary',
+    normalVariants: ['rockyPlanet_01', 'rockyPlanet_02'],
+    mysteryVariants: ['rockyPlanet_mystery_01'],
+    tintEnabled: true,
+    tintPalette: [0x96745d, 0xa85e47, 0x8b8b85, 0xa88752, 0x6d7f87],
+    mysteryTintPalette: [0x81868a],
+    allowRotation: true,
+    allowFlip: true,
+    alphaRange: [1, 1],
+    effects: { back: null, front: null }
+  },
+  gasPlanet: {
+    collisionFamily: 'gaseous',
+    normalVariants: ['gasPlanet_01', 'gasPlanet_02'],
+    mysteryVariants: ['gasPlanet_mystery_01'],
+    tintEnabled: true,
+    tintPalette: [0xe0c38f, 0xcda77d, 0xa7b8c9, 0xc7b596],
+    mysteryTintPalette: [0xa8a6a0],
+    allowRotation: false,
+    allowFlip: true,
+    alphaRange: [1, 1],
+    effects: { back: null, front: null }
+  },
+  star: {
+    collisionFamily: 'stellar',
+    normalVariants: ['star_01', 'star_02'],
+    // Deliberately shared across yellow/blue/red stars during uncertainty.
+    mysteryVariants: ['star_mystery_01'],
+    tintEnabled: true,
+    tintPalette: [0xffe59a],
+    mysteryTintPalette: [0xd5d9dc],
+    allowRotation: false,
+    allowFlip: false,
+    alphaRange: [1, 1],
+    effects: { back: 'starGlow', front: 'starFlicker' }
+  },
+  nebula: {
+    collisionFamily: 'nebular',
+    normalVariants: ['nebula_01'],
+    mysteryVariants: ['nebula_mystery_01'],
+    tintEnabled: false,
+    tintPalette: [],
+    mysteryTintPalette: [],
+    allowRotation: true,
+    allowFlip: true,
+    alphaRange: [0.82, 0.96],
+    effects: { back: 'nebulaDrift', front: null }
+  },
+  pulsar: {
+    collisionFamily: 'pulsar',
+    normalVariants: ['pulsar_01'],
+    mysteryVariants: ['pulsar_mystery_01'],
+    tintEnabled: false,
+    tintPalette: [],
+    mysteryTintPalette: [],
+    allowRotation: false,
+    allowFlip: false,
+    alphaRange: [1, 1],
+    effects: { back: null, front: 'pulsarBeams' }
+  },
+  blackHole: {
+    collisionFamily: 'blackHole',
+    normalVariants: ['blackHole_01'],
+    // Stellar and supermassive black holes may share mystery art.
+    mysteryVariants: ['blackHole_mystery_01'],
+    tintEnabled: false,
+    tintPalette: [],
+    mysteryTintPalette: [],
+    allowRotation: false,
+    allowFlip: false,
+    alphaRange: [1, 1],
+    effects: { back: 'blackHoleAccretion', front: null }
+  }
+};
+
+const COMET_OBJECT_VISUALS = {
+  'ATOM': { visualFamily: 'atomic' },
+  'DUST PARTICLE': { visualFamily: 'dust' },
+  'TINY METEORITE': { visualFamily: 'rock' },
+  'LARGE METEORITE': { visualFamily: 'rock' },
+  'SMALL COMET': { visualFamily: 'comet' },
+  'LARGER COMET': { visualFamily: 'comet' },
+  'ASTEROID': { visualFamily: 'rock' },
+  'DWARF PLANET': { visualFamily: 'rockyPlanet' },
+  'ROCKY PLANET': { visualFamily: 'rockyPlanet' },
+  'GAS PLANET': { visualFamily: 'gasPlanet' },
+  'YELLOW DWARF STAR': {
+    visualFamily: 'star',
+    tintPalette: [0xffd766, 0xffe69a, 0xffefb7]
+  },
+  'BLUE GIANT STAR': {
+    visualFamily: 'star',
+    tintPalette: [0x9ed7ff, 0xc1e6ff, 0xe0f3ff]
+  },
+  'RED HYPERGIANT STAR': {
+    visualFamily: 'star',
+    tintPalette: [0xff765e, 0xff9a70, 0xffb078]
+  },
+  'NEBULA': { visualFamily: 'nebula' },
+  'PULSAR': { visualFamily: 'pulsar' },
+  'BLACK HOLE': { visualFamily: 'blackHole' },
+  'SUPER MASSIVE BLACK HOLE': { visualFamily: 'blackHole' }
+};
+
+function getCometVisualDefinition(object) {
+  const tierName = object?.name || TIERS[object?.tier]?.name;
+  const objectVisual = COMET_OBJECT_VISUALS[tierName] || { visualFamily: 'rock' };
+  const family = COMET_VISUAL_FAMILIES[objectVisual.visualFamily] || COMET_VISUAL_FAMILIES.rock;
+  return {
+    ...family,
+    ...objectVisual,
+    visualFamily: objectVisual.visualFamily || 'rock',
+    collisionFamily: objectVisual.collisionFamily || family.collisionFamily,
+    effects: { ...(family.effects || {}), ...(objectVisual.effects || {}) }
+  };
+}
