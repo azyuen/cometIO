@@ -106,13 +106,13 @@ const COMET_SPRITE_ASSETS = {
   nebula_helix:         { family: 'nebula', lods: [32, 64], version: 1 },
 
   // PULSAR.
-  pulsar_01:            { family: 'pulsar', lods: [] },
-  pulsar_02:            { family: 'pulsar', lods: [] },
-  pulsar_mystery_01:    { family: 'pulsar', lods: [] },
-  pulsar_crab:          { family: 'pulsar', lods: [] },
-  pulsar_vela:          { family: 'pulsar', lods: [] },
-  pulsar_geminga:       { family: 'pulsar', lods: [] },
-  pulsar_b1509:         { family: 'pulsar', lods: [] },
+  pulsar_01:            { family: 'pulsar', lods: [32, 64], version: 1 },
+  pulsar_02:            { family: 'pulsar', lods: [32, 64], version: 1 },
+  pulsar_mystery_01:    { family: 'pulsar', lods: [32, 64], version: 1 },
+  pulsar_crab:          { family: 'pulsar', lods: [32, 64], version: 1 },
+  pulsar_vela:          { family: 'pulsar', lods: [32, 64], version: 1 },
+  pulsar_geminga:       { family: 'pulsar', lods: [32, 64], version: 1 },
+  pulsar_b1509:         { family: 'pulsar', lods: [32, 64], version: 1 },
 
   // Stellar-mass BLACK HOLE.
   blackHole_01:             { family: 'blackHole', lods: [] },
