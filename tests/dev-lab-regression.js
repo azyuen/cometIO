@@ -4,12 +4,15 @@ const index = fs.readFileSync('index.html', 'utf8');
 const dev = fs.readFileSync('comet-dev-lab-v1.js', 'utf8');
 const exact = fs.readFileSync('comet-dev-exact-scale-v1.js', 'utf8');
 const stability = fs.readFileSync('comet-sprite-stability.js', 'utf8');
+const compact = fs.readFileSync('comet-compact-gravity-v1.js', 'utf8');
 
 function assert(ok, message) { if (!ok) throw new Error(message); }
 
 assert(index.includes('comet-dev-lab-v1.js?v=2'), 'dev lab script must be cache-busted');
 assert(index.includes('comet-dev-exact-scale-v1.js?v=2'), 'DEV scale behaviour patch must be loaded');
+assert(index.includes('comet-compact-gravity-v1.js?v=1'), 'compact gravity animation patch must be loaded');
 assert(index.indexOf('comet-dev-exact-scale-v1.js?v=2') > index.indexOf('comet-dev-lab-v1.js?v=2'), 'DEV scale patch must load after dev lab');
+assert(index.indexOf('comet-compact-gravity-v1.js?v=1') > index.indexOf('comet-dev-exact-scale-v1.js?v=2'), 'compact gravity animation must load after DEV scale patch');
 assert(index.indexOf('comet-dev-lab-v1.js?v=2') > index.indexOf('comet-gameplay-refine-v1.js?v=2'), 'dev lab must load after gameplay refinements');
 
 // Home entry must be PIN-gated with an on-screen numeric keypad.
@@ -40,11 +43,21 @@ assert(exact.includes('const DEV_APPROACH_RADIUS = 16'), 'DEV approach size shou
 assert(exact.includes('IN-GAME APPROACH SIZE'), 'DEV selector should identify approach sizing');
 assert(exact.includes('APPROACH Ø 32 px'), 'DEV selector should show the live approach diameter');
 
-// Post-choice reveal/result uses the exact production progression scale.
+// Post-choice reveal/result uses the exact production PHYSICAL scale.
 assert(stability.includes('GameScene.prototype.getRevealDisplayRadii'), 'canonical production reveal sizing helper missing');
-assert(stability.includes('GameScene.prototype.getGameDisplayScaleRatio'), 'canonical progression display ratio missing');
-assert(stability.includes('Math.pow(2, tierGap) * (oWithin / pWithin)'), 'reveal scale must follow progression tier relationship');
+assert(stability.includes('GameScene.prototype.getPhysicalDisplayScaleRatio'), 'canonical physical display ratio missing');
+assert(stability.includes('this.getPhysicalDisplayScaleRatio(player, other)'), 'reveal must use physical radius relationship');
 assert(exact.includes('this.getRevealDisplayRadii(this.player, this.other)'), 'DEV result must call canonical production reveal sizing');
+
+// Compact successful absorbs use gravitational capture instead of head-on impact.
+assert(compact.includes('shouldUseCompactCapture'), 'compact capture condition missing');
+assert(compact.includes("pending.result === 'absorb' || pending.result === 'merge'"), 'compact capture should require a real successful absorb/merge');
+assert(compact.includes('animatePulsarCapture'), 'pulsar capture animation missing');
+assert(compact.includes('pulsarCaptureBurst'), 'pulsar light-puff effect missing');
+assert(compact.includes('animateBlackHoleCapture'), 'black-hole spiral capture missing');
+assert(compact.includes('blackHoleLensing'), 'black-hole lensing/accretion effect missing');
+assert(compact.includes('zoomIntoCompactObject'), 'compact-object finish zoom missing');
+assert(compact.includes('setDisplayDiameter(o, Math.max(1.8'), 'captured target should shrink toward a tiny dot');
 
 // Real action/reveal/animation pipeline, isolated resolver.
 assert(dev.includes('return baseChoose.call(this, choice)'), 'dev actions must use the real gameplay choose/reveal pipeline');
@@ -60,4 +73,4 @@ assert(dev.includes('restoreRunState(this, snapshot)'), 'dev lab must restore th
 assert(dev.includes("'NEXT', C.cyan, () => this.showDevLab()"), 'NEXT must loop back to selectors');
 assert(dev.includes("'BACK HOME'"), 'dev lab must provide a Home exit');
 
-console.log('dev collision lab + PIN + progression scale regression checks passed');
+console.log('dev collision lab + compact gravity regression checks passed');
