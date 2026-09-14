@@ -7,7 +7,8 @@ A portrait-mobile Phaser web-game prototype about deceptive cosmic scale, incomp
 Two objects approach in separate panes at misleadingly similar apparent sizes. The player sees their own mass, speed and tier, but the target's true scale is hidden until a choice is locked in.
 
 - **Absorb** — highest risk and reward. A head-on attempt to gain growth, mass and speed. Outcomes depend on the relative object scale.
-- **Deflect** — medium risk. A grazing encounter can produce a clean slingshot with speed/craters, a rough but survivable deflection that strips speed/mass, or—mainly against extreme mismatches—a catastrophic collision.
+- **Deflect** — medium risk. From Dwarf Planet onward, every three successful deflects forms an orbital. A grazing encounter can produce a clean slingshot with speed, a rough but survivable deflection that strips speed/mass, or—mainly against extreme mismatches—a catastrophic collision.
+- **Orbitals** — visible lower-tier bodies that slowly orbit the player and automatically rerender as astronomically appropriate objects when the player changes tier. In high-risk encounters, up to three may be sacrificed to reduce the chance of a catastrophic end.
 - **Avoid** — safest option. Early course correction usually survives but costs speed; sufficiently powerful gravity can still capture the player.
 
 ## Visual architecture

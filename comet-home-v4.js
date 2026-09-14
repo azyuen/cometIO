@@ -57,7 +57,7 @@
     this.addText(54, 362, 'ABSORB', 11, C.green, { bold: true });
     this.addText(145, 362, 'Grow when you are bigger.', 9.5, C.white, { bold: true });
     this.addText(54, 405, 'DEFLECT', 11, C.orange, { bold: true });
-    this.addText(145, 405, 'Trade risk for speed + craters.', 9.5, C.white, { bold: true });
+    this.addText(145, 405, 'Build orbitals for dangerous encounters.', 8.6, C.white, { bold: true });
     this.addText(54, 448, 'AVOID', 11, C.blue, { bold: true });
     this.addText(145, 448, 'Safest. Usually costs speed.', 9.5, C.white, { bold: true });
     this.addText(W / 2, 485, 'Pick a region every few rounds.', 8.5, C.muted, { ox: .5, bold: true });
