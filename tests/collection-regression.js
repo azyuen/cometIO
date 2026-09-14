@@ -19,13 +19,15 @@ assert(collection.includes('data.collectedIdentityIds = [...sceneCollection(scen
 assert(collection.includes('data.collectionBonusScore = integerOrZero(scene.collectionBonusScore);'), 'save file must persist collection bonus');
 assert(collection.includes('data.version = Math.max(5'), 'collection save schema must advance to v5');
 assert(collection.includes('this.collectedIdentityIds = savedIds;'), 'load must restore collection before encounter generation');
+assert(collection.includes('function savedCollectionSnapshot()'), 'home must be able to inspect collection without loading the save first');
+assert(collection.includes('const saved = !this.runActive ? savedCollectionSnapshot() : null;'), 'fresh-launch home must use saved collection state');
 
 assert(collection.includes('collection,'), 'high-score entry must snapshot collection');
 assert(collection.includes('collectionBonusScore: integerOrZero(this.collectionBonusScore)'), 'high-score entry must snapshot collection bonus');
 assert(collection.includes("'TAP A SCORE TO VIEW ITS COLLECTION'"), 'high-score UI must advertise collection drill-down');
 assert(collection.includes("hit.on('pointerdown', () => this.showCollection({ score, returnTo }))"), 'high-score cards must open their collection snapshot');
 assert(collection.includes('GameScene.prototype.showCollection'), 'collection screen must exist');
-assert(collection.includes('COLLECTION ${count}/${TOTAL_UNIQUE_OBJECTS}'), 'home must expose collection tab/count');
+assert(collection.includes('COLLECTION ${ids.length}/${TOTAL_UNIQUE_OBJECTS}'), 'home must expose collection tab/count');
 
 assert(identities.includes('const COMET_NAMED_IDENTITIES = ['), 'collection source of truth must be named identity registry');
 assert(index.includes('<script src="comet-collection-v1.js?v=1"></script>'), 'collection module must load');
