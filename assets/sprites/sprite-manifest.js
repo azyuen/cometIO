@@ -97,13 +97,13 @@ const COMET_SPRITE_ASSETS = {
   redHypergiant_nmlCygni:        { family: 'star', lods: [32, 64], version: 1 },
 
   // NEBULA.
-  nebula_01:            { family: 'nebula', lods: [] },
-  nebula_02:            { family: 'nebula', lods: [] },
-  nebula_mystery_01:    { family: 'nebula', lods: [] },
-  nebula_orion:         { family: 'nebula', lods: [] },
-  nebula_carina:        { family: 'nebula', lods: [] },
-  nebula_eagle:         { family: 'nebula', lods: [] },
-  nebula_helix:         { family: 'nebula', lods: [] },
+  nebula_01:            { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_02:            { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_mystery_01:    { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_orion:         { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_carina:        { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_eagle:         { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_helix:         { family: 'nebula', lods: [32, 64], version: 1 },
 
   // PULSAR.
   pulsar_01:            { family: 'pulsar', lods: [] },
