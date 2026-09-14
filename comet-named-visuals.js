@@ -8,6 +8,13 @@
     const lods = Array.isArray(entry?.lods) ? [...entry.lods] : [];
     if (!lods.length) return [];
 
+    // The first gas-planet 64px pack contains literal RGB garbage beneath the intended artwork.
+    // Its 32px counterparts are clean, so always prefer those and scale them up until the 64px
+    // sources are replaced. This applies to Jupiter/Saturn/Uranus/Neptune identity reveals too.
+    if (entry.family === 'gasPlanet' && lods.includes(32)) {
+      return [32, ...lods.filter(lod => lod !== 32)];
+    }
+
     const threshold = COMET_VISUAL_SETTINGS?.lodThresholds?.smallMaxPx ?? 48;
     const preferred = diameterPx <= threshold ? 32 : 64;
     return lods.sort((a, b) => {
@@ -54,9 +61,7 @@
 
     try {
       Object.defineProperty(object, NAMED_STATE, { value: state, enumerable: true, configurable: true });
-    } catch (e) {
-      // Rendering still works if an unusual immutable object is ever supplied.
-    }
+    } catch (e) {}
     return state;
   }
 
@@ -67,7 +72,6 @@
   }
 
   GameScene.prototype.drawObject = function (x, y, radius, object, mystery = false, glow = false) {
-    // Never expose named identity artwork during the uncertainty/decision stage.
     if (mystery || !object?.identityId || !object?.namedSpriteBase) {
       return baseDrawObject.call(this, x, y, radius, object, mystery, glow);
     }
@@ -111,8 +115,6 @@
       const nextDiameter = Math.max(1, diameterPx);
       const nextNamed = availableNamedTexture(container.cometVisual.scene, object.namedSpriteBase, nextDiameter);
 
-      // LOD is allowed to change as the object animates, but display size remains authoritative.
-      // Swap the source texture first, then immediately reapply the exact requested dimensions.
       if (nextNamed && nextNamed.key !== image.texture.key) {
         image.setTexture(nextNamed.key);
         applyNearestFilter(container.cometVisual.scene, nextNamed.key);
