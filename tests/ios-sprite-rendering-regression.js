@@ -9,15 +9,20 @@ const manifest = fs.readFileSync('assets/sprites/sprite-manifest.js', 'utf8');
 
 function assert(ok, message) { if (!ok) throw new Error(message); }
 
-// Home Screen mode must use the same Phaser renderer/scaling path as browser mode.
-assert(!index.includes('comet-render-mode.js'), 'legacy renderer shim must not be loaded by current index');
-assert(!renderMode.includes('Phaser.CANVAS'), 'legacy renderer shim must never force Canvas');
-assert(!renderMode.includes('Phaser.Game ='), 'legacy renderer shim must not patch Phaser.Game');
-assert(renderMode.includes('LEGACY_NOOP'), 'legacy renderer URL should remain an explicit no-op for stale cached indexes');
+// The remaining RGB/rainbow rectangle corruption reproduced on unrelated transparent PNGs
+// (Atom and Saturn), so iOS/iPadOS Home Screen mode now avoids the WebGL texture path entirely.
+assert(index.includes('comet-render-mode.js?v=2'), 'iOS renderer guard must be loaded');
+assert(index.indexOf('comet-render-mode.js?v=2') < index.indexOf('comet-game.js'), 'renderer guard must load before Phaser.Game is created');
+assert(renderMode.includes('window.COMET_STANDALONE'), 'renderer override must be standalone-only');
+assert(renderMode.includes('/iPad|iPhone|iPod/i'), 'renderer override must be iOS-targeted');
+assert(renderMode.includes("platform === 'MacIntel'"), 'renderer override must cover modern iPadOS user agents');
+assert(renderMode.includes('type: Phaser.CANVAS'), 'iOS Home Screen mode must use Canvas to avoid WebGL sprite corruption');
+assert(renderMode.includes('...config'), 'renderer override must preserve the existing Phaser config and Scale.FIT settings');
 
 // Force fresh PWA copies of files involved in the latest sprite stability work.
 for (const src of [
   'assets/sprites/sprite-manifest.js?v=8',
+  'comet-render-mode.js?v=2',
   'comet-family-lod-policy.js?v=5',
   'comet-named-visuals.js?v=4',
   'comet-sprite-stability.js?v=3'
@@ -35,17 +40,16 @@ assert(!familyPolicy.includes('MAX_SAFE_SPRITE_SCALE'), 'large fixed-LOD sprites
 assert(!namedVisuals.includes('MAX_SAFE_NAMED_SCALE'), 'large named sprites must not revert to generic/prototype graphics');
 assert(familyPolicy.includes('Only a genuinely missing/bad texture falls back'), 'fallback policy should be missing-texture only');
 
-// PWA mode keeps source sprite transforms simple to reduce iOS corruption.
+// Standalone sprite transforms remain conservative as a second layer of protection.
 assert(familyPolicy.includes('isStandaloneSafeMode()'), 'standalone safe transform mode missing');
 assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.tintEnabled) return null'), 'standalone tint disable missing');
 assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.allowRotation) return 0'), 'standalone rotation disable missing');
 assert(familyPolicy.includes('!isStandaloneSafeMode() && def.allowFlip'), 'standalone flip disable missing');
 
-// Atom must use the already-hardened source PNG directly. Runtime CanvasTextures were implicated in
-// the remaining Home Screen-only rainbow rectangle corruption and must not be recreated.
+// Atom uses its already-hardened source PNG directly; no runtime CanvasTexture conversion.
 for (const variant of ['atom_01', 'atom_02', 'atom_03']) {
   const re = new RegExp(`${variant}:\\s+\\{ family: 'atomic',\\s+lods: \\[32, 64\\], version: 4 \\}`);
-  assert(re.test(manifest), `${variant} must be cache-busted to version 4`);
+  assert(re.test(manifest), `${variant} must remain cache-busted to version 4`);
 }
 assert(!familyPolicy.includes('scene.textures.createCanvas'), 'Atom renderer must not create runtime CanvasTextures');
 assert(!familyPolicy.includes('standalone-hard-alpha'), 'legacy Atom CanvasTexture key must be removed');
