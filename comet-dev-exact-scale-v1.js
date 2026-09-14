@@ -1,9 +1,10 @@
-// DEV scale fidelity patch.
-// The collision lab must show the same display radii as the live SCALE REVEAL, not a normalized
-// side-by-side comparison. That makes it useful for judging whether sprites are distinguishable in play.
+// DEV scale behaviour patch.
+// Selection screen mirrors the real APPROACH phase: both objects have the same apparent size.
+// After an action is chosen, the DEV result can still show the true reveal scale for testing.
 (() => {
   const baseShowDevLab = GameScene.prototype.showDevLab;
   const baseShowDevResult = GameScene.prototype.showDevResult;
+  const DEV_APPROACH_RADIUS = 16; // Matches live approach: 32px displayed diameter.
 
   function destroyTrackedPreview(scene) {
     (scene._devPreviewObjects || []).forEach(object => {
@@ -28,19 +29,16 @@
     displayObject.setScale(diameter / visualDiameter);
   }
 
-  // Override the normalized DEV preview with the canonical production reveal sizing function.
+  // Selector preview uses identical apparent size for every tier/object, just like gameplay APPROACH.
   GameScene.prototype.refreshDevPreview = function () {
     if (!this._devModeActive || this.state !== 'DEV_LAB' || !this._devObjectA || !this._devObjectB) return;
     destroyTrackedPreview(this);
 
     const a = this._devObjectA;
     const b = this._devObjectB;
-    const sizing = this.getRevealDisplayRadii(a, b);
 
-    // Keep the selector screen side-by-side for usability, but use the EXACT radii the live game
-    // will use after SCALE REVEAL. No extra fit-to-preview or normalization is applied here.
-    track(this, this.drawObject(105, this.Y(323), sizing.playerRadius, a, false, false));
-    track(this, this.drawObject(315, this.Y(323), sizing.otherRadius, b, false, false));
+    track(this, this.drawObject(105, this.Y(323), DEV_APPROACH_RADIUS, a, false, false));
+    track(this, this.drawObject(315, this.Y(323), DEV_APPROACH_RADIUS, b, false, false));
 
     track(this, this.addText(105, this.Y(454), a.realName, 8.2, C.green, {
       ox: .5, bold: true, align: 'center', width: 180
@@ -49,28 +47,29 @@
       ox: .5, bold: true, align: 'center', width: 180
     }));
 
-    track(this, this.addText(105, this.Y(476), `GAME Ø ${Math.round(sizing.playerRadius * 2)} px`, 7.1, C.muted, {
+    track(this, this.addText(105, this.Y(476), 'APPROACH Ø 32 px', 7.1, C.muted, {
       ox: .5, bold: true, align: 'center', width: 180
     }));
-    track(this, this.addText(315, this.Y(476), `GAME Ø ${Math.round(sizing.otherRadius * 2)} px`, 7.1, C.muted, {
+    track(this, this.addText(315, this.Y(476), 'APPROACH Ø 32 px', 7.1, C.muted, {
       ox: .5, bold: true, align: 'center', width: 180
     }));
   };
 
   GameScene.prototype.showDevLab = function () {
     const result = baseShowDevLab.call(this);
-
-    // Make the screen explicit about what is being tested.
     (this.ui?.list || []).forEach(child => {
       if (!child || typeof child.text !== 'string') return;
-      if (child.text === 'RELATIVE SCALE PREVIEW') child.setText('EXACT IN-GAME REVEAL SIZE');
-      if (child.text === 'SELECT TWO OBJECTS • SIZES ARE AUTO-GENERATED') {
-        child.setText('SELECT TWO OBJECTS • LIVE GAME SCALE');
+      if (child.text === 'RELATIVE SCALE PREVIEW' || child.text === 'EXACT IN-GAME REVEAL SIZE') {
+        child.setText('IN-GAME APPROACH SIZE');
+      }
+      if (child.text === 'SELECT TWO OBJECTS • SIZES ARE AUTO-GENERATED' || child.text === 'SELECT TWO OBJECTS • LIVE GAME SCALE') {
+        child.setText('SELECT TWO OBJECTS • SAME APPARENT SIZE');
       }
     });
     return result;
   };
 
+  // Keep the DEV post-choice result faithful to the real SCALE REVEAL.
   GameScene.prototype.showDevResult = function () {
     const result = baseShowDevResult.call(this);
     if (!this.player || !this.other) return result;
