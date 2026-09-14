@@ -17,9 +17,9 @@ assert(renderMode.includes('LEGACY_NOOP'), 'legacy renderer URL should remain an
 
 // Force fresh PWA copies of files involved in the latest sprite stability work.
 for (const src of [
-  'assets/sprites/sprite-manifest.js?v=4',
-  'comet-family-lod-policy.js?v=4',
-  'comet-named-visuals.js?v=3',
+  'assets/sprites/sprite-manifest.js?v=8',
+  'comet-family-lod-policy.js?v=5',
+  'comet-named-visuals.js?v=4',
   'comet-sprite-stability.js?v=3'
 ]) {
   assert(index.includes(src), `${src} cache bust missing`);
@@ -35,21 +35,21 @@ assert(!familyPolicy.includes('MAX_SAFE_SPRITE_SCALE'), 'large fixed-LOD sprites
 assert(!namedVisuals.includes('MAX_SAFE_NAMED_SCALE'), 'large named sprites must not revert to generic/prototype graphics');
 assert(familyPolicy.includes('Only a genuinely missing/bad texture falls back'), 'fallback policy should be missing-texture only');
 
-// PWA mode keeps source sprite pixels simple to reduce iOS transform corruption.
+// PWA mode keeps source sprite transforms simple to reduce iOS corruption.
 assert(familyPolicy.includes('isStandaloneSafeMode()'), 'standalone safe transform mode missing');
 assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.tintEnabled) return null'), 'standalone tint disable missing');
 assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.allowRotation) return 0'), 'standalone rotation disable missing');
 assert(familyPolicy.includes('!isStandaloneSafeMode() && def.allowFlip'), 'standalone flip disable missing');
 
-// Atom textures get a fresh request and are converted to hard-alpha CanvasTextures only in standalone mode.
+// Atom must use the already-hardened source PNG directly. Runtime CanvasTextures were implicated in
+// the remaining Home Screen-only rainbow rectangle corruption and must not be recreated.
 for (const variant of ['atom_01', 'atom_02', 'atom_03']) {
-  const re = new RegExp(`${variant}:\\s+\\{ family: 'atomic',\\s+lods: \\[32, 64\\], version: 3 \\}`);
-  assert(re.test(manifest), `${variant} must be cache-busted to version 3`);
+  const re = new RegExp(`${variant}:\\s+\\{ family: 'atomic',\\s+lods: \\[32, 64\\], version: 4 \\}`);
+  assert(re.test(manifest), `${variant} must be cache-busted to version 4`);
 }
-assert(familyPolicy.includes("def.visualFamily !== 'atomic'"), 'Atom-only standalone hard-alpha guard missing');
-assert(familyPolicy.includes('scene.textures.createCanvas'), 'Atom hard-alpha CanvasTexture creation missing');
-assert(familyPolicy.includes('data[i + 3] < 128'), 'Atom alpha threshold missing');
-assert(familyPolicy.includes('data[i + 3] = 255'), 'Atom opaque alpha normalization missing');
+assert(!familyPolicy.includes('scene.textures.createCanvas'), 'Atom renderer must not create runtime CanvasTextures');
+assert(!familyPolicy.includes('standalone-hard-alpha'), 'legacy Atom CanvasTexture key must be removed');
+assert(familyPolicy.includes('this.add.image(0, 0, key)'), 'fixed-LOD renderer should use the original loaded texture directly');
 
 // Corrected rock/comet packs remain cache-busted so Home Screen mode cannot reuse bad image bytes.
 for (const [family, variants] of Object.entries({
