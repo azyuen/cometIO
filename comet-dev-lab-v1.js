@@ -313,7 +313,10 @@
     const ys = [this.Y(302), this.Y(374), this.Y(446)];
     let digit = 1;
     ys.forEach(y => {
-      xs.forEach(x => pinKey(this, x, y, String(digit++), () => enterDigit(digit - 1)));
+      xs.forEach(x => {
+        const value = digit++;
+        pinKey(this, x, y, String(value), () => enterDigit(value));
+      });
     });
     pinKey(this, xs[0], this.Y(518), 'CLEAR', clear, C.muted);
     pinKey(this, xs[1], this.Y(518), '0', () => enterDigit(0));
