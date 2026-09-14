@@ -115,22 +115,22 @@ const COMET_SPRITE_ASSETS = {
   pulsar_b1509:         { family: 'pulsar', lods: [32, 64], version: 1 },
 
   // Stellar-mass BLACK HOLE.
-  blackHole_01:             { family: 'blackHole', lods: [] },
-  blackHole_02:             { family: 'blackHole', lods: [] },
-  blackHole_mystery_01:     { family: 'blackHole', lods: [] },
-  blackHole_cygnusX1:       { family: 'blackHole', lods: [] },
-  blackHole_v404Cygni:      { family: 'blackHole', lods: [] },
-  blackHole_gaiaBH1:        { family: 'blackHole', lods: [] },
-  blackHole_maxiJ1820_070:  { family: 'blackHole', lods: [] },
+  blackHole_01:             { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_02:             { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_mystery_01:     { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_cygnusX1:       { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_v404Cygni:      { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_gaiaBH1:        { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_maxiJ1820_070:  { family: 'blackHole', lods: [32, 64], version: 1 },
 
   // SUPER MASSIVE BLACK HOLE generic/mystery + named endgame identities.
-  smbh_01:             { family: 'blackHole', lods: [] },
-  smbh_02:             { family: 'blackHole', lods: [] },
+  smbh_01:             { family: 'blackHole', lods: [], version: 1 },
+  smbh_02:             { family: 'blackHole', lods: [], version: 1 },
   smbh_mystery_01:     { family: 'blackHole', lods: [] },
-  smbh_sagittariusA:   { family: 'blackHole', lods: [] },
-  smbh_m87:            { family: 'blackHole', lods: [] },
-  smbh_ton618:         { family: 'blackHole', lods: [] },
-  smbh_ngc4889:        { family: 'blackHole', lods: [] }
+  smbh_sagittariusA:   { family: 'blackHole', lods: [32, 64], version: 1 },
+  smbh_m87:            { family: 'blackHole', lods: [32, 64], version: 1 },
+  smbh_ton618:         { family: 'blackHole', lods: [32, 64], version: 1 },
+  smbh_ngc4889:        { family: 'blackHole', lods: [32, 64], version: 1 },
 };
 
 function cometSpriteTextureKey(variant, lod) {
