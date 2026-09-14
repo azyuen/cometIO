@@ -124,9 +124,9 @@ const COMET_SPRITE_ASSETS = {
   blackHole_maxiJ1820_070:  { family: 'blackHole', lods: [32, 64], version: 1 },
 
   // SUPER MASSIVE BLACK HOLE generic/mystery + named endgame identities.
-  smbh_01:             { family: 'blackHole', lods: [], version: 1 },
-  smbh_02:             { family: 'blackHole', lods: [], version: 1 },
-  smbh_mystery_01:     { family: 'blackHole', lods: [] },
+  smbh_01:             { family: 'blackHole', lods: [32, 64], version: 1 },
+  smbh_02:             { family: 'blackHole', lods: [32, 64], version: 1 },
+  smbh_mystery_01:     { family: 'blackHole', lods: [32, 64], version: 1 },
   smbh_sagittariusA:   { family: 'blackHole', lods: [32, 64], version: 1 },
   smbh_m87:            { family: 'blackHole', lods: [32, 64], version: 1 },
   smbh_ton618:         { family: 'blackHole', lods: [32, 64], version: 1 },
