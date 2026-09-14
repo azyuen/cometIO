@@ -1,11 +1,17 @@
 // Unique named-object collection system.
-// - A named identity can reappear after DEFLECT/AVOID, but never after it has been successfully ABSORBED in this run.
+// Collection phase begins at DWARF PLANET. Named comets remain flavour encounters and can repeat.
+// - A collectible named identity can reappear after DEFLECT/AVOID, but never after successful ABSORB.
 // - Collection state follows manual/autosaves and rolls back with a loaded checkpoint.
 // - High-score entries keep an immutable collection snapshot.
-// - First-time named absorbs award a modest score bonus.
+// - First-time collectible absorbs award a modest score bonus.
 (() => {
   const UNIQUE_COLLECTION_BONUS = 200;
-  const TOTAL_UNIQUE_OBJECTS = Array.isArray(COMET_NAMED_IDENTITIES) ? COMET_NAMED_IDENTITIES.length : 0;
+  const COLLECTION_TIER_ORDER = Array.isArray(COMET_COLLECTIBLE_TIER_ORDER)
+    ? [...COMET_COLLECTIBLE_TIER_ORDER]
+    : [];
+  const TOTAL_UNIQUE_OBJECTS = Array.isArray(COMET_COLLECTIBLE_IDENTITIES)
+    ? COMET_COLLECTIBLE_IDENTITIES.length
+    : 0;
 
   const baseResetRun = GameScene.prototype.resetRun;
   const baseSave = GameScene.prototype.save;
@@ -29,11 +35,16 @@
     const seen = new Set();
     const out = [];
     for (const id of Array.isArray(ids) ? ids : []) {
-      if (!COMET_IDENTITY_BY_ID[id] || seen.has(id)) continue;
+      // This intentionally removes legacy comet IDs from saves/high-score collection snapshots.
+      if (!COMET_COLLECTIBLE_BY_ID[id] || seen.has(id)) continue;
       seen.add(id);
       out.push(id);
     }
     return out;
+  }
+
+  function collectionBonusForIds(ids) {
+    return validIdentityIds(ids).length * UNIQUE_COLLECTION_BONUS;
   }
 
   function sceneCollection(scene) {
@@ -57,7 +68,7 @@
       const ids = validIdentityIds(data.collectedIdentityIds);
       return {
         ids,
-        bonus: integerOrZero(data.collectionBonusScore) || ids.length * UNIQUE_COLLECTION_BONUS,
+        bonus: collectionBonusForIds(ids),
         recorded: Array.isArray(data.collectedIdentityIds)
       };
     } catch (e) {
@@ -81,8 +92,8 @@
     delete object.namedSpriteBase;
     delete object.scienceClass;
     delete object.identityStatus;
-    // Do not fall back to tier examples here: those examples can themselves be real named objects.
-    // Once the named pool is exhausted this is deliberately an anonymous/generic encounter.
+    // Tier examples can themselves be named objects, so exhausted collectible pools deliberately
+    // become anonymous/generic encounters rather than silently reusing a collected identity.
     object.realName = object.name;
     return object;
   }
@@ -92,9 +103,10 @@
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return true;
       const data = JSON.parse(raw);
-      data.version = Math.max(5, integerOrZero(data.version));
-      data.collectedIdentityIds = [...sceneCollection(scene)];
-      data.collectionBonusScore = integerOrZero(scene.collectionBonusScore);
+      const ids = [...sceneCollection(scene)];
+      data.version = Math.max(6, integerOrZero(data.version));
+      data.collectedIdentityIds = ids;
+      data.collectionBonusScore = collectionBonusForIds(ids);
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
       return true;
     } catch (e) {
@@ -102,15 +114,13 @@
     }
   }
 
-  function collectionDisplayName(identity) {
-    if (!identity) return 'UNKNOWN';
-    if (identity.id === 'comet_67p') return '67P / CHURYUMOV';
-    return identity.name;
+  function tierCollection(tierName) {
+    return COMET_COLLECTIBLE_IDENTITIES.filter(identity => identity.gameplayTiers.includes(tierName));
   }
 
-  function collectionBonusFor(scene, ids) {
-    const stored = integerOrZero(scene?.collectionBonusScore);
-    return stored || ids.length * UNIQUE_COLLECTION_BONUS;
+  function clampCollectionPage(value) {
+    const max = Math.max(0, COLLECTION_TIER_ORDER.length - 1);
+    return Math.max(0, Math.min(max, integerOrZero(value)));
   }
 
   // Clear collection BEFORE the underlying reset starts its first encounter, otherwise the first
@@ -122,11 +132,12 @@
     return baseResetRun.call(this);
   };
 
-  // The existing save module remains authoritative for normal run/checkpoint data. We add the
-  // collection fields immediately afterwards so old saves remain backward compatible.
+  // Existing save logic remains authoritative for the normal checkpoint. We append collection data
+  // afterwards so older save files remain compatible.
   GameScene.prototype.save = function (silent = false) {
     const result = baseSave.call(this, silent);
     if (result === false) return false;
+    this.collectionBonusScore = collectionBonusForIds(sceneCollection(this));
     return persistCollectionIntoSave(this) ? result : false;
   };
 
@@ -134,22 +145,20 @@
     const previousIds = [...sceneCollection(this)];
     const previousBonus = integerOrZero(this.collectionBonusScore);
     let savedIds = [];
-    let savedBonus = 0;
 
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (raw) {
         const data = JSON.parse(raw);
         savedIds = validIdentityIds(data.collectedIdentityIds);
-        savedBonus = integerOrZero(data.collectionBonusScore) || savedIds.length * UNIQUE_COLLECTION_BONUS;
       }
     } catch (e) {
       // Let the existing load path report corruption.
     }
 
-    // Set this before baseLoad(), because baseLoad immediately starts a new encounter.
+    // baseLoad() immediately starts a new encounter, so exclusions must exist before it runs.
     this.collectedIdentityIds = savedIds;
-    this.collectionBonusScore = savedBonus;
+    this.collectionBonusScore = collectionBonusForIds(savedIds);
     const result = baseLoad.call(this);
 
     if (result === false) {
@@ -159,48 +168,54 @@
     }
 
     this.collectedIdentityIds = savedIds;
-    this.collectionBonusScore = savedBonus;
+    this.collectionBonusScore = collectionBonusForIds(savedIds);
     persistCollectionIntoSave(this);
     return result;
   };
 
-  // Identity-runtime currently assigns a named identity whenever an eligible tier is rolled.
-  // Keep that behaviour, but replace an already-collected identity with an uncollected one from
-  // the same tier. If the entire named pool has been collected, the encounter becomes generic.
+  // Named comets and any other non-collectible flavour identities are intentionally untouched.
+  // For collectible tiers, replace an already-absorbed identity with an uncollected one from the
+  // same tier. When the named collectible pool is exhausted, the encounter becomes generic.
   GameScene.prototype.pickOpponent = function () {
     const object = basePickOpponent.call(this);
     if (!object?.identityId) return object;
 
+    const identity = getCometNamedIdentity(object.identityId);
+    if (!identity?.collectible) return object;
+
     const collected = new Set(sceneCollection(this));
     if (!collected.has(object.identityId)) return object;
 
-    const available = cometIdentityPoolForTier(object.name).filter(identity => !collected.has(identity.id));
+    const available = cometCollectiblePoolForTier(object.name).filter(candidate => !collected.has(candidate.id));
     if (!available.length) return stripNamedIdentity(object);
 
     return assignIdentity(object, available[Math.floor(Math.random() * available.length)]);
   };
 
-  // Register the collectible and its bonus before the normal resolver runs. The normal resolver
-  // then includes the bonus in the HUD/result score and its autosave captures the new collection.
+  // Register the collectible and bonus before the normal resolver. The resolver then includes the
+  // bonus in the result/HUD and its autosave captures the newly collected identity.
   GameScene.prototype.resolve = function () {
     this._lastCollectionPickup = null;
     const pending = this.pending;
     const identityId = this.other?.identityId;
+    const identity = getCometNamedIdentity(identityId);
     const collected = sceneCollection(this);
 
-    if (pending?.success && pending.choice === 'ABSORB' && identityId && !collected.includes(identityId)) {
-      const identity = getCometNamedIdentity(identityId);
-      if (identity) {
-        collected.push(identityId);
-        this.collectedIdentityIds = validIdentityIds(collected);
-        this.collectionBonusScore = integerOrZero(this.collectionBonusScore) + UNIQUE_COLLECTION_BONUS;
-        this.score = numberOrZero(this.score) + UNIQUE_COLLECTION_BONUS;
-        this._lastCollectionPickup = {
-          id: identityId,
-          name: identity.name,
-          bonus: UNIQUE_COLLECTION_BONUS
-        };
-      }
+    if (
+      pending?.success &&
+      pending.choice === 'ABSORB' &&
+      identity?.collectible &&
+      !collected.includes(identityId)
+    ) {
+      collected.push(identityId);
+      this.collectedIdentityIds = validIdentityIds(collected);
+      this.collectionBonusScore = collectionBonusForIds(this.collectedIdentityIds);
+      this.score = numberOrZero(this.score) + UNIQUE_COLLECTION_BONUS;
+      this._lastCollectionPickup = {
+        id: identityId,
+        name: identity.name,
+        bonus: UNIQUE_COLLECTION_BONUS
+      };
     }
 
     return baseResolve.call(this);
@@ -222,8 +237,7 @@
     return value;
   };
 
-  // Replace the score writer so every new leaderboard entry freezes the collection that belonged
-  // to that exact run. This survives the live save being overwritten/deleted later.
+  // Every new leaderboard entry freezes the collectible snapshot belonging to that exact run.
   GameScene.prototype.saveScoreAs = function (name) {
     if (!this.qualifies()) return;
 
@@ -233,6 +247,7 @@
     const deflects = history.filter(x => x === 'DEFLECT').length;
     const avoids = history.filter(x => x === 'AVOID').length;
     const collection = [...sceneCollection(this)];
+    const collectionBonusScore = collectionBonusForIds(collection);
 
     scores.push({
       name: String(name || 'PLAYER').trim().slice(0, 12).toUpperCase() || 'PLAYER',
@@ -246,7 +261,7 @@
       loads: integerOrZero(this.manualLoads),
       scorePenalty: integerOrZero(this.scorePenalty),
       collection,
-      collectionBonusScore: integerOrZero(this.collectionBonusScore),
+      collectionBonusScore,
       date: Date.now()
     });
 
@@ -254,16 +269,21 @@
     localStorage.setItem(SCORES_KEY, JSON.stringify(scores.slice(0, 5)));
   };
 
+  // The catalogue is paged by gameplay tier. This keeps 44 collectibles readable on a 420px-wide
+  // portrait screen and makes the Dwarf Planet tier feel like the start of a new game phase.
   GameScene.prototype.showCollection = function (options = {}) {
     const score = options.score || null;
     const saved = options.saved || null;
     const returnTo = options.returnTo || 'home';
+    const page = clampCollectionPage(options.page);
+    const tierName = COLLECTION_TIER_ORDER[page] || 'DWARF PLANET';
+    const tierItems = tierCollection(tierName);
+
     const recorded = score ? hasRecordedCollection(score) : (saved ? saved.recorded : true);
     const ids = score ? scoreCollection(score) : (saved ? saved.ids : [...sceneCollection(this)]);
     const collected = new Set(ids);
-    const bonus = score
-      ? (integerOrZero(score.collectionBonusScore) || ids.length * UNIQUE_COLLECTION_BONUS)
-      : (saved ? saved.bonus : collectionBonusFor(this, ids));
+    const bonus = collectionBonusForIds(ids);
+    const tierOwned = tierItems.filter(identity => collected.has(identity.id)).length;
 
     this.clearUI();
     this.state = 'COLLECTION';
@@ -275,35 +295,51 @@
       this.addText(W / 2, this.Y(72), `${ids.length} / ${TOTAL_UNIQUE_OBJECTS} UNIQUE OBJECTS`, 9.5, C.cyan, { ox: .5, bold: true });
       this.addText(W / 2, this.Y(95), `COLLECTION SCORE BONUS +${bonus.toLocaleString('en-US')}`, 8.4, C.green, { ox: .5, bold: true });
     } else {
-      this.addText(W / 2, this.Y(78), 'COLLECTION WAS NOT RECORDED FOR THIS LEGACY SAVE', 7.8, C.muted, { ox: .5, bold: true, width: 360, align: 'center' });
+      this.addText(W / 2, this.Y(82), 'COLLECTION WAS NOT RECORDED FOR THIS LEGACY SAVE', 7.8, C.muted, { ox: .5, bold: true, width: 360, align: 'center' });
     }
 
     const panel = this.add.graphics();
-    panel.fillStyle(C.panel, .97).fillRoundedRect(16, this.Y(122), 388, 568, 10);
-    panel.lineStyle(1.5, C.cyan, .5).strokeRoundedRect(16, this.Y(122), 388, 568, 10);
+    panel.fillStyle(C.panel, .97).fillRoundedRect(16, this.Y(122), 388, 560, 10);
+    panel.lineStyle(1.5, C.cyan, .5).strokeRoundedRect(16, this.Y(122), 388, 560, 10);
     this.ui.add(panel);
 
-    const rowsPerColumn = Math.ceil(TOTAL_UNIQUE_OBJECTS / 2);
-    COMET_NAMED_IDENTITIES.forEach((identity, index) => {
-      const col = Math.floor(index / rowsPerColumn);
-      const row = index % rowsPerColumn;
-      const x = col === 0 ? 31 : 222;
-      const y = this.Y(148 + row * 45);
+    this.addText(W / 2, this.Y(143), tierName, 11.5, C.white, { ox: .5, bold: true });
+    this.addText(
+      W / 2,
+      this.Y(168),
+      recorded ? `${tierOwned} / ${tierItems.length} FOUND  •  TIER ${page + 1}/${COLLECTION_TIER_ORDER.length}` : `TIER ${page + 1}/${COLLECTION_TIER_ORDER.length}`,
+      7.7,
+      C.muted,
+      { ox: .5, bold: true }
+    );
+
+    tierItems.forEach((identity, index) => {
+      const y = this.Y(205 + index * 51);
       const owned = recorded && collected.has(identity.id);
       const slot = String(index + 1).padStart(2, '0');
-      const label = owned ? collectionDisplayName(identity) : 'UNKNOWN';
-      this.addText(
-        x,
-        y,
-        `${slot}  ${owned ? '◆' : '◇'}  ${label}`,
-        owned ? 7.4 : 7.1,
-        owned ? C.green : C.muted,
-        { bold: owned, width: 171 }
-      );
+      const label = owned ? identity.name : 'UNKNOWN';
+      this.addText(34, y, `${slot}  ${owned ? '◆' : '◇'}  ${label}`, owned ? 8.4 : 8, owned ? C.green : C.muted, {
+        bold: owned,
+        width: 350
+      });
+      if (owned) {
+        this.addText(64, y + 20, identity.scienceClass, 6.6, C.muted, { width: 320 });
+      }
     });
 
+    if (page > 0) {
+      this.miniButton(92, this.Y(655), 130, 30, '◀ PREVIOUS', C.cyan, () => {
+        this.showCollection({ score, saved, returnTo, page: page - 1 });
+      });
+    }
+    if (page < COLLECTION_TIER_ORDER.length - 1) {
+      this.miniButton(328, this.Y(655), 130, 30, 'NEXT ▶', C.cyan, () => {
+        this.showCollection({ score, saved, returnTo, page: page + 1 });
+      });
+    }
+
     if (!score && recorded) {
-      this.addText(W / 2, this.Y(714), 'SUCCESSFULLY ABSORB A NAMED OBJECT TO ADD IT', 7.5, C.muted, { ox: .5, bold: true });
+      this.addText(W / 2, this.Y(714), 'COLLECTIONS BEGIN AT DWARF PLANET', 7.5, C.muted, { ox: .5, bold: true });
     } else if (score && recorded) {
       this.addText(W / 2, this.Y(714), `FINAL SCORE ${numberOrZero(score.score).toLocaleString('en-US')}`, 7.8, C.muted, { ox: .5, bold: true });
     }
@@ -326,7 +362,7 @@
       24,
       `COLLECTION ${ids.length}/${TOTAL_UNIQUE_OBJECTS}`,
       C.cyan,
-      () => this.showCollection({ returnTo: 'home', saved })
+      () => this.showCollection({ returnTo: 'home', saved, page: 0 })
     );
     return result;
   };
@@ -354,7 +390,7 @@
       );
 
       const hit = this.add.rectangle(210, y + 10, 388, 106, 0xffffff, .001).setInteractive({ useHandCursor: true });
-      hit.on('pointerdown', () => this.showCollection({ score, returnTo }));
+      hit.on('pointerdown', () => this.showCollection({ score, returnTo, page: 0 }));
       this.ui.add(hit);
     });
 
@@ -364,7 +400,8 @@
   GameScene.prototype.collectionRules = function () {
     return {
       uniqueBonus: UNIQUE_COLLECTION_BONUS,
-      totalUniqueObjects: TOTAL_UNIQUE_OBJECTS
+      totalUniqueObjects: TOTAL_UNIQUE_OBJECTS,
+      collectibleTiers: [...COLLECTION_TIER_ORDER]
     };
   };
 })();

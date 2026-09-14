@@ -19,7 +19,6 @@ const COMET_VISUAL_FAMILIES = {
     sharedVariants: ['atom_01', 'atom_02', 'atom_03'],
     fixedLods: { mystery: 32, normal: 64 },
     lodByDisplayedSize: true,
-    // Near-neutral multipliers keep the clustered nucleon artwork natural and early-game ambiguous.
     tintEnabled: true,
     tintPalette: [0xffffff, 0xe7e8e6, 0xdce3e6, 0xe7e2d9, 0xd7d9d7, 0xe9e8e2],
     mysteryTintPalette: [0xe7e8e6, 0xdce3e6, 0xe7e2d9, 0xe9e8e2],
@@ -27,7 +26,6 @@ const COMET_VISUAL_FAMILIES = {
     rotationStep: 90,
     allowFlip: true,
     alphaRange: [1, 1],
-    // The replacement Atom art is deliberately just the compact blob cluster: no orbit/halo FX.
     effects: { back: null, front: null }
   },
   dust: {
@@ -103,6 +101,8 @@ const COMET_VISUAL_FAMILIES = {
   },
   star: {
     collisionFamily: 'stellar',
+    // Legacy family-level placeholders remain as a procedural fallback path. Each stellar tier below
+    // overrides these with its own generic/mystery pool so uploaded art can be visually distinct.
     normalVariants: ['star_01', 'star_02'],
     mysteryVariants: ['star_mystery_01'],
     tintEnabled: true,
@@ -115,7 +115,7 @@ const COMET_VISUAL_FAMILIES = {
   },
   nebula: {
     collisionFamily: 'nebular',
-    normalVariants: ['nebula_01'],
+    normalVariants: ['nebula_01', 'nebula_02'],
     mysteryVariants: ['nebula_mystery_01'],
     tintEnabled: false,
     tintPalette: [],
@@ -127,7 +127,7 @@ const COMET_VISUAL_FAMILIES = {
   },
   pulsar: {
     collisionFamily: 'pulsar',
-    normalVariants: ['pulsar_01'],
+    normalVariants: ['pulsar_01', 'pulsar_02'],
     mysteryVariants: ['pulsar_mystery_01'],
     tintEnabled: false,
     tintPalette: [],
@@ -139,7 +139,7 @@ const COMET_VISUAL_FAMILIES = {
   },
   blackHole: {
     collisionFamily: 'blackHole',
-    normalVariants: ['blackHole_01'],
+    normalVariants: ['blackHole_01', 'blackHole_02'],
     mysteryVariants: ['blackHole_mystery_01'],
     tintEnabled: false,
     tintPalette: [],
@@ -162,13 +162,47 @@ const COMET_OBJECT_VISUALS = {
   'DWARF PLANET': { visualFamily: 'rockyPlanet' },
   'ROCKY PLANET': { visualFamily: 'rockyPlanet' },
   'GAS PLANET': { visualFamily: 'gasPlanet' },
-  'YELLOW DWARF STAR': { visualFamily: 'star', tintPalette: [0xffd766, 0xffe69a, 0xffefb7] },
-  'BLUE GIANT STAR': { visualFamily: 'star', tintPalette: [0x9ed7ff, 0xc1e6ff, 0xe0f3ff] },
-  'RED HYPERGIANT STAR': { visualFamily: 'star', tintPalette: [0xff765e, 0xff9a70, 0xffb078] },
-  'NEBULA': { visualFamily: 'nebula' },
-  'PULSAR': { visualFamily: 'pulsar' },
-  'BLACK HOLE': { visualFamily: 'blackHole' },
-  'SUPER MASSIVE BLACK HOLE': { visualFamily: 'blackHole' }
+
+  // Tier-specific generic pools are reserved now. Until their PNGs are uploaded/activated in the
+  // manifest, the existing renderer simply falls back to the proven procedural art.
+  'YELLOW DWARF STAR': {
+    visualFamily: 'star',
+    normalVariants: ['yellowDwarf_01', 'yellowDwarf_02'],
+    mysteryVariants: ['yellowDwarf_mystery_01'],
+    tintPalette: [0xffd766, 0xffe69a, 0xffefb7]
+  },
+  'BLUE GIANT STAR': {
+    visualFamily: 'star',
+    normalVariants: ['blueGiant_01', 'blueGiant_02'],
+    mysteryVariants: ['blueGiant_mystery_01'],
+    tintPalette: [0x9ed7ff, 0xc1e6ff, 0xe0f3ff]
+  },
+  'RED HYPERGIANT STAR': {
+    visualFamily: 'star',
+    normalVariants: ['redHypergiant_01', 'redHypergiant_02'],
+    mysteryVariants: ['redHypergiant_mystery_01'],
+    tintPalette: [0xff765e, 0xff9a70, 0xffb078]
+  },
+  'NEBULA': {
+    visualFamily: 'nebula',
+    normalVariants: ['nebula_01', 'nebula_02'],
+    mysteryVariants: ['nebula_mystery_01']
+  },
+  'PULSAR': {
+    visualFamily: 'pulsar',
+    normalVariants: ['pulsar_01', 'pulsar_02'],
+    mysteryVariants: ['pulsar_mystery_01']
+  },
+  'BLACK HOLE': {
+    visualFamily: 'blackHole',
+    normalVariants: ['blackHole_01', 'blackHole_02'],
+    mysteryVariants: ['blackHole_mystery_01']
+  },
+  'SUPER MASSIVE BLACK HOLE': {
+    visualFamily: 'blackHole',
+    normalVariants: ['smbh_01', 'smbh_02'],
+    mysteryVariants: ['smbh_mystery_01']
+  }
 };
 
 function getCometVisualDefinition(object) {

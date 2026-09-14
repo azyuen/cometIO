@@ -1,5 +1,7 @@
 // Sprite asset manifest.
-// Only LODs listed here are preloaded. Missing textures still fall back procedurally.
+// Only LODs listed here are preloaded. Missing/future textures keep lods: [] so the renderer falls
+// back procedurally without generating 404s. When a 32/64 PNG pair is uploaded, switch that entry
+// to lods: [32, 64] and bump its version.
 
 const COMET_SPRITE_ASSETS = {
   // v3 forces a fresh Atom image fetch; Home Screen mode also hardens Atom alpha in memory.
@@ -25,7 +27,7 @@ const COMET_SPRITE_ASSETS = {
   comet_03:             { family: 'comet',       lods: [32, 64], version: 3 },
   comet_mystery_01:     { family: 'comet',       lods: [] },
 
-  // Named comet reveal art. Leave lods empty until each PNG is supplied.
+  // Named comet reveal art. Named comets are not part of the collectible phase.
   comet_halley:         { family: 'comet',       lods: [] },
   comet_tempel1:        { family: 'comet',       lods: [] },
   comet_borrelly:       { family: 'comet',       lods: [] },
@@ -37,7 +39,7 @@ const COMET_SPRITE_ASSETS = {
   rockyPlanet_02:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
   rockyPlanet_mystery_01:{ family: 'rockyPlanet',lods: [32, 64], version: 1 },
 
-  // Named dwarf-planet reveal art. Mystery/decision stage still uses the generic rocky-planet path.
+  // Named dwarf-planet reveal art — collectible phase begins here.
   dwarf_ceres:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
   dwarf_pluto:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
   dwarf_eris:           { family: 'rockyPlanet', lods: [32, 64], version: 1 },
@@ -53,29 +55,82 @@ const COMET_SPRITE_ASSETS = {
   planet_earth:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
   planet_mars:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
 
+  // Gas/ice giant generic + mystery art and all four named planets are already active.
   gasPlanet_01:         { family: 'gasPlanet',   lods: [32, 64], version: 1 },
   gasPlanet_02:         { family: 'gasPlanet',   lods: [32, 64], version: 1 },
   gasPlanet_mystery_01: { family: 'gasPlanet',   lods: [32, 64], version: 1 },
-
-  // Named giant planet reveal art. Uranus/Neptune are scientifically ice giants but remain in
-  // the existing GAS PLANET gameplay/visual family until a separate ice-giant family is desired.
   planet_jupiter:       { family: 'gasPlanet',   lods: [32, 64], version: 1 },
   planet_saturn:        { family: 'gasPlanet',   lods: [32, 64], version: 1 },
   planet_uranus:        { family: 'gasPlanet',   lods: [32, 64], version: 1 },
   planet_neptune:       { family: 'gasPlanet',   lods: [32, 64], version: 1 },
 
+  // Legacy shared star placeholders remain reserved, but gameplay now points at tier-specific pools.
   star_01:              { family: 'star',        lods: [] },
   star_02:              { family: 'star',        lods: [] },
   star_mystery_01:      { family: 'star',        lods: [] },
 
-  nebula_01:            { family: 'nebula',      lods: [] },
-  nebula_mystery_01:    { family: 'nebula',      lods: [] },
+  // YELLOW DWARF STAR — generic/mystery + four collectible named identities.
+  yellowDwarf_01:              { family: 'star', lods: [] },
+  yellowDwarf_02:              { family: 'star', lods: [] },
+  yellowDwarf_mystery_01:      { family: 'star', lods: [] },
+  yellowDwarf_sun:             { family: 'star', lods: [] },
+  yellowDwarf_alphaCentauriA:  { family: 'star', lods: [] },
+  yellowDwarf_tauCeti:         { family: 'star', lods: [] },
+  yellowDwarf_18Scorpii:       { family: 'star', lods: [] },
 
-  pulsar_01:            { family: 'pulsar',      lods: [] },
-  pulsar_mystery_01:    { family: 'pulsar',      lods: [] },
+  // BLUE GIANT STAR.
+  blueGiant_01:          { family: 'star', lods: [] },
+  blueGiant_02:          { family: 'star', lods: [] },
+  blueGiant_mystery_01:  { family: 'star', lods: [] },
+  blueGiant_rigel:       { family: 'star', lods: [] },
+  blueGiant_spica:       { family: 'star', lods: [] },
+  blueGiant_alnitak:     { family: 'star', lods: [] },
+  blueGiant_bellatrix:   { family: 'star', lods: [] },
 
-  blackHole_01:         { family: 'blackHole',   lods: [] },
-  blackHole_mystery_01: { family: 'blackHole',   lods: [] }
+  // RED HYPERGIANT STAR gameplay tier.
+  redHypergiant_01:              { family: 'star', lods: [] },
+  redHypergiant_02:              { family: 'star', lods: [] },
+  redHypergiant_mystery_01:      { family: 'star', lods: [] },
+  redHypergiant_betelgeuse:      { family: 'star', lods: [] },
+  redHypergiant_vyCanisMajoris:  { family: 'star', lods: [] },
+  redHypergiant_uyScuti:         { family: 'star', lods: [] },
+  redHypergiant_nmlCygni:        { family: 'star', lods: [] },
+
+  // NEBULA.
+  nebula_01:            { family: 'nebula', lods: [] },
+  nebula_02:            { family: 'nebula', lods: [] },
+  nebula_mystery_01:    { family: 'nebula', lods: [] },
+  nebula_orion:         { family: 'nebula', lods: [] },
+  nebula_carina:        { family: 'nebula', lods: [] },
+  nebula_eagle:         { family: 'nebula', lods: [] },
+  nebula_helix:         { family: 'nebula', lods: [] },
+
+  // PULSAR.
+  pulsar_01:            { family: 'pulsar', lods: [] },
+  pulsar_02:            { family: 'pulsar', lods: [] },
+  pulsar_mystery_01:    { family: 'pulsar', lods: [] },
+  pulsar_crab:          { family: 'pulsar', lods: [] },
+  pulsar_vela:          { family: 'pulsar', lods: [] },
+  pulsar_geminga:       { family: 'pulsar', lods: [] },
+  pulsar_b1509:         { family: 'pulsar', lods: [] },
+
+  // Stellar-mass BLACK HOLE.
+  blackHole_01:             { family: 'blackHole', lods: [] },
+  blackHole_02:             { family: 'blackHole', lods: [] },
+  blackHole_mystery_01:     { family: 'blackHole', lods: [] },
+  blackHole_cygnusX1:       { family: 'blackHole', lods: [] },
+  blackHole_v404Cygni:      { family: 'blackHole', lods: [] },
+  blackHole_gaiaBH1:        { family: 'blackHole', lods: [] },
+  blackHole_maxiJ1820_070:  { family: 'blackHole', lods: [] },
+
+  // SUPER MASSIVE BLACK HOLE generic/mystery + named endgame identities.
+  smbh_01:             { family: 'blackHole', lods: [] },
+  smbh_02:             { family: 'blackHole', lods: [] },
+  smbh_mystery_01:     { family: 'blackHole', lods: [] },
+  smbh_sagittariusA:   { family: 'blackHole', lods: [] },
+  smbh_m87:            { family: 'blackHole', lods: [] },
+  smbh_ton618:         { family: 'blackHole', lods: [] },
+  smbh_ngc4889:        { family: 'blackHole', lods: [] }
 };
 
 function cometSpriteTextureKey(variant, lod) {
