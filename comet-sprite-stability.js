@@ -40,14 +40,31 @@
     scene.tweens.add({ targets: objectContainer, alpha: 1, duration, ease: 'Cubic.out' });
   }
 
+  // Display scale follows GAME progression, not literal astronomical diameter.
+  // This is important for compact remnants: a nebula is physically much wider than a pulsar or
+  // stellar black hole, but PULSAR and BLACK HOLE are later/larger gameplay tiers. The collision
+  // mechanics already use the same 2^tier-gap relationship (`gameRatio`) with a small within-tier
+  // radius variation. Keeping reveal sizing on that same scale means:
+  // NEBULA < PULSAR < BLACK HOLE < SUPER MASSIVE BLACK HOLE.
+  GameScene.prototype.getGameDisplayScaleRatio = function (player = this.player, other = this.other) {
+    const pTier = clamp(Number.isFinite(player?.tier) ? player.tier : 0, 0, TIERS.length - 1);
+    const oTier = clamp(Number.isFinite(other?.tier) ? other.tier : 0, 0, TIERS.length - 1);
+    const pReference = Math.max(TIERS[pTier]?.r || 1, 1e-300);
+    const oReference = Math.max(TIERS[oTier]?.r || 1, 1e-300);
+    const pWithin = Math.max((player?.radiusM || pReference) / pReference, 1e-9);
+    const oWithin = Math.max((other?.radiusM || oReference) / oReference, 1e-9);
+    const tierGap = oTier - pTier;
+    return Math.pow(2, tierGap) * (oWithin / pWithin);
+  };
+
   // Canonical display-size calculation used by the real SCALE REVEAL and by DEV testing.
-  // DEV must call this rather than inventing a separate normalized comparison, otherwise it cannot
-  // accurately reveal whether two sprites are distinguishable at the sizes players actually see.
+  // DEV calls this exact function so its preview matches what players actually see.
   GameScene.prototype.getRevealDisplayRadii = function (player = this.player, other = this.other) {
-    const ratio = other.radiusM / player.radiusM;
+    const ratio = this.getGameDisplayScaleRatio(player, other);
     let pr = 38, or = pr * ratio;
 
-    // Exact relative size is preserved for close encounters. Only extreme ratios are compressed to fit the phone.
+    // Preserve the gameplay-relative scale for close encounters. Only extreme differences are
+    // compressed to keep both objects visible on a phone screen.
     if (ratio >= .2 && ratio <= 5) {
       pr = 38; or = 38 * ratio;
       if (or > 145) { const s = 145 / or; or *= s; pr *= s; }
