@@ -70,13 +70,13 @@ const COMET_SPRITE_ASSETS = {
   star_mystery_01:      { family: 'star',        lods: [] },
 
   // YELLOW DWARF STAR — generic/mystery + four collectible named identities.
-  yellowDwarf_01:              { family: 'star', lods: [] },
-  yellowDwarf_02:              { family: 'star', lods: [] },
-  yellowDwarf_mystery_01:      { family: 'star', lods: [] },
-  yellowDwarf_sun:             { family: 'star', lods: [] },
-  yellowDwarf_alphaCentauriA:  { family: 'star', lods: [] },
-  yellowDwarf_tauCeti:         { family: 'star', lods: [] },
-  yellowDwarf_18Scorpii:       { family: 'star', lods: [] },
+  yellowDwarf_01:              { family: 'star', lods: [32, 64], version: 1 },
+  yellowDwarf_02:              { family: 'star', lods: [32, 64], version: 1 },
+  yellowDwarf_mystery_01:      { family: 'star', lods: [32, 64], version: 1 },
+  yellowDwarf_sun:             { family: 'star', lods: [32, 64], version: 1 },
+  yellowDwarf_alphaCentauriA:  { family: 'star', lods: [32, 64], version: 1 },
+  yellowDwarf_tauCeti:         { family: 'star', lods: [32, 64], version: 1 },
+  yellowDwarf_18Scorpii:       { family: 'star', lods: [32, 64], version: 1 },
 
   // BLUE GIANT STAR.
   blueGiant_01:          { family: 'star', lods: [] },
