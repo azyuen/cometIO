@@ -53,16 +53,16 @@ const COMET_SPRITE_ASSETS = {
   planet_earth:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
   planet_mars:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
 
-  gasPlanet_01:         { family: 'gasPlanet',   lods: [] },
-  gasPlanet_02:         { family: 'gasPlanet',   lods: [] },
-  gasPlanet_mystery_01: { family: 'gasPlanet',   lods: [] },
+  gasPlanet_01:         { family: 'gasPlanet',   lods: [32, 64], version: 1 },
+  gasPlanet_02:         { family: 'gasPlanet',   lods: [32, 64], version: 1 },
+  gasPlanet_mystery_01: { family: 'gasPlanet',   lods: [32, 64], version: 1 },
 
   // Named giant planet reveal art. Uranus/Neptune are scientifically ice giants but remain in
   // the existing GAS PLANET gameplay/visual family until a separate ice-giant family is desired.
-  planet_jupiter:       { family: 'gasPlanet',   lods: [] },
-  planet_saturn:        { family: 'gasPlanet',   lods: [] },
-  planet_uranus:        { family: 'gasPlanet',   lods: [] },
-  planet_neptune:       { family: 'gasPlanet',   lods: [] },
+  planet_jupiter:       { family: 'gasPlanet',   lods: [32, 64], version: 1 },
+  planet_saturn:        { family: 'gasPlanet',   lods: [32, 64], version: 1 },
+  planet_uranus:        { family: 'gasPlanet',   lods: [32, 64], version: 1 },
+  planet_neptune:       { family: 'gasPlanet',   lods: [32, 64], version: 1 },
 
   star_01:              { family: 'star',        lods: [] },
   star_02:              { family: 'star',        lods: [] },
