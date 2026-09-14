@@ -79,22 +79,22 @@ const COMET_SPRITE_ASSETS = {
   yellowDwarf_18Scorpii:       { family: 'star', lods: [32, 64], version: 1 },
 
   // BLUE GIANT STAR.
-  blueGiant_01:          { family: 'star', lods: [] },
-  blueGiant_02:          { family: 'star', lods: [] },
-  blueGiant_mystery_01:  { family: 'star', lods: [] },
-  blueGiant_rigel:       { family: 'star', lods: [] },
-  blueGiant_spica:       { family: 'star', lods: [] },
-  blueGiant_alnitak:     { family: 'star', lods: [] },
-  blueGiant_bellatrix:   { family: 'star', lods: [] },
+  blueGiant_01:          { family: 'star', lods: [32, 64], version: 1 },
+  blueGiant_02:          { family: 'star', lods: [32, 64], version: 1 },
+  blueGiant_mystery_01:  { family: 'star', lods: [32, 64], version: 1 },
+  blueGiant_rigel:       { family: 'star', lods: [32, 64], version: 1 },
+  blueGiant_spica:       { family: 'star', lods: [32, 64], version: 1 },
+  blueGiant_alnitak:     { family: 'star', lods: [32, 64], version: 1 },
+  blueGiant_bellatrix:   { family: 'star', lods: [32, 64], version: 1 },
 
   // RED HYPERGIANT STAR gameplay tier.
-  redHypergiant_01:              { family: 'star', lods: [] },
-  redHypergiant_02:              { family: 'star', lods: [] },
-  redHypergiant_mystery_01:      { family: 'star', lods: [] },
-  redHypergiant_betelgeuse:      { family: 'star', lods: [] },
-  redHypergiant_vyCanisMajoris:  { family: 'star', lods: [] },
-  redHypergiant_uyScuti:         { family: 'star', lods: [] },
-  redHypergiant_nmlCygni:        { family: 'star', lods: [] },
+  redHypergiant_01:              { family: 'star', lods: [32, 64], version: 1 },
+  redHypergiant_02:              { family: 'star', lods: [32, 64], version: 1 },
+  redHypergiant_mystery_01:      { family: 'star', lods: [32, 64], version: 1 },
+  redHypergiant_betelgeuse:      { family: 'star', lods: [32, 64], version: 1 },
+  redHypergiant_vyCanisMajoris:  { family: 'star', lods: [32, 64], version: 1 },
+  redHypergiant_uyScuti:         { family: 'star', lods: [32, 64], version: 1 },
+  redHypergiant_nmlCygni:        { family: 'star', lods: [32, 64], version: 1 },
 
   // NEBULA.
   nebula_01:            { family: 'nebula', lods: [] },
