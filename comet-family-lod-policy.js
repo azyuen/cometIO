@@ -30,56 +30,10 @@
 
   // Safari standalone mode has shown intermittent corruption when combining tiny transparent PNGs
   // with tint + flip + rotation. Keep the same artwork/variant there, but simplify the GPU path.
+  // Atom PNGs are already hard-alpha source assets, so standalone mode deliberately uses those
+  // original Image textures directly rather than rebuilding them as runtime CanvasTextures.
   function isStandaloneSafeMode() {
     return typeof window !== 'undefined' && window.COMET_STANDALONE === true;
-  }
-
-  // Atom art still contains partially-transparent edge pixels. On iOS Home Screen mode, rebuild
-  // each loaded Atom texture once as a hard-alpha CanvasTexture. This preserves the sprite artwork
-  // and dimensions while removing the semi-transparent pixels most associated with the rare
-  // rainbow/black quad corruption. Normal Safari/browser rendering is untouched.
-  function standaloneTextureKey(scene, def, key) {
-    if (!isStandaloneSafeMode() || def.visualFamily !== 'atomic' || !key) return key;
-
-    const safeKey = `${key}:standalone-hard-alpha`;
-    if (scene.textures.exists(safeKey)) return safeKey;
-
-    try {
-      const sourceTexture = scene.textures.get(key);
-      const source = sourceTexture?.getSourceImage?.();
-      const width = source?.naturalWidth || source?.width || 0;
-      const height = source?.naturalHeight || source?.height || 0;
-      if (!source || width <= 0 || height <= 0) return key;
-
-      const canvasTexture = scene.textures.createCanvas(safeKey, width, height);
-      const ctx = canvasTexture.getContext();
-      ctx.clearRect(0, 0, width, height);
-      ctx.drawImage(source, 0, 0, width, height);
-
-      const pixels = ctx.getImageData(0, 0, width, height);
-      const data = pixels.data;
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i + 3] < 128) {
-          data[i] = 0;
-          data[i + 1] = 0;
-          data[i + 2] = 0;
-          data[i + 3] = 0;
-        } else {
-          data[i + 3] = 255;
-        }
-      }
-      ctx.putImageData(pixels, 0, 0);
-      canvasTexture.refresh();
-
-      if (canvasTexture.setFilter && typeof Phaser !== 'undefined' && Phaser.Textures?.FilterMode) {
-        canvasTexture.setFilter(Phaser.Textures.FilterMode.NEAREST);
-      }
-      return safeKey;
-    } catch (e) {
-      // If CanvasTexture creation is unavailable for any reason, use the already-loaded PNG.
-      try { if (scene.textures.exists(safeKey)) scene.textures.remove(safeKey); } catch (_) {}
-      return key;
-    }
   }
 
   function chooseTint(def) {
@@ -194,13 +148,12 @@
       return forceProceduralFallback(this, [x, y, radius, object, mystery, glow], def.sharedVariants);
     }
 
-    const renderKey = standaloneTextureKey(this, def, key);
     const container = this.add.container(x, y);
     const back = this.add.container(0, 0);
     const front = this.add.container(0, 0);
-    const image = this.add.image(0, 0, renderKey);
+    const image = this.add.image(0, 0, key);
 
-    const texture = this.textures.get?.(renderKey);
+    const texture = this.textures.get?.(key);
     if (texture?.setFilter && typeof Phaser !== 'undefined' && Phaser.Textures?.FilterMode) {
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
