@@ -1,26 +1,32 @@
 const fs = require('fs');
 
-const rules = fs.readFileSync('comet-save-score-v1.js', 'utf8');
+const legacyRules = fs.readFileSync('comet-save-score-v1.js', 'utf8');
+const refine = fs.readFileSync('comet-gameplay-refine-v1.js', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
 
 function assert(ok, message) { if (!ok) throw new Error(message); }
 
-assert(rules.includes('const MANUAL_SAVE_PENALTY = 10'), 'manual save penalty should remain 10 points');
-assert(rules.includes('const SUCCESSFUL_LOAD_PENALTY = 25'), 'successful load penalty should remain 25 points');
-assert(rules.includes('const manual = !silent'), 'only non-silent/manual saves should count');
-assert(rules.includes('this.manualSaves = previous.manualSaves + 1'), 'manual save counter increment missing');
-assert(rules.includes('this.manualLoads += 1'), 'successful load counter increment missing');
-assert(rules.includes('this.score -= SUCCESSFUL_LOAD_PENALTY'), 'load score deduction missing');
-assert(rules.includes('writeSave(this);\n\n      this.startEncounter()'), 'load counter/penalty must be persisted before play resumes');
-assert(rules.includes('this.manualSaves = previous.manualSaves'), 'failed manual saves must restore the save counter');
-assert(rules.includes('this.score = previous.score'), 'failed manual saves must restore score');
-assert(rules.includes('manualSaves: integerOrZero(scene.manualSaves)'), 'save counter must persist in save file');
-assert(rules.includes('manualLoads: integerOrZero(scene.manualLoads)'), 'load counter must persist in save file');
-assert(rules.includes('scorePenalty: integerOrZero(scene.scorePenalty)'), 'total penalty must persist in save file');
-assert(rules.includes('saves: integerOrZero(this.manualSaves)'), 'high scores must record saves');
-assert(rules.includes('loads: integerOrZero(this.manualLoads)'), 'high scores must record loads');
-assert(rules.includes('`SAVES ${saves} • LOADS ${loads} • PENALTY -${penalty}`'), 'leaderboard usage line missing');
-assert(index.includes('comet-save-score-v1.js?v=1'), 'save/load scoring script should be loaded with cache bust');
-assert(index.indexOf('comet-home-v4.js') < index.indexOf('comet-save-score-v1.js?v=1'), 'scoring patch must load after home-v4 save/leaderboard overrides');
+assert(refine.includes('const MANUAL_SAVE_PENALTY = 10'), 'manual save penalty should remain 10 points');
+assert(refine.includes('if (silent) return true'), 'silent/autosave calls must be no-ops');
+assert(refine.includes('this.manualSaves = previous.manualSaves + 1'), 'manual save counter increment missing');
+assert(refine.includes('this.score = previous.score - MANUAL_SAVE_PENALTY'), 'manual save score deduction missing');
+assert(refine.includes('writeManualSave(checkpointPayload(this))'), 'manual checkpoint write missing');
+assert(refine.includes('manualSaves: integerOrZero(scene.manualSaves)'), 'save counter must persist in checkpoint');
+assert(refine.includes('Loading is a read-only rollback'), 'load must leave the checkpoint unchanged');
+assert(!refine.includes('this.manualLoads += 1'), 'loads must no longer increment a usage counter');
+assert(!refine.includes('SUCCESSFUL_LOAD_PENALTY'), 'loads must no longer have a score penalty');
+assert(refine.includes('loadPenalty: 0'), 'public save/load rules must report free loads');
+assert(refine.includes('localStorage.removeItem(LEGACY_AUTO_SAVE_KEY)'), 'legacy autosave must be removed');
+assert(!refine.includes('localStorage.removeItem(SAVE_KEY)'), 'restart/game over must never delete the manual checkpoint');
 
-console.log('save/load scoring regression checks passed');
+assert(refine.includes('delay: 1750'), 'save confirmation should stay visible longer');
+assert(refine.includes('const width = 334'), 'save confirmation should be wide enough for its text');
+assert(refine.includes('• SAVES ${saves}`'), 'high-score action line must end with saves count');
+assert(refine.includes('Cover the old TOTAL line plus the obsolete SAVES/LOADS/PENALTY line'), 'legacy score usage line should be replaced');
+
+assert(index.includes('comet-gameplay-refine-v1.js?v=1'), 'gameplay refinement script must be loaded');
+assert(index.indexOf('comet-gameplay-refine-v1.js?v=1') > index.indexOf('comet-save-collection-v2.js?v=1'), 'manual-only save refinement must load last');
+assert(index.includes('comet-save-score-v1.js?v=1'), 'legacy scoring layer remains loaded for backward-compatible score fields');
+assert(legacyRules.includes('saves: integerOrZero(this.manualSaves)'), 'legacy high-score schema must still understand saves');
+
+console.log('manual save/high-score regression checks passed');
