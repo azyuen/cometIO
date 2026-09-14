@@ -40,12 +40,15 @@
     scene.tweens.add({ targets: objectContainer, alpha: 1, duration, ease: 'Cubic.out' });
   }
 
-  // Display scale follows GAME progression, not literal astronomical diameter.
-  // This is important for compact remnants: a nebula is physically much wider than a pulsar or
-  // stellar black hole, but PULSAR and BLACK HOLE are later/larger gameplay tiers. The collision
-  // mechanics already use the same 2^tier-gap relationship (`gameRatio`) with a small within-tier
-  // radius variation. Keeping reveal sizing on that same scale means:
-  // NEBULA < PULSAR < BLACK HOLE < SUPER MASSIVE BLACK HOLE.
+  // Gameplay progression and visible physical size deliberately diverge for compact remnants.
+  // A nebula can be physically enormous while a pulsar or stellar black hole is tiny but extremely
+  // compact/gravitationally dominant. Collision odds may still use tier/gravity mechanics, but the
+  // SCALE REVEAL should communicate the physical size relationship the player would intuitively see.
+  GameScene.prototype.getPhysicalDisplayScaleRatio = function (player = this.player, other = this.other) {
+    return Math.max(other?.radiusM || 1e-300, 1e-300) / Math.max(player?.radiusM || 1e-300, 1e-300);
+  };
+
+  // Retain the progression ratio helper for mechanics/debugging that need tier-relative size.
   GameScene.prototype.getGameDisplayScaleRatio = function (player = this.player, other = this.other) {
     const pTier = clamp(Number.isFinite(player?.tier) ? player.tier : 0, 0, TIERS.length - 1);
     const oTier = clamp(Number.isFinite(other?.tier) ? other.tier : 0, 0, TIERS.length - 1);
@@ -57,24 +60,53 @@
     return Math.pow(2, tierGap) * (oWithin / pWithin);
   };
 
-  // Canonical display-size calculation used by the real SCALE REVEAL and by DEV testing.
-  // DEV calls this exact function so its preview matches what players actually see.
-  GameScene.prototype.getRevealDisplayRadii = function (player = this.player, other = this.other) {
-    const ratio = this.getGameDisplayScaleRatio(player, other);
-    let pr = 38, or = pr * ratio;
+  function compactTierIndex() {
+    const index = TIERS.findIndex(t => t.name === 'PULSAR');
+    return index >= 0 ? index : 14;
+  }
 
-    // Preserve the gameplay-relative scale for close encounters. Only extreme differences are
-    // compressed to keep both objects visible on a phone screen.
+  function isCompactObject(object) {
+    return Number.isFinite(object?.tier) && object.tier >= compactTierIndex();
+  }
+
+  // Canonical display-size calculation used by the real SCALE REVEAL and DEV post-choice result.
+  // It follows physical radius. Extremely large ratios are compressed to fit the phone, while a
+  // compact object gets a small visibility floor so a pulsar/black-hole sprite remains readable.
+  GameScene.prototype.getRevealDisplayRadii = function (player = this.player, other = this.other) {
+    const ratio = this.getPhysicalDisplayScaleRatio(player, other);
+    const maxRadius = 145;
+    const ordinaryMinRadius = 2.5;
+    const compactMinRadius = 7;
+    let pr = 38;
+    let or = pr * ratio;
+
     if (ratio >= .2 && ratio <= 5) {
-      pr = 38; or = 38 * ratio;
-      if (or > 145) { const s = 145 / or; or *= s; pr *= s; }
-      if (pr > 145) { const s = 145 / pr; pr *= s; or *= s; }
+      if (or > maxRadius) {
+        const s = maxRadius / or;
+        or *= s;
+        pr *= s;
+      }
+      if (pr > maxRadius) {
+        const s = maxRadius / pr;
+        pr *= s;
+        or *= s;
+      }
+    } else if (ratio > 5) {
+      or = maxRadius;
+      pr = Math.max(isCompactObject(player) ? compactMinRadius : ordinaryMinRadius, maxRadius / ratio);
     } else {
-      if (or > 145) { const s = 145 / or; or = 145; pr = Math.max(1.5, pr * s); }
-      if (or < 5) { const s = 5 / Math.max(or, .00001); or = 5; pr = Math.min(145, pr * s); }
+      pr = maxRadius;
+      or = Math.max(isCompactObject(other) ? compactMinRadius : ordinaryMinRadius, maxRadius * ratio);
     }
 
-    return { playerRadius: Math.max(1.5, pr), otherRadius: Math.max(1.5, or), ratio };
+    if (isCompactObject(player)) pr = Math.max(pr, compactMinRadius);
+    if (isCompactObject(other)) or = Math.max(or, compactMinRadius);
+
+    return {
+      playerRadius: Math.max(ordinaryMinRadius, Math.min(maxRadius, pr)),
+      otherRadius: Math.max(ordinaryMinRadius, Math.min(maxRadius, or)),
+      ratio
+    };
   };
 
   GameScene.prototype.reveal = function (choice) {
