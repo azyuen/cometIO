@@ -70,11 +70,10 @@
     this.tweens.add({ targets: [a, b], alpha: 1, delay: 430, duration: 300 });
 
     const g = this.add.graphics();
-    g.fillStyle(C.panel, .99).fillRoundedRect(10, this.Y(646), 400, 68, 8);
-    g.lineStyle(2, C.cyan, .82).strokeRoundedRect(10, this.Y(646), 400, 68, 8);
+    g.fillStyle(C.panel, .99).fillRoundedRect(10, this.Y(653), 400, 54, 8);
+    g.lineStyle(2, C.cyan, .82).strokeRoundedRect(10, this.Y(653), 400, 54, 8);
     this.ui.add(g);
-    this.addText(W / 2, this.Y(666), choice, 13, C.white, { ox: .5, bold: true });
-    this.addText(W / 2, this.Y(691), 'LOCKED IN', 9, C.muted, { ox: .5, bold: true });
+    this.addText(W / 2, this.Y(680), choice, 13, C.white, { ox: .5, oy: .5, bold: true });
     this.time.delayedCall(1500, () => this.animate(choice, p, o, pr, or));
   };
 })();
