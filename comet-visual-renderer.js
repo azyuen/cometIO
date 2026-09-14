@@ -46,9 +46,25 @@
     return 128;
   }
 
+  function forceClean32ForKnownCorruptPack(variant, lods) {
+    const entry = COMET_SPRITE_ASSETS[variant];
+    if (!entry || !lods.includes(32)) return null;
+
+    // The 64px source files in the original atomic and gas-planet packs contain literal RGB
+    // garbage in their lower transparent rows. This is in the PNG bytes themselves, not a Phaser
+    // or iOS rendering issue. Until those source files are regenerated, always use the clean 32px
+    // counterpart and scale it with nearest-neighbour filtering.
+    if (entry.family === 'atomic' || entry.family === 'gasPlanet') return 32;
+    return null;
+  }
+
   function closestAvailableLod(scene, variant, displayDiameterPx) {
     const lods = availableLods(scene, variant);
     if (!lods.length) return null;
+
+    const forcedCleanLod = forceClean32ForKnownCorruptPack(variant, lods);
+    if (forcedCleanLod) return forcedCleanLod;
+
     const desired = desiredLod(displayDiameterPx);
     return lods.reduce((best, lod) => {
       const bestDistance = Math.abs(Math.log2(best / desired));
