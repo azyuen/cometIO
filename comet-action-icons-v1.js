@@ -3,16 +3,16 @@
   const priorPreload = GameScene.prototype.preload;
   GameScene.prototype.preload = function () {
     if (priorPreload) priorPreload.call(this);
-    this.load.image('action-absorb', 'assets/ui/action_absorb_64.png?v=2');
-    this.load.image('action-deflect', 'assets/ui/action_deflect_64.png?v=2');
-    this.load.image('action-avoid', 'assets/ui/action_avoid_64.png?v=2');
+    this.load.image('action-absorb', 'assets/ui/action_absorb_64.png?v=3');
+    this.load.image('action-deflect', 'assets/ui/action_deflect_64.png?v=3');
+    this.load.image('action-avoid', 'assets/ui/action_avoid_64.png?v=3');
   };
 
   const priorClearUI = GameScene.prototype.clearUI;
   GameScene.prototype.clearUI = function () {
     const result = priorClearUI.call(this);
     if (typeof window !== 'undefined' && window.COMET_STANDALONE === true && this.ui) {
-      this.ui.y = -18;
+      this.ui.y = -8;
     }
     return result;
   };
