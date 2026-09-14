@@ -1,42 +1,105 @@
 // Named celestial identities are deliberately separate from gameplay tier/physics data.
 // They are flavour/art identities revealed after the player's choice. They do NOT change mass,
-// radius, speed, encounter odds or progression. Future named sprites can use spriteVariant.
+// radius, speed, encounter odds or progression. spriteVariant is the stable sprite filename base.
+//
+// Collection phase begins at DWARF PLANET. Named comets remain flavour encounters, can repeat,
+// and never count toward the collection or unique-object score bonus.
 
 const COMET_NAMED_IDENTITIES = [
-  // Comets — these all remain hidden behind the shared generic comet mystery family until reveal.
-  { id:'comet_halley', name:"HALLEY'S COMET", designation:'1P/Halley', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_halley', allowRotation:true, rotationStep:90, allowFlip:true },
-  { id:'comet_tempel1', name:'TEMPEL 1', designation:'9P/Tempel 1', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_tempel1', allowRotation:true, rotationStep:90, allowFlip:true },
-  { id:'comet_borrelly', name:'BORRELLY', designation:'19P/Borrelly', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_borrelly', allowRotation:true, rotationStep:90, allowFlip:true },
-  { id:'comet_67p', name:'67P / CHURYUMOV–GERASIMENKO', designation:'67P/Churyumov–Gerasimenko', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_67p', allowRotation:true, rotationStep:90, allowFlip:true },
-  { id:'comet_wild2', name:'WILD 2', designation:'81P/Wild 2', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_wild2', allowRotation:true, rotationStep:90, allowFlip:true },
+  // Comets — named flavour only; shared between Small/Larger Comet and deliberately repeatable.
+  { id:'comet_halley', name:"HALLEY'S COMET", designation:'1P/Halley', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_halley', collectible:false, allowRotation:true, rotationStep:90, allowFlip:true },
+  { id:'comet_tempel1', name:'TEMPEL 1', designation:'9P/Tempel 1', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_tempel1', collectible:false, allowRotation:true, rotationStep:90, allowFlip:true },
+  { id:'comet_borrelly', name:'BORRELLY', designation:'19P/Borrelly', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_borrelly', collectible:false, allowRotation:true, rotationStep:90, allowFlip:true },
+  { id:'comet_67p', name:'67P / CHURYUMOV–GERASIMENKO', designation:'67P/Churyumov–Gerasimenko', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_67p', collectible:false, allowRotation:true, rotationStep:90, allowFlip:true },
+  { id:'comet_wild2', name:'WILD 2', designation:'81P/Wild 2', gameplayTiers:['SMALL COMET','LARGER COMET'], scienceClass:'COMET', status:'confirmed', spriteVariant:'comet_wild2', collectible:false, allowRotation:true, rotationStep:90, allowFlip:true },
 
-  // Dwarf planets. The first five are IAU-recognized dwarf planets. The final three are strong
-  // dwarf-planet candidates and are flagged internally so future encyclopedia UI can distinguish them.
-  { id:'dwarf_ceres', name:'CERES', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_ceres', allowRotation:false, allowFlip:false },
-  { id:'dwarf_pluto', name:'PLUTO', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_pluto', allowRotation:false, allowFlip:false },
-  { id:'dwarf_eris', name:'ERIS', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_eris', allowRotation:false, allowFlip:false },
-  { id:'dwarf_haumea', name:'HAUMEA', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_haumea', allowRotation:false, allowFlip:false },
-  { id:'dwarf_makemake', name:'MAKEMAKE', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_makemake', allowRotation:false, allowFlip:false },
-  { id:'dwarf_gonggong', name:'GONGGONG', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF-PLANET CANDIDATE', status:'candidate', spriteVariant:'dwarf_gonggong', allowRotation:false, allowFlip:false },
-  { id:'dwarf_quaoar', name:'QUAOAR', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF-PLANET CANDIDATE', status:'candidate', spriteVariant:'dwarf_quaoar', allowRotation:false, allowFlip:false },
-  { id:'dwarf_sedna', name:'SEDNA', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF-PLANET CANDIDATE', status:'candidate', spriteVariant:'dwarf_sedna', allowRotation:false, allowFlip:false },
+  // Collection phase begins here.
+  // Dwarf planets. First five are IAU-recognized; final three are strong candidates.
+  { id:'dwarf_ceres', name:'CERES', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_ceres', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'dwarf_pluto', name:'PLUTO', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_pluto', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'dwarf_eris', name:'ERIS', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_eris', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'dwarf_haumea', name:'HAUMEA', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_haumea', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'dwarf_makemake', name:'MAKEMAKE', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF PLANET', status:'iau-recognized', spriteVariant:'dwarf_makemake', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'dwarf_gonggong', name:'GONGGONG', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF-PLANET CANDIDATE', status:'candidate', spriteVariant:'dwarf_gonggong', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'dwarf_quaoar', name:'QUAOAR', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF-PLANET CANDIDATE', status:'candidate', spriteVariant:'dwarf_quaoar', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'dwarf_sedna', name:'SEDNA', gameplayTiers:['DWARF PLANET'], scienceClass:'DWARF-PLANET CANDIDATE', status:'candidate', spriteVariant:'dwarf_sedna', collectible:true, allowRotation:false, allowFlip:false },
 
-  // All eight Solar System planets. Uranus and Neptune keep the existing GAS PLANET gameplay tier
-  // but are correctly tagged as ICE GIANT scientifically. Named identity never changes tier physics.
-  { id:'planet_mercury', name:'MERCURY', gameplayTiers:['ROCKY PLANET'], scienceClass:'TERRESTRIAL PLANET', status:'planet', spriteVariant:'planet_mercury', allowRotation:false, allowFlip:false },
-  { id:'planet_venus', name:'VENUS', gameplayTiers:['ROCKY PLANET'], scienceClass:'TERRESTRIAL PLANET', status:'planet', spriteVariant:'planet_venus', allowRotation:false, allowFlip:false },
-  { id:'planet_earth', name:'EARTH', gameplayTiers:['ROCKY PLANET'], scienceClass:'TERRESTRIAL PLANET', status:'planet', spriteVariant:'planet_earth', allowRotation:false, allowFlip:false },
-  { id:'planet_mars', name:'MARS', gameplayTiers:['ROCKY PLANET'], scienceClass:'TERRESTRIAL PLANET', status:'planet', spriteVariant:'planet_mars', allowRotation:false, allowFlip:false },
-  { id:'planet_jupiter', name:'JUPITER', gameplayTiers:['GAS PLANET'], scienceClass:'GAS GIANT', status:'planet', spriteVariant:'planet_jupiter', allowRotation:false, allowFlip:false },
-  { id:'planet_saturn', name:'SATURN', gameplayTiers:['GAS PLANET'], scienceClass:'GAS GIANT', status:'planet', spriteVariant:'planet_saturn', allowRotation:false, allowFlip:false },
-  { id:'planet_uranus', name:'URANUS', gameplayTiers:['GAS PLANET'], scienceClass:'ICE GIANT', status:'planet', spriteVariant:'planet_uranus', allowRotation:false, allowFlip:false },
-  { id:'planet_neptune', name:'NEPTUNE', gameplayTiers:['GAS PLANET'], scienceClass:'ICE GIANT', status:'planet', spriteVariant:'planet_neptune', allowRotation:false, allowFlip:false }
+  // Solar System planets. Uranus and Neptune remain in GAS PLANET gameplay but are ice giants.
+  { id:'planet_mercury', name:'MERCURY', gameplayTiers:['ROCKY PLANET'], scienceClass:'TERRESTRIAL PLANET', status:'planet', spriteVariant:'planet_mercury', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'planet_venus', name:'VENUS', gameplayTiers:['ROCKY PLANET'], scienceClass:'TERRESTRIAL PLANET', status:'planet', spriteVariant:'planet_venus', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'planet_earth', name:'EARTH', gameplayTiers:['ROCKY PLANET'], scienceClass:'TERRESTRIAL PLANET', status:'planet', spriteVariant:'planet_earth', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'planet_mars', name:'MARS', gameplayTiers:['ROCKY PLANET'], scienceClass:'TERRESTRIAL PLANET', status:'planet', spriteVariant:'planet_mars', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'planet_jupiter', name:'JUPITER', gameplayTiers:['GAS PLANET'], scienceClass:'GAS GIANT', status:'planet', spriteVariant:'planet_jupiter', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'planet_saturn', name:'SATURN', gameplayTiers:['GAS PLANET'], scienceClass:'GAS GIANT', status:'planet', spriteVariant:'planet_saturn', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'planet_uranus', name:'URANUS', gameplayTiers:['GAS PLANET'], scienceClass:'ICE GIANT', status:'planet', spriteVariant:'planet_uranus', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'planet_neptune', name:'NEPTUNE', gameplayTiers:['GAS PLANET'], scienceClass:'ICE GIANT', status:'planet', spriteVariant:'planet_neptune', collectible:true, allowRotation:false, allowFlip:false },
+
+  // Yellow dwarf / Sun-like stars. Unique sprite art can differentiate surface activity and corona.
+  { id:'yellowDwarf_sun', name:'THE SUN', gameplayTiers:['YELLOW DWARF STAR'], scienceClass:'G-TYPE MAIN-SEQUENCE STAR', status:'star', spriteVariant:'yellowDwarf_sun', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'yellowDwarf_alphaCentauriA', name:'ALPHA CENTAURI A', gameplayTiers:['YELLOW DWARF STAR'], scienceClass:'G-TYPE MAIN-SEQUENCE STAR', status:'star', spriteVariant:'yellowDwarf_alphaCentauriA', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'yellowDwarf_tauCeti', name:'TAU CETI', gameplayTiers:['YELLOW DWARF STAR'], scienceClass:'G-TYPE MAIN-SEQUENCE STAR', status:'star', spriteVariant:'yellowDwarf_tauCeti', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'yellowDwarf_18Scorpii', name:'18 SCORPII', gameplayTiers:['YELLOW DWARF STAR'], scienceClass:'G-TYPE MAIN-SEQUENCE STAR', status:'star', spriteVariant:'yellowDwarf_18Scorpii', collectible:true, allowRotation:false, allowFlip:false },
+
+  // Blue giants / supergiants grouped into the existing BLUE GIANT STAR gameplay tier.
+  { id:'blueGiant_rigel', name:'RIGEL', gameplayTiers:['BLUE GIANT STAR'], scienceClass:'BLUE SUPERGIANT', status:'star', spriteVariant:'blueGiant_rigel', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'blueGiant_spica', name:'SPICA', gameplayTiers:['BLUE GIANT STAR'], scienceClass:'BLUE GIANT SYSTEM', status:'star', spriteVariant:'blueGiant_spica', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'blueGiant_alnitak', name:'ALNITAK', gameplayTiers:['BLUE GIANT STAR'], scienceClass:'BLUE SUPERGIANT SYSTEM', status:'star', spriteVariant:'blueGiant_alnitak', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'blueGiant_bellatrix', name:'BELLATRIX', gameplayTiers:['BLUE GIANT STAR'], scienceClass:'BLUE GIANT', status:'star', spriteVariant:'blueGiant_bellatrix', collectible:true, allowRotation:false, allowFlip:false },
+
+  // Very large evolved red stars. Some are scientifically supergiants rather than strict hypergiants;
+  // they intentionally share the game's RED HYPERGIANT STAR progression tier.
+  { id:'redHypergiant_betelgeuse', name:'BETELGEUSE', gameplayTiers:['RED HYPERGIANT STAR'], scienceClass:'RED SUPERGIANT', status:'star', spriteVariant:'redHypergiant_betelgeuse', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'redHypergiant_vyCanisMajoris', name:'VY CANIS MAJORIS', gameplayTiers:['RED HYPERGIANT STAR'], scienceClass:'RED HYPERGIANT', status:'star', spriteVariant:'redHypergiant_vyCanisMajoris', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'redHypergiant_uyScuti', name:'UY SCUTI', gameplayTiers:['RED HYPERGIANT STAR'], scienceClass:'RED SUPERGIANT', status:'star', spriteVariant:'redHypergiant_uyScuti', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'redHypergiant_nmlCygni', name:'NML CYGNI', gameplayTiers:['RED HYPERGIANT STAR'], scienceClass:'RED HYPERGIANT', status:'star', spriteVariant:'redHypergiant_nmlCygni', collectible:true, allowRotation:false, allowFlip:false },
+
+  // Visually distinctive nebulae.
+  { id:'nebula_orion', name:'ORION NEBULA', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_orion', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_carina', name:'CARINA NEBULA', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_carina', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_eagle', name:'EAGLE NEBULA', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_eagle', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_helix', name:'HELIX NEBULA', gameplayTiers:['NEBULA'], scienceClass:'PLANETARY NEBULA', status:'nebula', spriteVariant:'nebula_helix', collectible:true, allowRotation:false, allowFlip:false },
+
+  // Pulsars are visually identified through their beam/wind-nebula treatment in the sprite art.
+  { id:'pulsar_crab', name:'CRAB PULSAR', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_crab', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_vela', name:'VELA PULSAR', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_vela', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_geminga', name:'GEMINGA', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_geminga', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_b1509', name:'PSR B1509–58', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_b1509', collectible:true, allowRotation:false, allowFlip:false },
+
+  // Stellar-mass black holes. Sprite identity comes from accretion/jet/companion context.
+  { id:'blackHole_cygnusX1', name:'CYGNUS X-1', gameplayTiers:['BLACK HOLE'], scienceClass:'STELLAR-MASS BLACK HOLE', status:'black-hole', spriteVariant:'blackHole_cygnusX1', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'blackHole_v404Cygni', name:'V404 CYGNI', gameplayTiers:['BLACK HOLE'], scienceClass:'STELLAR-MASS BLACK HOLE', status:'black-hole', spriteVariant:'blackHole_v404Cygni', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'blackHole_gaiaBH1', name:'GAIA BH1', gameplayTiers:['BLACK HOLE'], scienceClass:'STELLAR-MASS BLACK HOLE', status:'black-hole', spriteVariant:'blackHole_gaiaBH1', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'blackHole_maxiJ1820_070', name:'MAXI J1820+070', gameplayTiers:['BLACK HOLE'], scienceClass:'STELLAR-MASS BLACK HOLE', status:'black-hole', spriteVariant:'blackHole_maxiJ1820_070', collectible:true, allowRotation:false, allowFlip:false },
+
+  // Supermassive black holes / active nuclei for the final gameplay tier.
+  { id:'smbh_sagittariusA', name:'SAGITTARIUS A*', gameplayTiers:['SUPER MASSIVE BLACK HOLE'], scienceClass:'SUPERMASSIVE BLACK HOLE', status:'supermassive-black-hole', spriteVariant:'smbh_sagittariusA', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'smbh_m87', name:'M87*', gameplayTiers:['SUPER MASSIVE BLACK HOLE'], scienceClass:'SUPERMASSIVE BLACK HOLE', status:'supermassive-black-hole', spriteVariant:'smbh_m87', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'smbh_ton618', name:'TON 618', gameplayTiers:['SUPER MASSIVE BLACK HOLE'], scienceClass:'QUASAR / SUPERMASSIVE BLACK HOLE', status:'supermassive-black-hole', spriteVariant:'smbh_ton618', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'smbh_ngc4889', name:'NGC 4889', gameplayTiers:['SUPER MASSIVE BLACK HOLE'], scienceClass:'SUPERMASSIVE BLACK HOLE', status:'supermassive-black-hole', spriteVariant:'smbh_ngc4889', collectible:true, allowRotation:false, allowFlip:false }
 ];
 
 const COMET_IDENTITY_BY_ID = Object.fromEntries(COMET_NAMED_IDENTITIES.map(identity => [identity.id, identity]));
+const COMET_COLLECTIBLE_IDENTITIES = COMET_NAMED_IDENTITIES.filter(identity => identity.collectible === true);
+const COMET_COLLECTIBLE_BY_ID = Object.fromEntries(COMET_COLLECTIBLE_IDENTITIES.map(identity => [identity.id, identity]));
+const COMET_COLLECTIBLE_TIER_ORDER = [
+  'DWARF PLANET',
+  'ROCKY PLANET',
+  'GAS PLANET',
+  'YELLOW DWARF STAR',
+  'BLUE GIANT STAR',
+  'RED HYPERGIANT STAR',
+  'NEBULA',
+  'PULSAR',
+  'BLACK HOLE',
+  'SUPER MASSIVE BLACK HOLE'
+];
 
 function cometIdentityPoolForTier(tierName) {
   return COMET_NAMED_IDENTITIES.filter(identity => identity.gameplayTiers.includes(tierName));
+}
+
+function cometCollectiblePoolForTier(tierName) {
+  return COMET_COLLECTIBLE_IDENTITIES.filter(identity => identity.gameplayTiers.includes(tierName));
 }
 
 function pickCometNamedIdentity(tierName) {
@@ -47,4 +110,8 @@ function pickCometNamedIdentity(tierName) {
 
 function getCometNamedIdentity(id) {
   return id ? COMET_IDENTITY_BY_ID[id] || null : null;
+}
+
+function isCometCollectibleIdentity(id) {
+  return !!(id && COMET_COLLECTIBLE_BY_ID[id]);
 }
