@@ -8,14 +8,16 @@ const source = fs.readFileSync(path.join(root, 'comet-orbitals-v1.js'), 'utf8');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
 
-assert(index.includes('comet-orbitals-v1.js?v=1'), 'orbital layer must be loaded last');
-assert(index.indexOf('comet-orbitals-v1.js?v=1') > index.indexOf('comet-compact-gravity-v1.js?v=2'), 'orbital layer must wrap final mechanics');
+assert(index.includes('comet-orbitals-v1.js?v=2'), 'orbital layer cache version must include the HUD alignment update');
+assert(index.indexOf('comet-orbitals-v1.js?v=2') > index.indexOf('comet-compact-gravity-v1.js?v=2'), 'orbital layer must wrap final mechanics');
 assert(source.includes('const UNLOCK_TIER = 7'), 'orbitals must unlock at Dwarf Planet');
 assert(source.includes('const DEFLECTS_PER_ORBITAL = 3'), 'three successful deflects must form one orbital');
 assert(source.includes('const MAX_SACRIFICE = 3'), 'intervention must cap sacrifice at three');
 assert(source.includes("10: [8, 9]"), 'yellow dwarfs must render rocky/gas planet orbitals');
 assert(source.includes("8:  [6, 7]"), 'rocky planets must render asteroid/dwarf planet orbitals');
 assert(source.includes('renderOrbitals(this)'), 'arena must render visible orbitals');
+assert(source.includes('const titleX = x + 7'), 'HUD titles must align to the left edge of every card');
+assert(source.includes('const valueX = index < 3 ? x + 34 : x + 7'), 'HUD values must retain icon clearance');
 assert(source.includes('Math.pow(RISK_MULTIPLIER_PER_ORBITAL, selected)'), 'selector must preview cumulative risk reduction');
 assert(source.includes("pending?.choice === 'DEFLECT'"), 'successful deflects must award orbital charge');
 assert(source.includes('data.orbitalProgress'), 'manual saves must preserve partial orbital progress');

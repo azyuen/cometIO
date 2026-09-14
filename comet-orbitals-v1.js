@@ -177,9 +177,10 @@
         this.ui.add(bar);
       }
 
-      const textX = index < 3 ? x + 34 : x + 7;
-      this.addText(textX, y + 9, row[0], index === 2 ? 7.8 : 8.4, C.muted, { bold: true });
-      this.addText(textX, y + 30, row[1], index === 3 ? 7.4 : index === 2 ? 8.1 : 9.2, C.white, {
+      const titleX = x + 7;
+      const valueX = index < 3 ? x + 34 : x + 7;
+      this.addText(titleX, y + 9, row[0], index === 2 ? 7.8 : 8.4, C.muted, { bold: true });
+      this.addText(valueX, y + 30, row[1], index === 3 ? 7.4 : index === 2 ? 8.1 : 9.2, C.white, {
         bold: true,
         width: index === 3 ? 82 : 61,
         lineSpacing: index === 3 ? 1 : 0
