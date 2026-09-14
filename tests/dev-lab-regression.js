@@ -2,10 +2,14 @@ const fs = require('fs');
 
 const index = fs.readFileSync('index.html', 'utf8');
 const dev = fs.readFileSync('comet-dev-lab-v1.js', 'utf8');
+const exact = fs.readFileSync('comet-dev-exact-scale-v1.js', 'utf8');
+const stability = fs.readFileSync('comet-sprite-stability.js', 'utf8');
 
 function assert(ok, message) { if (!ok) throw new Error(message); }
 
 assert(index.includes('comet-dev-lab-v1.js?v=2'), 'dev lab script must be cache-busted');
+assert(index.includes('comet-dev-exact-scale-v1.js?v=1'), 'exact DEV scale patch must be loaded');
+assert(index.indexOf('comet-dev-exact-scale-v1.js?v=1') > index.indexOf('comet-dev-lab-v1.js?v=2'), 'exact DEV scale patch must load after dev lab');
 assert(index.indexOf('comet-dev-lab-v1.js?v=2') > index.indexOf('comet-gameplay-refine-v1.js?v=2'), 'dev lab must load after gameplay refinements');
 
 // Home entry must be PIN-gated with an on-screen numeric keypad.
@@ -27,11 +31,17 @@ assert(dev.includes("fontSize: '16px'"), 'iOS dropdowns must use >=16px font to 
 assert(dev.includes('COMET_NAMED_IDENTITIES'), 'named identities must be available in dev selectors');
 assert(dev.includes('GENERIC ${tier.name}'), 'generic tier variants must be available in dev selectors');
 
-// Representative likely physics + relative-scale preview.
+// Representative likely physics.
 assert(dev.includes('radiusM: tier.r * randomFactor(.055)'), 'dev object should get a likely radius');
 assert(dev.includes('massKg: tier.m * randomFactor(.09)'), 'dev object should get a likely mass');
-assert(dev.includes('RELATIVE SCALE PREVIEW'), 'relative-scale preview missing');
-assert(dev.includes('this.scaleRelation(radii.ratio)'), 'preview should use real scale relationship text');
+
+// DEV must use the exact production reveal-size calculation, not its old normalized comparison.
+assert(stability.includes('GameScene.prototype.getRevealDisplayRadii'), 'canonical production reveal sizing helper missing');
+assert(exact.includes('this.getRevealDisplayRadii(a, b)'), 'DEV preview must call canonical production sizing helper');
+assert(exact.includes('EXACT IN-GAME REVEAL SIZE'), 'DEV should label exact game sizing clearly');
+assert(exact.includes('GAME Ø ${Math.round(sizing.playerRadius * 2)} px'), 'DEV should show player display diameter');
+assert(exact.includes('GAME Ø ${Math.round(sizing.otherRadius * 2)} px'), 'DEV should show opponent display diameter');
+assert(!exact.includes('relativePreviewRadii'), 'exact DEV patch must not use normalized preview sizing');
 
 // Real action/reveal/animation pipeline, isolated resolver.
 assert(dev.includes('return baseChoose.call(this, choice)'), 'dev actions must use the real gameplay choose/reveal pipeline');
@@ -47,4 +57,4 @@ assert(dev.includes('restoreRunState(this, snapshot)'), 'dev lab must restore th
 assert(dev.includes("'NEXT', C.cyan, () => this.showDevLab()"), 'NEXT must loop back to selectors');
 assert(dev.includes("'BACK HOME'"), 'dev lab must provide a Home exit');
 
-console.log('dev collision lab + PIN regression checks passed');
+console.log('dev collision lab + PIN + exact scale regression checks passed');
