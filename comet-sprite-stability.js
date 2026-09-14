@@ -40,11 +40,11 @@
     scene.tweens.add({ targets: objectContainer, alpha: 1, duration, ease: 'Cubic.out' });
   }
 
-  GameScene.prototype.reveal = function (choice) {
-    this.clearUI(); this.drawHud(false);
-    this.addText(W / 2, this.Y(157), 'SCALE REVEAL', 13, C.white, { ox: .5, bold: true });
-
-    const ratio = this.other.radiusM / this.player.radiusM;
+  // Canonical display-size calculation used by the real SCALE REVEAL and by DEV testing.
+  // DEV must call this rather than inventing a separate normalized comparison, otherwise it cannot
+  // accurately reveal whether two sprites are distinguishable at the sizes players actually see.
+  GameScene.prototype.getRevealDisplayRadii = function (player = this.player, other = this.other) {
+    const ratio = other.radiusM / player.radiusM;
     let pr = 38, or = pr * ratio;
 
     // Exact relative size is preserved for close encounters. Only extreme ratios are compressed to fit the phone.
@@ -57,8 +57,20 @@
       if (or < 5) { const s = 5 / Math.max(or, .00001); or = 5; pr = Math.min(145, pr * s); }
     }
 
-    const p = this.drawObject(102, this.Y(345), Math.max(1.5, pr), this.player);
-    const o = this.drawObject(318, this.Y(410), Math.max(1.5, or), this.other);
+    return { playerRadius: Math.max(1.5, pr), otherRadius: Math.max(1.5, or), ratio };
+  };
+
+  GameScene.prototype.reveal = function (choice) {
+    this.clearUI(); this.drawHud(false);
+    this.addText(W / 2, this.Y(157), 'SCALE REVEAL', 13, C.white, { ox: .5, bold: true });
+
+    const sizing = this.getRevealDisplayRadii(this.player, this.other);
+    const ratio = sizing.ratio;
+    const pr = sizing.playerRadius;
+    const or = sizing.otherRadius;
+
+    const p = this.drawObject(102, this.Y(345), pr, this.player);
+    const o = this.drawObject(318, this.Y(410), or, this.other);
 
     const a = this.addText(18, this.Y(542), `YOU\n${this.player.name}`, 10, C.green, { bold: true, lineSpacing: 4, width: 165 });
     const b = this.addText(W - 18, this.Y(542), `${this.other.realName}\n${this.other.name}`, 10, C.orange, { ox: 1, align: 'right', bold: true, lineSpacing: 4, width: 195 });
