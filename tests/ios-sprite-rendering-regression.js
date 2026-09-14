@@ -41,11 +41,12 @@ for (const src of [
 assert(stability.includes('setVisualDisplayDiameter(startDiameter)'), 'sprite reveal must initialize via display diameter');
 assert(stability.includes('setVisualDisplayDiameter(tween.getValue())'), 'sprite reveal must tween display diameter');
 assert(stability.includes('GameScene.prototype.getRevealDisplayRadii'), 'canonical reveal sizing helper missing');
-assert(stability.includes('GameScene.prototype.getGameDisplayScaleRatio'), 'progression display-scale helper missing');
-assert(stability.includes('Math.pow(2, tierGap) * (oWithin / pWithin)'), 'display scaling must follow tier progression gameRatio');
-assert(stability.includes('NEBULA < PULSAR < BLACK HOLE < SUPER MASSIVE BLACK HOLE'), 'compact-remnant progression rule must be documented');
+assert(stability.includes('GameScene.prototype.getPhysicalDisplayScaleRatio'), 'physical reveal-scale helper missing');
+assert(stability.includes('GameScene.prototype.getGameDisplayScaleRatio'), 'progression helper should remain available for mechanics/debugging');
+assert(stability.includes('this.getPhysicalDisplayScaleRatio(player, other)'), 'live reveal must use physical radius relationship');
+assert(stability.includes("const index = TIERS.findIndex(t => t.name === 'PULSAR')"), 'compact visibility floor should begin at pulsars');
+assert(stability.includes('const compactMinRadius = 7'), 'compact remnants should remain small but visible');
 assert(stability.includes('const sizing = this.getRevealDisplayRadii(this.player, this.other)'), 'live reveal must use canonical sizing helper');
-assert(!stability.includes('const ratio = other.radiusM / player.radiusM'), 'live reveal must not use literal astronomical radius ratio');
 assert(!stability.includes("'LOCKED IN'"), 'reveal choice panel should not include redundant LOCKED IN text');
 assert(index.indexOf('comet-sprite-stability.js?v=6') > index.indexOf('comet-approach-visuals-v8.js'), 'stability reveal patch must load after approach visuals');
 
@@ -60,4 +61,4 @@ for (const variant of ['atom_01', 'atom_02', 'atom_03']) {
   assert(re.test(manifest), `${variant} must remain cache-busted to version 4`);
 }
 
-console.log('iOS sprite rendering + progression scaling regression checks passed');
+console.log('iOS sprite rendering + physical compact reveal regression checks passed');
