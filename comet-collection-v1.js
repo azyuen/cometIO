@@ -49,6 +49,22 @@
     return Array.isArray(score?.collection) || Array.isArray(score?.collectedIdentityIds);
   }
 
+  function savedCollectionSnapshot() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      const ids = validIdentityIds(data.collectedIdentityIds);
+      return {
+        ids,
+        bonus: integerOrZero(data.collectionBonusScore) || ids.length * UNIQUE_COLLECTION_BONUS,
+        recorded: Array.isArray(data.collectedIdentityIds)
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
   function assignIdentity(object, identity) {
     if (!object || !identity) return object;
     object.identityId = identity.id;
@@ -240,13 +256,14 @@
 
   GameScene.prototype.showCollection = function (options = {}) {
     const score = options.score || null;
+    const saved = options.saved || null;
     const returnTo = options.returnTo || 'home';
-    const recorded = !score || hasRecordedCollection(score);
-    const ids = score ? scoreCollection(score) : [...sceneCollection(this)];
+    const recorded = score ? hasRecordedCollection(score) : (saved ? saved.recorded : true);
+    const ids = score ? scoreCollection(score) : (saved ? saved.ids : [...sceneCollection(this)]);
     const collected = new Set(ids);
     const bonus = score
       ? (integerOrZero(score.collectionBonusScore) || ids.length * UNIQUE_COLLECTION_BONUS)
-      : collectionBonusFor(this, ids);
+      : (saved ? saved.bonus : collectionBonusFor(this, ids));
 
     this.clearUI();
     this.state = 'COLLECTION';
@@ -258,7 +275,7 @@
       this.addText(W / 2, this.Y(72), `${ids.length} / ${TOTAL_UNIQUE_OBJECTS} UNIQUE OBJECTS`, 9.5, C.cyan, { ox: .5, bold: true });
       this.addText(W / 2, this.Y(95), `COLLECTION SCORE BONUS +${bonus.toLocaleString('en-US')}`, 8.4, C.green, { ox: .5, bold: true });
     } else {
-      this.addText(W / 2, this.Y(78), 'COLLECTION WAS NOT RECORDED FOR THIS LEGACY SCORE', 7.8, C.muted, { ox: .5, bold: true, width: 360, align: 'center' });
+      this.addText(W / 2, this.Y(78), 'COLLECTION WAS NOT RECORDED FOR THIS LEGACY SAVE', 7.8, C.muted, { ox: .5, bold: true, width: 360, align: 'center' });
     }
 
     const panel = this.add.graphics();
@@ -285,9 +302,9 @@
       );
     });
 
-    if (!score) {
+    if (!score && recorded) {
       this.addText(W / 2, this.Y(714), 'SUCCESSFULLY ABSORB A NAMED OBJECT TO ADD IT', 7.5, C.muted, { ox: .5, bold: true });
-    } else if (recorded) {
+    } else if (score && recorded) {
       this.addText(W / 2, this.Y(714), `FINAL SCORE ${numberOrZero(score.score).toLocaleString('en-US')}`, 7.8, C.muted, { ox: .5, bold: true });
     }
 
@@ -300,15 +317,16 @@
 
   GameScene.prototype.showHome = function () {
     const result = baseShowHome.call(this);
-    const count = sceneCollection(this).length;
+    const saved = !this.runActive ? savedCollectionSnapshot() : null;
+    const ids = saved ? saved.ids : sceneCollection(this);
     this.miniButton(
       W - 72,
       this.Y(31),
       124,
       24,
-      `COLLECTION ${count}/${TOTAL_UNIQUE_OBJECTS}`,
+      `COLLECTION ${ids.length}/${TOTAL_UNIQUE_OBJECTS}`,
       C.cyan,
-      () => this.showCollection({ returnTo: 'home' })
+      () => this.showCollection({ returnTo: 'home', saved })
     );
     return result;
   };
