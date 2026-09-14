@@ -32,9 +32,10 @@ const COMET_SPRITE_ASSETS = {
   comet_67p:            { family: 'comet',       lods: [] },
   comet_wild2:          { family: 'comet',       lods: [] },
 
-  rockyPlanet_01:       { family: 'rockyPlanet', lods: [] },
-  rockyPlanet_02:       { family: 'rockyPlanet', lods: [] },
-  rockyPlanet_mystery_01:{ family: 'rockyPlanet',lods: [] },
+  // Generic rocky-planet art for the player/non-identity path plus anonymous mystery art.
+  rockyPlanet_01:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  rockyPlanet_02:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  rockyPlanet_mystery_01:{ family: 'rockyPlanet',lods: [32, 64], version: 1 },
 
   // Named dwarf-planet reveal art. Mystery/decision stage still uses the generic rocky-planet path.
   dwarf_ceres:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
@@ -47,10 +48,10 @@ const COMET_SPRITE_ASSETS = {
   dwarf_sedna:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
 
   // Named terrestrial planet reveal art.
-  planet_mercury:       { family: 'rockyPlanet', lods: [] },
-  planet_venus:         { family: 'rockyPlanet', lods: [] },
-  planet_earth:         { family: 'rockyPlanet', lods: [] },
-  planet_mars:          { family: 'rockyPlanet', lods: [] },
+  planet_mercury:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  planet_venus:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  planet_earth:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  planet_mars:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
 
   gasPlanet_01:         { family: 'gasPlanet',   lods: [] },
   gasPlanet_02:         { family: 'gasPlanet',   lods: [] },
