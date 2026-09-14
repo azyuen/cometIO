@@ -22,9 +22,10 @@
     const y = controls ? SAFE_TOP + 42 : SAFE_TOP + 18;
 
     if (controls) {
-      this.miniButton(44, utilityY, 68, 24, 'SAVE', C.green, () => this.save(false));
-      this.miniButton(119, utilityY, 68, 24, 'LOAD', C.blue, () => this.load());
-      this.miniButton(198, utilityY, 76, 24, 'HOME', C.orange, () => {
+      // Leave enough horizontal room for the v2 COLLECTION replacement so the label is not cramped.
+      this.miniButton(48, utilityY, 72, 24, 'SAVE', C.green, () => this.save(false));
+      this.miniButton(140, utilityY, 104, 24, 'LOAD', C.blue, () => this.load());
+      this.miniButton(232, utilityY, 72, 24, 'HOME', C.orange, () => {
         this.save(true);
         this.runActive = true;
         this.showHome();
