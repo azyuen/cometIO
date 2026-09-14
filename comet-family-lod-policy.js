@@ -28,10 +28,6 @@
     return true;
   }
 
-  // Safari standalone mode has shown intermittent corruption when combining tiny transparent PNGs
-  // with tint + flip + rotation. Keep the same artwork/variant there, but simplify the GPU path.
-  // Atom PNGs are already hard-alpha source assets, so standalone mode deliberately uses those
-  // original Image textures directly rather than rebuilding them as runtime CanvasTextures.
   function isStandaloneSafeMode() {
     return typeof window !== 'undefined' && window.COMET_STANDALONE === true;
   }
@@ -57,7 +53,7 @@
 
     const pool = def.sharedVariants || def.normalVariants || [];
     const initialLod = mystery ? def.fixedLods?.mystery : def.fixedLods?.normal;
-    const loadable = pool.filter(variant => textureReady(scene, variant, initialLod));
+    const loadable = pool.filter(variant => textureReady(scene, variant, initialLod) || textureReady(scene, variant, 32));
     const variant = randomFrom(loadable.length ? loadable : pool);
 
     state = {
@@ -76,9 +72,7 @@
         enumerable: true,
         configurable: true
       });
-    } catch (e) {
-      // Normal encounter objects are extensible; this is only a defensive fallback.
-    }
+    } catch (e) {}
     return state;
   }
 
@@ -104,6 +98,10 @@
   }
 
   function selectLod(def, mystery, diameter) {
+    // The uploaded 64px atom PNGs contain literal RGB garbage below the intended sprite.
+    // The 32px atom sources are clean, so keep the same art and simply scale those up.
+    if (def.visualFamily === 'atomic') return 32;
+
     if (!def.lodByDisplayedSize) return mystery ? def.fixedLods.mystery : def.fixedLods.normal;
     if (mystery) return def.fixedLods.mystery;
     return diameter <= COMET_VISUAL_SETTINGS.lodThresholds.smallMaxPx
@@ -142,8 +140,6 @@
     const lod = selectLod(def, mystery, diameter);
     const key = state.variant ? cometSpriteTextureKey(state.variant, lod) : null;
 
-    // A real sprite should stay a real sprite at every game-calculated display size.
-    // Only a genuinely missing/bad texture falls back to the legacy procedural renderer.
     if (!key || !textureReady(this, state.variant, lod)) {
       return forceProceduralFallback(this, [x, y, radius, object, mystery, glow], def.sharedVariants);
     }
