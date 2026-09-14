@@ -10,9 +10,9 @@ function assert(ok, message) { if (!ok) throw new Error(message); }
 
 assert(index.includes('comet-dev-lab-v1.js?v=2'), 'dev lab script must be cache-busted');
 assert(index.includes('comet-dev-exact-scale-v1.js?v=2'), 'DEV scale behaviour patch must be loaded');
-assert(index.includes('comet-compact-gravity-v1.js?v=1'), 'compact gravity animation patch must be loaded');
+assert(index.includes('comet-compact-gravity-v1.js?v=2'), 'compact gravity mechanics patch must be cache-busted');
 assert(index.indexOf('comet-dev-exact-scale-v1.js?v=2') > index.indexOf('comet-dev-lab-v1.js?v=2'), 'DEV scale patch must load after dev lab');
-assert(index.indexOf('comet-compact-gravity-v1.js?v=1') > index.indexOf('comet-dev-exact-scale-v1.js?v=2'), 'compact gravity animation must load after DEV scale patch');
+assert(index.indexOf('comet-compact-gravity-v1.js?v=2') > index.indexOf('comet-dev-exact-scale-v1.js?v=2'), 'compact gravity mechanics must load after DEV scale patch');
 assert(index.indexOf('comet-dev-lab-v1.js?v=2') > index.indexOf('comet-gameplay-refine-v1.js?v=2'), 'dev lab must load after gameplay refinements');
 
 // Home entry must be PIN-gated with an on-screen numeric keypad.
@@ -49,15 +49,35 @@ assert(stability.includes('GameScene.prototype.getPhysicalDisplayScaleRatio'), '
 assert(stability.includes('this.getPhysicalDisplayScaleRatio(player, other)'), 'reveal must use physical radius relationship');
 assert(exact.includes('this.getRevealDisplayRadii(this.player, this.other)'), 'DEV result must call canonical production reveal sizing');
 
-// Compact successful absorbs use gravitational capture instead of head-on impact.
-assert(compact.includes('shouldUseCompactCapture'), 'compact capture condition missing');
-assert(compact.includes("pending.result === 'absorb' || pending.result === 'merge'"), 'compact capture should require a real successful absorb/merge');
+// Compact successful absorbs use gravitational capture instead of a normal impact.
+assert(compact.includes('shouldUseForwardCompactCapture'), 'forward compact capture condition missing');
+assert(compact.includes("pending.result === 'absorb' || pending.result === 'merge'"), 'forward compact capture should require successful absorb/merge');
 assert(compact.includes('animatePulsarCapture'), 'pulsar capture animation missing');
 assert(compact.includes('pulsarCaptureBurst'), 'pulsar light-puff effect missing');
 assert(compact.includes('animateBlackHoleCapture'), 'black-hole spiral capture missing');
 assert(compact.includes('blackHoleLensing'), 'black-hole lensing/accretion effect missing');
-assert(compact.includes('zoomIntoCompactObject'), 'compact-object finish zoom missing');
-assert(compact.includes('setDisplayDiameter(o, Math.max(1.8'), 'captured target should shrink toward a tiny dot');
+assert(compact.includes('setDisplayDiameter(captured, Math.max(1.8'), 'captured black-hole target should shrink toward a tiny dot');
+
+// Finish emphasis must enlarge only the gravity object, never zoom/pan the camera/frame.
+assert(compact.includes('emphasizeCompactObject'), 'compact object visual emphasis missing');
+assert(compact.includes('this is deliberately NOT a camera zoom'), 'fixed-frame intent should be explicit');
+assert(!compact.includes('camera.zoomTo'), 'compact capture must not zoom the camera');
+assert(!compact.includes('camera.pan'), 'compact capture must not pan the camera');
+
+// Gravity dominance must reverse a naive size-based absorb when the TARGET is compact.
+assert(compact.includes('targetCompactDominates'), 'target gravity-dominance test missing');
+assert(compact.includes("choice === 'ABSORB' && targetCompactDominates(this)"), 'reverse ABSORB mechanics missing');
+assert(compact.includes('compactGravityReverse: true'), 'reverse compact capture flag missing');
+assert(compact.includes('absorbChance: 0'), 'gravity-dominant compact target must not be absorbable by radius alone');
+assert(compact.includes("title: 'GRAVITY CAPTURED YOU'"), 'reverse compact fatal result missing');
+assert(compact.includes("'TIDALLY FRAGMENTED'"), 'reverse black-hole fragmentation result missing');
+
+// DEFLECT against a compact gravity-dominant target must get its own odds and trajectory treatment.
+assert(compact.includes("choice === 'DEFLECT' && targetCompactDominates(this)"), 'compact-target DEFLECT mechanics missing');
+assert(compact.includes('compactGravityDeflect: true'), 'compact DEFLECT flag missing');
+assert(compact.includes('animateCompactDeflect'), 'compact DEFLECT animation missing');
+assert(compact.includes("result === 'catastrophic'"), 'failed compact DEFLECT should feed into capture animation');
+assert(compact.includes('tidal forces stripped material away'), 'rough compact DEFLECT explanation missing');
 
 // Real action/reveal/animation pipeline, isolated resolver.
 assert(dev.includes('return baseChoose.call(this, choice)'), 'dev actions must use the real gameplay choose/reveal pipeline');
@@ -73,4 +93,4 @@ assert(dev.includes('restoreRunState(this, snapshot)'), 'dev lab must restore th
 assert(dev.includes("'NEXT', C.cyan, () => this.showDevLab()"), 'NEXT must loop back to selectors');
 assert(dev.includes("'BACK HOME'"), 'dev lab must provide a Home exit');
 
-console.log('dev collision lab + compact gravity regression checks passed');
+console.log('dev collision lab + bidirectional compact gravity regression checks passed');
