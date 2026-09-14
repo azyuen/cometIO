@@ -4,10 +4,10 @@
 // to lods: [32, 64] and bump its version.
 
 const COMET_SPRITE_ASSETS = {
-  // v3 forces a fresh Atom image fetch; Home Screen mode also hardens Atom alpha in memory.
-  atom_01:              { family: 'atomic',      lods: [32, 64], version: 3 },
-  atom_02:              { family: 'atomic',      lods: [32, 64], version: 3 },
-  atom_03:              { family: 'atomic',      lods: [32, 64], version: 3 },
+  // v4 forces a fresh Atom image fetch after removing the iOS runtime CanvasTexture workaround.
+  atom_01:              { family: 'atomic',      lods: [32, 64], version: 4 },
+  atom_02:              { family: 'atomic',      lods: [32, 64], version: 4 },
+  atom_03:              { family: 'atomic',      lods: [32, 64], version: 4 },
 
   dust_01:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_02:              { family: 'dust',        lods: [32, 64], version: 1 },
