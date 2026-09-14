@@ -7,6 +7,7 @@
   const baseResolve = GameScene.prototype.resolve;
 
   const DEV_SELECT_CLASS = 'comet-dev-object-select';
+  const DEV_PIN = '8888';
 
   function copyRunState(scene) {
     const keys = [
@@ -201,6 +202,27 @@
     return object;
   }
 
+  function pinKey(scene, x, y, label, onPress, color = C.cyan) {
+    const c = scene.add.container(x, y);
+    const g = scene.add.graphics();
+    const w = 82;
+    const h = 58;
+    g.fillStyle(color, .10).fillRoundedRect(-w / 2, -h / 2, w, h, 9);
+    g.lineStyle(1.5, color, .72).strokeRoundedRect(-w / 2, -h / 2, w, h, 9);
+    const t = scene.add.text(0, 0, label, {
+      fontFamily: FONT,
+      fontSize: label.length > 2 ? '10px' : '20px',
+      fontStyle: 'bold',
+      color: '#f7fbff'
+    }).setOrigin(.5);
+    if (t.setResolution) t.setResolution(Math.min(window.devicePixelRatio || 1, 3));
+    const hit = scene.add.rectangle(0, 0, w, h, 0xffffff, .001).setInteractive({ useHandCursor: true });
+    hit.on('pointerdown', onPress);
+    c.add([g, t, hit]);
+    scene.ui.add(c);
+    return c;
+  }
+
   GameScene.prototype.clearUI = function () {
     removeDevDom(this);
     destroyPreview(this);
@@ -209,8 +231,95 @@
 
   GameScene.prototype.showHome = function () {
     const result = baseShowHome.call(this);
-    this.miniButton(42, this.Y(31), 58, 24, 'DEV', C.purple, () => this.enterDevLab());
+    this.miniButton(42, this.Y(31), 58, 24, 'DEV', C.purple, () => this.showDevPinGate());
     return result;
+  };
+
+  GameScene.prototype.showDevPinGate = function () {
+    this.clearUI();
+    this.state = 'DEV_PIN';
+    this._devPinEntry = '';
+    this._devPinLocked = false;
+
+    const bg = this.add.graphics();
+    bg.fillStyle(C.bg, .88).fillRect(0, SAFE_TOP, W, H - SAFE_TOP);
+    this.ui.add(bg);
+
+    this.addText(W / 2, this.Y(92), 'DEV ACCESS', 20, C.white, { ox: .5, bold: true });
+    this.addText(W / 2, this.Y(132), 'ENTER 4-DIGIT CODE', 9, C.muted, { ox: .5, bold: true });
+
+    const dots = [];
+    [159, 193, 227, 261].forEach(x => {
+      const circle = this.add.circle(x, this.Y(190), 8, C.panel2, 1);
+      circle.setStrokeStyle(2, C.cyan, .8);
+      this.ui.add(circle);
+      dots.push(circle);
+    });
+
+    const status = this.addText(W / 2, this.Y(224), '', 8.5, C.red, { ox: .5, bold: true });
+
+    const refreshDots = () => {
+      dots.forEach((dot, index) => {
+        dot.setFillStyle(index < this._devPinEntry.length ? C.cyan : C.panel2, 1);
+      });
+    };
+
+    const resetWrongPin = () => {
+      this._devPinLocked = true;
+      status.setText('INCORRECT CODE');
+      status.setColor('#ff5368');
+      this.cameras.main.shake(110, .004);
+      this.time.delayedCall(520, () => {
+        if (this.state !== 'DEV_PIN') return;
+        this._devPinEntry = '';
+        this._devPinLocked = false;
+        status.setText('');
+        refreshDots();
+      });
+    };
+
+    const enterDigit = digit => {
+      if (this._devPinLocked || this._devPinEntry.length >= 4) return;
+      this._devPinEntry += String(digit);
+      refreshDots();
+      if (this._devPinEntry.length !== 4) return;
+
+      if (this._devPinEntry === DEV_PIN) {
+        this._devPinLocked = true;
+        status.setColor('#25f29a');
+        status.setText('ACCESS GRANTED');
+        this.time.delayedCall(220, () => {
+          if (this.state === 'DEV_PIN') this.enterDevLab();
+        });
+      } else {
+        resetWrongPin();
+      }
+    };
+
+    const backspace = () => {
+      if (this._devPinLocked || !this._devPinEntry.length) return;
+      this._devPinEntry = this._devPinEntry.slice(0, -1);
+      refreshDots();
+    };
+
+    const clear = () => {
+      if (this._devPinLocked) return;
+      this._devPinEntry = '';
+      status.setText('');
+      refreshDots();
+    };
+
+    const xs = [112, 210, 308];
+    const ys = [this.Y(302), this.Y(374), this.Y(446)];
+    let digit = 1;
+    ys.forEach(y => {
+      xs.forEach(x => pinKey(this, x, y, String(digit++), () => enterDigit(digit - 1)));
+    });
+    pinKey(this, xs[0], this.Y(518), 'CLEAR', clear, C.muted);
+    pinKey(this, xs[1], this.Y(518), '0', () => enterDigit(0));
+    pinKey(this, xs[2], this.Y(518), '⌫', backspace, C.orange);
+
+    this.wideButton(W / 2, this.Y(630), 280, 46, 'CANCEL', C.muted, () => this.showHome());
   };
 
   GameScene.prototype.enterDevLab = function () {
