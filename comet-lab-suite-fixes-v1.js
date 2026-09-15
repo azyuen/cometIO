@@ -3,6 +3,8 @@
 (() => {
   if (!window.CometLabSuite) return;
   const proto = GameScene.prototype;
+  const baseShowDevLab = proto.showDevLab;
+  const baseShowPhaseCompleteCard = proto.showPhaseCompleteCard;
   const baseContinueFromPhaseCard = proto.continueFromPhaseCard;
   const baseShowPhase4DevReward = proto.showPhase4DevReward;
 
@@ -10,6 +12,12 @@
     if (!node) return;
     visitor(node);
     if (Array.isArray(node.list)) node.list.forEach(child => walk(child, visitor));
+  }
+
+  function replaceText(scene, from, to) {
+    walk(scene.ui, child => {
+      if (typeof child?.text === 'string' && child.text === from && typeof child.setText === 'function') child.setText(to);
+    });
   }
 
   function renameDevToLab(scene) {
@@ -27,6 +35,24 @@
       if (next) child.setText(next);
     });
   }
+
+  // Rebuild the collision LAB when a selector crosses an orbital-eligible tier so the +/- controls
+  // appear/disappear immediately rather than requiring the user to leave and re-enter the tab.
+  proto.showDevLab = function () {
+    const result = baseShowDevLab.call(this);
+    if (this.state === 'DEV_LAB') {
+      [this._devSelectA, this._devSelectB].forEach(select => {
+        if (!select || select._labEligibilityRefreshAttached) return;
+        select._labEligibilityRefreshAttached = true;
+        select.addEventListener('change', () => {
+          this.time.delayedCall(0, () => {
+            if (this.state === 'DEV_LAB') this.showDevLab();
+          });
+        });
+      });
+    }
+    return result;
+  };
 
   proto.showLabPhaseComplete = function () {
     this.tweens.killAll();
@@ -50,6 +76,18 @@
     });
   };
 
+  if (typeof baseShowPhaseCompleteCard === 'function') {
+    proto.showPhaseCompleteCard = function (phase) {
+      const result = baseShowPhaseCompleteCard.call(this, phase);
+      renameDevToLab(this);
+      if (this._labSandboxRun && phase === 4) {
+        replaceText(this, 'UNLOCK LAB MODE', 'FINISH PHS4 TEST');
+        replaceText(this, 'UNLOCK DEV MODE', 'FINISH PHS4 TEST');
+      }
+      return result;
+    };
+  }
+
   proto.continueFromPhaseCard = function (config) {
     if (this._labSandboxRun && config?.final) return this.showLabPhaseComplete();
     return baseContinueFromPhaseCard.call(this, config);
@@ -66,6 +104,7 @@
 
   window.CometLabSuiteFixes = Object.freeze({
     blocksPhase4RewardInSandbox: true,
+    refreshesOrbitalControlsOnTierChange: true,
     visibleName: 'LAB MODE'
   });
 })();
