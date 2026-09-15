@@ -137,6 +137,9 @@
         const selectedTier = Number(String(this._devSelectedA || '').split(':').pop());
         if (carry.tier !== selectedTier) this._devSelectedA = `tier:${carry.tier}`;
       }
+      if (this._devSelectA && [...this._devSelectA.options].some(option => option.value === this._devSelectedA)) {
+        this._devSelectA.value = this._devSelectedA;
+      }
       this.refreshDevPreview?.(false, false);
     }
 
