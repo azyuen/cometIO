@@ -4,6 +4,7 @@
   if (!window.CometLabSuite) return;
   const proto = GameScene.prototype;
   const baseShowDevLab = proto.showDevLab;
+  const baseChoose = proto.choose;
   const baseShowPhaseCompleteCard = proto.showPhaseCompleteCard;
   const baseContinueFromPhaseCard = proto.continueFromPhaseCard;
   const baseShowPhase4DevReward = proto.showPhase4DevReward;
@@ -52,6 +53,17 @@
       });
     }
     return result;
+  };
+
+  // The original DEV collision wrapper changes state from DEV_LAB to APPROACH before outcome() is
+  // calculated. Mark ordinary LAB actions as experiment-running for that brief pipeline so the
+  // suite's orbital-protection wrapper sees A's selected orbitals. Result labelling remains LAB.
+  proto.choose = function (choice) {
+    if (this._devModeActive && this.state === 'DEV_LAB' && !this._labExperimentRunning) {
+      this._labExperimentRunning = true;
+      this._labExperimentResult = false;
+    }
+    return baseChoose.call(this, choice);
   };
 
   proto.showLabPhaseComplete = function () {
@@ -105,6 +117,7 @@
   window.CometLabSuiteFixes = Object.freeze({
     blocksPhase4RewardInSandbox: true,
     refreshesOrbitalControlsOnTierChange: true,
+    labOrbitalsApplyToCollisionTests: true,
     visibleName: 'LAB MODE'
   });
 })();
