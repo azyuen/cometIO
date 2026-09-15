@@ -19,20 +19,21 @@ assert(renderMode.includes('__COMET_RENDER_MODE_LEGACY_NOOP'), 'renderer shim sh
 assert(!renderMode.includes('Phaser.CANVAS'), 'iOS Home Screen mode must not force Canvas');
 assert(!renderMode.includes('Phaser.Game ='), 'renderer shim must not monkey-patch Phaser.Game');
 
-// The rainbow rectangles were literal pixels in some 64px PNG sources. Force clean 32px
-// counterparts for the affected packs until those source assets are replaced.
-assert(renderer.includes("entry.family === 'atomic' || entry.family === 'gasPlanet'"), 'generic renderer must force clean 32px affected packs');
+// Rainbow rectangles are literal pixels in some 64px PNG source packs. Force clean 32px
+// counterparts for the affected families until those source assets are replaced.
+assert(renderer.includes("entry.family === 'atomic' || entry.family === 'gasPlanet' || entry.family === 'rockyPlanet'"), 'generic renderer must force clean 32px affected packs');
 assert(renderer.includes('return 32;'), 'generic affected-pack fallback must resolve to 32px');
 assert(familyPolicy.includes("if (def.visualFamily === 'atomic') return 32"), 'fixed-LOD atom renderer must force clean 32px source');
-assert(namedVisuals.includes("entry.family === 'gasPlanet' && lods.includes(32)"), 'named gas planets must prefer clean 32px source');
-assert(namedVisuals.includes('return [32, ...lods.filter(lod => lod !== 32)]'), 'named gas planet LOD order must put 32px first');
+assert(namedVisuals.includes("entry.family === 'gasPlanet' || entry.family === 'rockyPlanet'"), 'named gas/rocky planets must prefer clean 32px source');
+assert(namedVisuals.includes('return [32, ...lods.filter(lod => lod !== 32)]'), 'named affected-family LOD order must put 32px first');
+assert(namedVisuals.includes('including Eris'), 'named rocky-planet workaround should document Eris coverage');
 
 for (const src of [
   'assets/sprites/sprite-manifest.js?v=8',
   'comet-render-mode.js?v=3',
-  'comet-visual-renderer.js?v=1',
+  'comet-visual-renderer.js?v=3',
   'comet-family-lod-policy.js?v=6',
-  'comet-named-visuals.js?v=5',
+  'comet-named-visuals.js?v=7',
   'comet-sprite-stability.js?v=6'
 ]) {
   assert(index.includes(src), `${src} cache bust missing`);
@@ -61,4 +62,4 @@ for (const variant of ['atom_01', 'atom_02', 'atom_03']) {
   assert(re.test(manifest), `${variant} must remain cache-busted to version 4`);
 }
 
-console.log('iOS sprite rendering + physical compact reveal regression checks passed');
+console.log('iOS sprite rendering + rocky planet clean-LOD regression checks passed');
