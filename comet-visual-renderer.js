@@ -50,11 +50,11 @@
     const entry = COMET_SPRITE_ASSETS[variant];
     if (!entry || !lods.includes(32)) return null;
 
-    // The 64px source files in the original atomic and gas-planet packs contain literal RGB
-    // garbage in their lower transparent rows. This is in the PNG bytes themselves, not a Phaser
-    // or iOS rendering issue. Until those source files are regenerated, always use the clean 32px
-    // counterpart and scale it with nearest-neighbour filtering.
-    if (entry.family === 'atomic' || entry.family === 'gasPlanet') return 32;
+    // Some original 64px packs contain literal RGB garbage beneath transparency. This is in the
+    // PNG bytes themselves, not Phaser/iOS. Until those 64px sources are regenerated, always use
+    // the clean 32px counterpart and scale it with nearest-neighbour filtering. Rocky-planet generic
+    // art is included here because the 64px dwarf/player path can show the same rainbow-box artifact.
+    if (entry.family === 'atomic' || entry.family === 'gasPlanet' || entry.family === 'rockyPlanet') return 32;
     return null;
   }
 
@@ -75,7 +75,6 @@
 
   function chooseTint(def, mystery) {
     if (!def.tintEnabled) return null;
-    // Mystery colouring is family-level and deliberately avoids object-specific star colours.
     const family = COMET_VISUAL_FAMILIES[def.visualFamily] || def;
     const palette = mystery ? family.mysteryTintPalette : def.tintPalette;
     return randomFrom(palette || []);
@@ -88,10 +87,6 @@
 
   function ensureObjectVisualState(scene, object) {
     ensureSceneVisualState(scene);
-
-    // The symbol is enumerable so the game's existing {...object} encounter snapshot carries
-    // the visual state into the result screen. JSON.stringify ignores symbol keys, so saves and
-    // gameplay data remain unaffected.
     let state = object?.[VISUAL_STATE] || scene._cometVisualStates.get(object);
     if (state) {
       scene._cometVisualStates.set(object, state);
@@ -111,19 +106,12 @@
     };
     scene._cometVisualStates.set(object, state);
     try {
-      Object.defineProperty(object, VISUAL_STATE, {
-        value: state,
-        enumerable: true,
-        configurable: true
-      });
-    } catch (e) {
-      // WeakMap storage is still enough for normal game objects if a future object is non-extensible.
-    }
+      Object.defineProperty(object, VISUAL_STATE, { value: state, enumerable: true, configurable: true });
+    } catch (e) {}
     return state;
   }
 
   function applyImageDisplayDiameter(image, displayDiameterPx) {
-    // The existing game supplies displayDiameterPx. Texture resolution never changes that width.
     const sourceWidth = Math.max(image.width || 1, 1);
     const sourceHeight = Math.max(image.height || sourceWidth, 1);
     const aspect = sourceHeight / sourceWidth;
@@ -134,7 +122,6 @@
     if (!handle.image || !lod) return false;
     const key = textureKey(handle.variant, lod);
     if (!handle.scene.textures.exists(key)) return false;
-
     handle.image.setTexture(key);
     applyImageDisplayDiameter(handle.image, handle.baseDisplayDiameterPx);
     handle.lod = lod;
@@ -162,12 +149,8 @@
   function addDebugLabel(scene, container, handle, radius) {
     if (!COMET_VISUAL_SETTINGS.debug) return null;
     const label = scene.add.text(0, radius + 10, '', {
-      fontFamily: 'Menlo, Consolas, monospace',
-      fontSize: '7px',
-      color: '#ffffff',
-      backgroundColor: '#000000cc',
-      padding: { x: 3, y: 2 },
-      align: 'center'
+      fontFamily: 'Menlo, Consolas, monospace', fontSize: '7px', color: '#ffffff',
+      backgroundColor: '#000000cc', padding: { x: 3, y: 2 }, align: 'center'
     }).setOrigin(0.5, 0);
     if (label.setResolution) label.setResolution(4);
     container.add(label);
@@ -207,20 +190,8 @@
     scene.ui.add(container);
 
     const handle = {
-      scene,
-      container,
-      object,
-      mystery,
-      visualState: state,
-      variant,
-      lod,
-      image,
-      effectsBack,
-      effectsFront,
-      baseDisplayDiameterPx: displayDiameterPx,
-      tint,
-      fallback: false,
-      debugLabel: null
+      scene, container, object, mystery, visualState: state, variant, lod, image, effectsBack, effectsFront,
+      baseDisplayDiameterPx: displayDiameterPx, tint, fallback: false, debugLabel: null
     };
 
     container.cometVisual = handle;
@@ -240,7 +211,6 @@
       return container;
     };
 
-    // Identity-bearing family effects are intentionally suppressed while the opponent is a mystery.
     if (!mystery) {
       invokeEffect(state.definition.effects?.back, { scene, handle, layer: effectsBack, object, definition: state.definition });
       invokeEffect(state.definition.effects?.front, { scene, handle, layer: effectsFront, object, definition: state.definition });
@@ -253,18 +223,10 @@
 
   function attachFallbackMetadata(scene, container, object, radius, mystery, state) {
     const handle = {
-      scene,
-      container,
-      object,
-      mystery,
-      visualState: state,
+      scene, container, object, mystery, visualState: state,
       variant: mystery ? state.mysteryVariant : state.normalVariant,
-      lod: null,
-      image: null,
-      baseDisplayDiameterPx: Math.max(1, radius * 2),
-      tint: mystery ? state.mysteryTint : state.normalTint,
-      fallback: true,
-      debugLabel: null
+      lod: null, image: null, baseDisplayDiameterPx: Math.max(1, radius * 2),
+      tint: mystery ? state.mysteryTint : state.normalTint, fallback: true, debugLabel: null
     };
     container.cometVisual = handle;
     container.cometCollisionFamily = state.definition.collisionFamily;
@@ -276,7 +238,6 @@
 
   GameScene.prototype.preload = function () {
     if (typeof previousPreload === 'function') previousPreload.call(this);
-
     Object.entries(COMET_SPRITE_ASSETS).forEach(([variant, entry]) => {
       (entry.lods || []).forEach(lod => {
         const path = cometSpriteAssetPath(variant, lod);
@@ -292,19 +253,16 @@
     const displayDiameterPx = Math.max(1, radius * 2);
     const lod = variant ? closestAvailableLod(this, variant, displayDiameterPx) : null;
 
-    // No usable sprite? Preserve the current proven renderer exactly.
     if (!variant || !lod) {
       const fallback = proceduralDrawObject.call(this, x, y, radius, object, mystery, glow);
       return attachFallbackMetadata(this, fallback, object, radius, mystery, state);
     }
-
     return createSpriteObject(this, x, y, radius, object, mystery, glow, state, variant, lod);
   };
 
   GameScene.prototype.update = function (time, delta) {
     if (typeof previousUpdate === 'function') previousUpdate.call(this, time, delta);
     if (!this._cometVisualHandles || !this._cometVisualHandles.size) return;
-
     for (const handle of [...this._cometVisualHandles]) {
       if (!handle.container || !handle.container.active || !handle.image) {
         this._cometVisualHandles.delete(handle);
@@ -318,21 +276,11 @@
 
   window.CometVisuals = {
     getDefinition: getCometVisualDefinition,
-    getCollisionFamily(object) {
-      return getCometVisualDefinition(object).collisionFamily;
-    },
-    registerEffect(name, fn) {
-      if (typeof fn === 'function') effectRegistry[name] = fn;
-    },
-    unregisterEffect(name) {
-      delete effectRegistry[name];
-    },
-    setDebug(enabled) {
-      COMET_VISUAL_SETTINGS.debug = !!enabled;
-    },
-    describe(object) {
-      return getCometVisualDefinition(object);
-    },
+    getCollisionFamily(object) { return getCometVisualDefinition(object).collisionFamily; },
+    registerEffect(name, fn) { if (typeof fn === 'function') effectRegistry[name] = fn; },
+    unregisterEffect(name) { delete effectRegistry[name]; },
+    setDebug(enabled) { COMET_VISUAL_SETTINGS.debug = !!enabled; },
+    describe(object) { return getCometVisualDefinition(object); },
     desiredLod
   };
 })();
