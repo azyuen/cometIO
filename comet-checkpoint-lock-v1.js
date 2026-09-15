@@ -72,7 +72,7 @@
       actionHistory: Array.isArray(scene.actionHistory) ? [...scene.actionHistory] : [],
 
       manualSaves: whole(scene.manualSaves),
-      manualLoads: whole(scene.manualLoads), // compatibility only; LOAD itself is free/read-only
+      manualLoads: whole(scene.manualLoads),
       scorePenalty: whole(scene.scorePenalty),
 
       collectedIdentityIds: collection,
@@ -82,7 +82,6 @@
       orbitalProgress: whole(scene.orbitalProgress),
       orbitalsUnlocked: scene.orbitalsUnlocked === true,
 
-      // Phase 4 state. Harmless zeros during earlier phases.
       universeCount: whole(scene.universeCount),
       systemCaptures: whole(scene.systemCaptures),
       finaleMergeCount: whole(scene.finaleMergeCount)
@@ -92,9 +91,6 @@
   function writeProtected(scene) {
     const data = payload(scene);
     const json = JSON.stringify(data);
-
-    // This key is the authority. Mirrors exist only so older Collection/Phase 4 readers continue to
-    // display compatible information. LOAD never depends on either mirror.
     localStorage.setItem(PROTECTED_CHECKPOINT_KEY, json);
     localStorage.setItem(LEGACY_MANUAL_KEY, json);
     localStorage.setItem(SAVE_KEY, json);
@@ -135,19 +131,33 @@
     });
 
     if (!scene.player) scene.setPlayer(true);
-    scene.craters = scene.orbitalCount; // legacy HUD/save alias
+    scene.craters = scene.orbitalCount;
     if (scene.player && scene.tierIndex >= (window.CometPhase4?.firstTier ?? Infinity)) {
       scene.player.phase4CaptureCount = whole(scene.systemCaptures);
     }
   }
 
   function checkpointToast(scene, text, color) {
-    if (typeof scene.toast === 'function') scene.toast(text, color);
+    if (!scene?.add || !scene?.ui) return;
+    const c = scene.add.container(W / 2, scene.Y(174));
+    const g = scene.add.graphics();
+    const width = 356, height = 38;
+    g.fillStyle(C.panel, .99).fillRoundedRect(-width / 2, -height / 2, width, height, 6);
+    g.lineStyle(1.5, color, .95).strokeRoundedRect(-width / 2, -height / 2, width, height, 6);
+    const t = scene.add.text(0, 0, text, {
+      fontFamily: FONT,
+      fontSize: '8.8px',
+      fontStyle: 'bold',
+      color: `#${color.toString(16).padStart(6, '0')}`
+    }).setOrigin(.5);
+    if (t.setResolution) t.setResolution(Math.min(window.devicePixelRatio || 1, 3));
+    c.add([g, t]);
+    scene.ui.add(c);
+    scene.tweens.add({ targets: c, alpha: 0, delay: 1900, duration: 500, onComplete: () => c.destroy() });
   }
 
-  // Final SAVE authority. Sandbox/LAB phase runs remain isolated.
   GameScene.prototype.save = function (silent = false) {
-    if (silent) return true; // absolutely no autosaves
+    if (silent) return true;
     if (this._labSandboxRun || this._devModeActive) {
       checkpointToast(this, 'LAB • SAVE DISABLED', C.orange);
       return false;
@@ -165,7 +175,7 @@
 
     try {
       writeProtected(this);
-      checkpointToast(this, `CHECKPOINT SAVED • SAVE ${this.manualSaves} • -${SAVE_COST}`, C.green);
+      checkpointToast(this, `CHECKPOINT SAVED • SAVE ${this.manualSaves} • COST -${SAVE_COST}`, C.green);
       return true;
     } catch (e) {
       this.manualSaves = before.manualSaves;
@@ -176,8 +186,8 @@
     }
   };
 
-  // Final LOAD authority. It is deliberately read-only: loading does not mutate/re-date/rewrite the
-  // checkpoint, so the same pre-death checkpoint can be reused repeatedly until SAVE is pressed.
+  // LOAD is read-only: loading does not mutate/re-date/rewrite the checkpoint, so the same
+  // pre-death checkpoint remains reusable until the player deliberately presses SAVE again.
   GameScene.prototype.load = function () {
     if (this._labSandboxRun) {
       checkpointToast(this, 'LAB • LOAD DISABLED', C.orange);
@@ -212,7 +222,6 @@
   };
 
   // Losing, restarting, starting another run or navigating Home must NEVER touch the protected slot.
-  // Legacy autosave debris may be removed safely.
   GameScene.prototype.clearSave = function () {
     try { localStorage.removeItem(LEGACY_AUTO_KEY); } catch (e) {}
     return true;
