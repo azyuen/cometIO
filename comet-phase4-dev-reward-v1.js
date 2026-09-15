@@ -9,7 +9,7 @@
   const baseShowPhaseCompleteCard = proto.showPhaseCompleteCard;
   const baseContinueFromPhaseCard = proto.continueFromPhaseCard;
 
-  const DEV_PASSCODE = '8888';
+  const DEV_PASSCODE = 'uniatom';
   const DEV_UNLOCK_KEY = 'cometio-dev-unlocked-v1';
   const FINAL_SCORE_KEY = 'cometio-final-score-v1';
   const OBSERVABLE_UNIVERSE_MASS = 1e53;
@@ -185,7 +185,7 @@
     rewardButton(this, 636, 'HOME', C.cyan, () => this.showHome(), 250);
 
     this.addText(W / 2, this.Y(704), 'DEV MODE IS A COMPLETION REWARD.', 8, C.muted, { ox: .5, bold: true });
-    this.addText(W / 2, this.Y(731), 'PASSCODE 8888 WILL ALSO WORK FROM HOME.', 8, C.muted, { ox: .5, bold: true });
+    this.addText(W / 2, this.Y(731), 'PASSWORD UNIATOM WILL ALSO WORK FROM HOME.', 8, C.muted, { ox: .5, bold: true });
     this.cameras.main.flash(260, 37, 242, 154, false);
   };
 
