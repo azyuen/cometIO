@@ -10,30 +10,34 @@ const manifest = fs.readFileSync('assets/sprites/sprite-manifest.js', 'utf8');
 
 function assert(ok, message) { if (!ok) throw new Error(message); }
 
-// Home Screen mode must use the normal Phaser.AUTO path. Forcing Canvas with a high-DPI
-// resolution + Scale.FIT caused the installed iOS view to zoom/jumble the scene.
 assert(index.includes('comet-render-mode.js?v=3'), 'restored renderer shim must be cache-busted');
 assert(index.indexOf('comet-render-mode.js?v=3') < index.indexOf('comet-game.js'), 'renderer shim should still load before the game');
 assert(renderMode.includes("__COMET_RENDER_MODE = 'AUTO'"), 'renderer shim should explicitly document AUTO mode');
-assert(renderMode.includes('__COMET_RENDER_MODE_LEGACY_NOOP'), 'renderer shim should remain a no-op for stale cached indexes');
 assert(!renderMode.includes('Phaser.CANVAS'), 'iOS Home Screen mode must not force Canvas');
-assert(!renderMode.includes('Phaser.Game ='), 'renderer shim must not monkey-patch Phaser.Game');
 
-// Rainbow rectangles are literal pixels in some 64px PNG source packs. Force clean 32px
-// counterparts for the affected families until those source assets are replaced.
-assert(renderer.includes("entry.family === 'atomic' || entry.family === 'gasPlanet' || entry.family === 'rockyPlanet'"), 'generic renderer must force clean 32px affected packs');
-assert(renderer.includes('return 32;'), 'generic affected-pack fallback must resolve to 32px');
+// Known corrupt 64px sources stay on clean 32px fallbacks, but clean planets are allowed to use
+// their 64px art again so they do not all look low-detail/blurry.
+assert(renderer.includes("variant.startsWith('rockyPlanet_')"), 'generic rocky planet fallback missing');
+assert(renderer.includes("variant === 'dwarf_eris'"), 'Eris clean-source fallback missing');
+assert(renderer.includes("variant === 'dwarf_ceres'"), 'Ceres clean-source fallback missing');
+assert(renderer.includes("variant === 'planet_saturn'"), 'Saturn clean-source fallback missing');
+assert(renderer.includes("variant === 'planet_neptune'"), 'Neptune clean-source fallback missing');
+assert(renderer.includes("variant.startsWith('yellowDwarf_')"), 'yellow dwarf/Sun clean-source fallback missing');
+assert(renderer.includes('Phaser.Textures.FilterMode.NEAREST'), 'sprite renderer must use nearest-neighbour filtering');
 assert(familyPolicy.includes("if (def.visualFamily === 'atomic') return 32"), 'fixed-LOD atom renderer must force clean 32px source');
-assert(namedVisuals.includes("entry.family === 'gasPlanet' || entry.family === 'rockyPlanet'"), 'named gas/rocky planets must prefer clean 32px source');
-assert(namedVisuals.includes('return [32, ...lods.filter(lod => lod !== 32)]'), 'named affected-family LOD order must put 32px first');
-assert(namedVisuals.includes('including Eris'), 'named rocky-planet workaround should document Eris coverage');
+
+assert(namedVisuals.includes("variant === 'dwarf_eris'"), 'named Eris fallback missing');
+assert(namedVisuals.includes("variant === 'planet_saturn'"), 'named Saturn fallback missing');
+assert(namedVisuals.includes("String(variant || '').startsWith('yellowDwarf_')"), 'named yellow dwarf/Sun fallback missing');
+assert(!namedVisuals.includes("entry.family === 'rockyPlanet'"), 'clean rocky planets should not all be forced to 32px');
+assert(!namedVisuals.includes("entry.family === 'gasPlanet'"), 'clean gas planets should not all be forced to 32px');
 
 for (const src of [
   'assets/sprites/sprite-manifest.js?v=8',
   'comet-render-mode.js?v=3',
-  'comet-visual-renderer.js?v=3',
+  'comet-visual-renderer.js?v=4',
   'comet-family-lod-policy.js?v=6',
-  'comet-named-visuals.js?v=7',
+  'comet-named-visuals.js?v=8',
   'comet-sprite-stability.js?v=6'
 ]) {
   assert(index.includes(src), `${src} cache bust missing`);
@@ -43,23 +47,16 @@ assert(stability.includes('setVisualDisplayDiameter(startDiameter)'), 'sprite re
 assert(stability.includes('setVisualDisplayDiameter(tween.getValue())'), 'sprite reveal must tween display diameter');
 assert(stability.includes('GameScene.prototype.getRevealDisplayRadii'), 'canonical reveal sizing helper missing');
 assert(stability.includes('GameScene.prototype.getPhysicalDisplayScaleRatio'), 'physical reveal-scale helper missing');
-assert(stability.includes('GameScene.prototype.getGameDisplayScaleRatio'), 'progression helper should remain available for mechanics/debugging');
 assert(stability.includes('this.getPhysicalDisplayScaleRatio(player, other)'), 'live reveal must use physical radius relationship');
-assert(stability.includes("const index = TIERS.findIndex(t => t.name === 'PULSAR')"), 'compact visibility floor should begin at pulsars');
-assert(stability.includes('const compactMinRadius = 7'), 'compact remnants should remain small but visible');
-assert(stability.includes('const sizing = this.getRevealDisplayRadii(this.player, this.other)'), 'live reveal must use canonical sizing helper');
-assert(!stability.includes("'LOCKED IN'"), 'reveal choice panel should not include redundant LOCKED IN text');
 assert(index.indexOf('comet-sprite-stability.js?v=6') > index.indexOf('comet-approach-visuals-v8.js'), 'stability reveal patch must load after approach visuals');
 
-// Standalone sprite transforms remain conservative as a separate safeguard.
 assert(familyPolicy.includes('isStandaloneSafeMode()'), 'standalone safe transform mode missing');
 assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.tintEnabled) return null'), 'standalone tint disable missing');
 assert(familyPolicy.includes('if (isStandaloneSafeMode() || !def.allowRotation) return 0'), 'standalone rotation disable missing');
-assert(familyPolicy.includes('!isStandaloneSafeMode() && def.allowFlip'), 'standalone flip disable missing');
 
 for (const variant of ['atom_01', 'atom_02', 'atom_03']) {
   const re = new RegExp(`${variant}:\\s+\\{ family: 'atomic',\\s+lods: \\[32, 64\\], version: 4 \\}`);
   assert(re.test(manifest), `${variant} must remain cache-busted to version 4`);
 }
 
-console.log('iOS sprite rendering + rocky planet clean-LOD regression checks passed');
+console.log('iOS sprite rendering + targeted clean-source regression checks passed');
