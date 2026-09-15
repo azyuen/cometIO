@@ -50,12 +50,20 @@
     const entry = COMET_SPRITE_ASSETS[variant];
     if (!entry || !lods.includes(32)) return null;
 
-    // Some original 64px packs contain literal RGB garbage beneath transparency. This is in the
-    // PNG bytes themselves, not Phaser/iOS. Until those 64px sources are regenerated, always use
-    // the clean 32px counterpart and scale it with nearest-neighbour filtering. Rocky-planet generic
-    // art is included here because the 64px dwarf/player path can show the same rainbow-box artifact.
-    if (entry.family === 'atomic' || entry.family === 'gasPlanet' || entry.family === 'rockyPlanet') return 32;
-    return null;
+    // Known bad 64px sources only. Do NOT blanket-downgrade whole planet families: doing so made
+    // otherwise-clean planets lose detail. These variants stay on their stable 32px sources until
+    // the original 64px PNGs are re-exported.
+    const force32 =
+      entry.family === 'atomic' ||
+      variant.startsWith('rockyPlanet_') ||
+      variant === 'dwarf_ceres' ||
+      variant === 'dwarf_eris' ||
+      variant.startsWith('gasPlanet_') ||
+      variant === 'planet_saturn' ||
+      variant === 'planet_neptune' ||
+      variant.startsWith('yellowDwarf_');
+
+    return force32 ? 32 : null;
   }
 
   function closestAvailableLod(scene, variant, displayDiameterPx) {
@@ -111,6 +119,13 @@
     return state;
   }
 
+  function applyNearestFilter(scene, key) {
+    const texture = scene.textures.get?.(key);
+    if (texture?.setFilter && typeof Phaser !== 'undefined' && Phaser.Textures?.FilterMode) {
+      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
+  }
+
   function applyImageDisplayDiameter(image, displayDiameterPx) {
     const sourceWidth = Math.max(image.width || 1, 1);
     const sourceHeight = Math.max(image.height || sourceWidth, 1);
@@ -123,6 +138,7 @@
     const key = textureKey(handle.variant, lod);
     if (!handle.scene.textures.exists(key)) return false;
     handle.image.setTexture(key);
+    applyNearestFilter(handle.scene, key);
     applyImageDisplayDiameter(handle.image, handle.baseDisplayDiameterPx);
     handle.lod = lod;
     updateDebugLabel(handle);
@@ -174,6 +190,7 @@
     const displayDiameterPx = Math.max(1, radius * 2);
     const tint = mystery ? state.mysteryTint : state.normalTint;
 
+    applyNearestFilter(scene, key);
     image.setAngle(state.rotation);
     image.setFlipX(state.flipX);
     image.setAlpha(state.alpha);
