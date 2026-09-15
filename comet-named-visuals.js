@@ -8,11 +8,16 @@
     const lods = Array.isArray(entry?.lods) ? [...entry.lods] : [];
     if (!lods.length) return [];
 
-    // Known source-art workarounds: prefer the clean 32px file and nearest-neighbour upscale.
-    // The affected 64px PNG packs contain literal rectangle/RGB garbage in transparent areas.
-    // rockyPlanet covers every dwarf/terrestrial named reveal (including Eris), so keep that whole
-    // family on its stable 32px sources until the 64px originals are re-exported cleanly.
-    if ((entry.family === 'gasPlanet' || entry.family === 'rockyPlanet') && lods.includes(32)) {
+    // Use 32px only for variants whose 64px source has shown black/rainbow rectangle corruption.
+    // Keeping the workaround variant-specific lets clean 64px Earth/Mars/Jupiter/etc. retain detail.
+    const force32 =
+      variant === 'dwarf_ceres' ||
+      variant === 'dwarf_eris' ||
+      variant === 'planet_saturn' ||
+      variant === 'planet_neptune' ||
+      String(variant || '').startsWith('yellowDwarf_');
+
+    if (force32 && lods.includes(32)) {
       return [32, ...lods.filter(lod => lod !== 32)];
     }
 
