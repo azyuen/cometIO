@@ -1,26 +1,20 @@
 const fs = require('fs');
 
 const index = fs.readFileSync('index.html', 'utf8');
-const integrity = fs.readFileSync('comet-collection-integrity-v1.js', 'utf8');
+const state = fs.readFileSync('comet-collection-state-v2.js', 'utf8');
 const collection = fs.readFileSync('comet-collection-v1.js', 'utf8');
 
 function assert(ok, message) { if (!ok) throw new Error(message); }
 
-assert(index.includes('comet-collection-integrity-v1.js?v=1'), 'collection integrity guard must be loaded');
-assert(index.indexOf('comet-collection-integrity-v1.js?v=1') > index.indexOf('comet-lab-suite-fixes-v1.js?v=1'), 'collection guard should load after gameplay/LAB wrappers');
+assert(!index.includes('comet-collection-integrity-v1.js'), 'obsolete collection integrity wrapper must not be loaded');
+assert(index.includes('comet-collection-state-v2.js?v=1'), 'explicit toggle-map collection authority must replace integrity wrapper');
+assert(state.includes("p.choice !== 'ABSORB'"), 'final authority must only register ABSORB outcomes');
+assert(state.includes('p.compactGravityReverse'), 'reverse gravity capture must never count as collecting the target');
+assert(state.includes("result === 'absorb' || result === 'merge'"), 'only absorb/merge should collect');
+assert(state.includes('COMET_COLLECTIBLE_BY_ID?.[id]'), 'collection target must be a real collectible identity');
+assert(state.includes('state[id] === true'), 'duplicate collection must be ignored');
+assert(state.includes('scene.collectedIdentityIds = ids(scene.uniqueCollectionState)'), 'compatibility IDs must mirror explicit state');
+assert(state.includes('scene._devModeActive || scene._labSandboxRun'), 'DEV/LAB must not mutate collection');
+assert(collection.includes('showCollection'), 'existing collection catalogue UI should remain available');
 
-assert(integrity.includes("pending.choice !== 'ABSORB'"), 'guard must only register ABSORB outcomes');
-assert(integrity.includes('pending.compactGravityReverse'), 'reverse gravity capture must never count as collecting the target');
-assert(integrity.includes("type === 'absorb' || type === 'merge' || type === 'clean'"), 'only true absorb/merge outcomes should collect');
-assert(integrity.includes('COMET_COLLECTIBLE_BY_ID?.[identityId]'), 'guard must require a collectible named identity');
-assert(integrity.includes('if (ids.includes(identityId))'), 'guard must be idempotent with the original collection layer');
-assert(integrity.includes('scene.collectedIdentityIds = ids'), 'collected ID must be written to live run state');
-assert(integrity.includes('scene.collectionBonusScore = ids.length * UNIQUE_COLLECTION_BONUS'), 'collection bonus state must stay synchronized');
-assert(integrity.includes('scene._lastCollectionPickup ='), 'new pickup must still feed result-screen collection messaging');
-assert(integrity.includes('scene._devModeActive'), 'DEV/LAB collisions must not mutate collection');
-
-// Original collection implementation remains in place for saves, exclusions, high-score snapshots and UI.
-assert(collection.includes('collectedIdentityIds'), 'original collection state must remain active');
-assert(collection.includes('COMET_COLLECTIBLE_BY_ID'), 'original collection validation must remain active');
-
-console.log('collection integrity regression checks passed');
+console.log('explicit collection integrity regression checks passed');
