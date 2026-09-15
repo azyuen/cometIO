@@ -9,9 +9,10 @@
     if (!lods.length) return [];
 
     // Known source-art workarounds: prefer the clean 32px file and nearest-neighbour upscale.
-    // Gas-planet 64px files contain literal RGB garbage beneath transparency; Ceres' current 64px
-    // source can render black/empty on the Home Screen build, while its 32px counterpart is stable.
-    if ((entry.family === 'gasPlanet' || variant === 'dwarf_ceres') && lods.includes(32)) {
+    // The affected 64px PNG packs contain literal rectangle/RGB garbage in transparent areas.
+    // rockyPlanet covers every dwarf/terrestrial named reveal (including Eris), so keep that whole
+    // family on its stable 32px sources until the 64px originals are re-exported cleanly.
+    if ((entry.family === 'gasPlanet' || entry.family === 'rockyPlanet') && lods.includes(32)) {
       return [32, ...lods.filter(lod => lod !== 32)];
     }
 
