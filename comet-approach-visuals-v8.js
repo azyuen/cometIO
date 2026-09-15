@@ -8,11 +8,13 @@
     d.lineStyle(3, C.cyan, .9).lineBetween(0, this.Y(610), W, this.Y(226));
     this.ui.add(d);
 
-    // During the choice phase both bodies intentionally occupy the same small apparent size.
-    // This protects the uncertainty mechanic. True relative size is still revealed later by reveal().
-    // glow=false also guarantees the old procedural circular halo cannot sit behind a real sprite.
+    // During the choice phase both bodies still occupy the same apparent size, so physical scale is
+    // not leaked early. But named collectible identities now use their REAL art immediately. Hiding
+    // Earth, Saturn, Eris, etc. behind a generic brown/grey mystery sprite was visually redundant and
+    // made the named sprite system look broken. Anonymous/non-collectible encounters remain UNKNOWN.
+    const namedCollectible = !!COMET_COLLECTIBLE_BY_ID?.[this.other?.identityId];
     this.youSprite = this.drawObject(128, this.Y(330), APPROACH_RADIUS, this.player, false, false);
-    this.otherSprite = this.drawObject(303, this.Y(480), APPROACH_RADIUS, this.other, true, false);
+    this.otherSprite = this.drawObject(303, this.Y(480), APPROACH_RADIUS, this.other, !namedCollectible, false);
 
     // Legacy trail/debris decorations were designed for placeholder circles and can interfere with
     // finished PNG sprites. Keep them only while an object is still using the procedural fallback.
@@ -22,7 +24,14 @@
     if (!targetUsesSprite) this.specks(303, this.Y(480));
 
     this.addText(14, this.Y(170), 'YOU', 10, C.green, { bold: true });
-    this.addText(W - 14, this.Y(603), 'UNKNOWN', 10, C.orange, { bold: true, ox: 1 });
+    this.addText(
+      W - 14,
+      this.Y(603),
+      namedCollectible ? this.other.realName : 'UNKNOWN',
+      10,
+      C.orange,
+      { bold: true, ox: 1, width: 210, align: 'right' }
+    );
 
     this.tweens.add({
       targets: this.youSprite,
