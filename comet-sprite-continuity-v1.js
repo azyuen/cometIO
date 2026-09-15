@@ -56,13 +56,28 @@
     image.setDisplaySize(diameter, diameter * (height / width));
   }
 
+  function applyOrientation(container, object) {
+    const handle = container?.cometVisual;
+    const image = handle?.image;
+    if (!handle || !image || !object) return;
+
+    const rotation = Number(object.cometVisualRotation);
+    if (!Number.isFinite(rotation)) return;
+    image.setAngle(rotation);
+    // Rotate effects with the art, while leaving the OUTER object container free for trajectory
+    // animations to change its angle independently.
+    handle.effectsBack?.setAngle?.(rotation);
+    handle.effectsFront?.setAngle?.(rotation);
+  }
+
   function applySerializableAppearance(scene, container, object) {
     const handle = container?.cometVisual;
     const image = handle?.image;
     if (!handle || !image || !object) return;
 
-    // If this object already has an adopted variant, force the renderer onto it. The underlying
-    // renderer may have rolled a different hidden Symbol-state variant after a tier-up/load.
+    // If this object already has an adopted NORMAL variant, force the renderer onto it. Mystery
+    // drawings deliberately skip this function so a saved player/encounter skin can never reveal
+    // itself through the UNKNOWN silhouette.
     const variant = object.cometVisualVariant;
     if (variant && variant !== handle.variant) {
       const texture = loadedLod(scene, variant, handle.lod);
@@ -78,14 +93,7 @@
       }
     }
 
-    const rotation = Number(object.cometVisualRotation);
-    if (Number.isFinite(rotation)) {
-      image.setAngle(rotation);
-      // Rotate family effects with the source art. The OUTER object container remains unrotated so
-      // DEFLECT/AVOID trajectory animations can still control its angle independently.
-      handle.effectsBack?.setAngle?.(rotation);
-      handle.effectsFront?.setAngle?.(rotation);
-    }
+    applyOrientation(container, object);
 
     if (typeof object.cometVisualFlipX === 'boolean') image.setFlipX(object.cometVisualFlipX);
     if (Number.isFinite(Number(object.cometVisualAlpha))) image.setAlpha(Number(object.cometVisualAlpha));
@@ -146,11 +154,19 @@
   }
 
   GameScene.prototype.drawObject = function (x, y, radius, object, mystery = false, glow = false) {
-    // Every sprite-backed gameplay object gets a static random orientation, including named/unique
+    // Every sprite-backed gameplay object gets one static random orientation, including named/unique
     // identities and families whose older metadata disabled rotation in standalone mode.
     ensureSerializableOrientation(object);
 
     const container = baseDrawObject.call(this, x, y, radius, object, mystery, glow);
+
+    if (mystery) {
+      // Preserve only orientation across UNKNOWN -> REVEAL. Never persist/force the mystery variant,
+      // tint or flip as the object's real visual identity.
+      applyOrientation(container, object);
+      return container;
+    }
+
     applySerializableAppearance(this, container, object);
     recordSerializableAppearance(container, object);
 
@@ -194,6 +210,7 @@
   window.CometSpriteContinuity = Object.freeze({
     rotationMode: 'static-quarter-turns',
     appearanceFields: [...APPEARANCE_KEYS],
-    preservesThroughSave: true
+    preservesThroughSave: true,
+    mysterySafe: true
   });
 })();
