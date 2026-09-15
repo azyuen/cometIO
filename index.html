@@ -17,7 +17,6 @@
       const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
       window.COMET_STANDALONE = standalone;
       if (!standalone) return;
-
       document.documentElement.classList.add('standalone');
       const syncStandaloneHeight = () => {
         document.documentElement.style.setProperty('--app-height', `${Math.round(window.innerHeight)}px`);
@@ -78,6 +77,6 @@
   <script src="comet-lab-suite-fixes-v1.js?v=1"></script>
   <script src="comet-collection-integrity-v1.js?v=1"></script>
   <script src="comet-dev-password-v1.js?v=1"></script>
-  <script src="comet-checkpoint-lock-v1.js?v=1"></script>
+  <script src="comet-checkpoint-lock-v1.js?v=2"></script>
 </body>
 </html>
