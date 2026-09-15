@@ -4,14 +4,14 @@
   const baseDrawObject = GameScene.prototype.drawObject;
   const NAMED_STATE = Symbol('cometNamedVisualState');
 
-  function namedLodOrder(entry, diameterPx) {
+  function namedLodOrder(entry, diameterPx, variant) {
     const lods = Array.isArray(entry?.lods) ? [...entry.lods] : [];
     if (!lods.length) return [];
 
-    // The first gas-planet 64px pack contains literal RGB garbage beneath the intended artwork.
-    // Its 32px counterparts are clean, so always prefer those and scale them up until the 64px
-    // sources are replaced. This applies to Jupiter/Saturn/Uranus/Neptune identity reveals too.
-    if (entry.family === 'gasPlanet' && lods.includes(32)) {
+    // Known source-art workarounds: prefer the clean 32px file and nearest-neighbour upscale.
+    // Gas-planet 64px files contain literal RGB garbage beneath transparency; Ceres' current 64px
+    // source can render black/empty on the Home Screen build, while its 32px counterpart is stable.
+    if ((entry.family === 'gasPlanet' || variant === 'dwarf_ceres') && lods.includes(32)) {
       return [32, ...lods.filter(lod => lod !== 32)];
     }
 
@@ -28,7 +28,7 @@
     const entry = COMET_SPRITE_ASSETS[variant];
     if (!entry || !Array.isArray(entry.lods) || !entry.lods.length) return null;
 
-    for (const lod of namedLodOrder(entry, diameterPx)) {
+    for (const lod of namedLodOrder(entry, diameterPx, variant)) {
       const key = cometSpriteTextureKey(variant, lod);
       if (scene.textures.exists(key)) return { key, lod };
     }
