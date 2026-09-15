@@ -2,6 +2,8 @@ const fs = require('fs');
 
 const index = fs.readFileSync('index.html', 'utf8');
 const dev = fs.readFileSync('comet-dev-lab-v1.js', 'utf8');
+const password = fs.readFileSync('comet-dev-password-v1.js', 'utf8');
+const reward = fs.readFileSync('comet-phase4-dev-reward-v1.js', 'utf8');
 const exact = fs.readFileSync('comet-dev-exact-scale-v1.js', 'utf8');
 const stability = fs.readFileSync('comet-sprite-stability.js', 'utf8');
 const compact = fs.readFileSync('comet-compact-gravity-v1.js', 'utf8');
@@ -11,21 +13,22 @@ function assert(ok, message) { if (!ok) throw new Error(message); }
 assert(index.includes('comet-dev-lab-v1.js?v=2'), 'dev lab script must be cache-busted');
 assert(index.includes('comet-dev-exact-scale-v1.js?v=2'), 'DEV scale behaviour patch must be loaded');
 assert(index.includes('comet-compact-gravity-v1.js?v=2'), 'compact gravity mechanics patch must be cache-busted');
+assert(index.includes('comet-dev-password-v1.js?v=1'), 'text password override must be loaded');
+assert(index.indexOf('comet-dev-password-v1.js?v=1') > index.indexOf('comet-lab-suite-fixes-v1.js?v=1'), 'password override must load after LAB wrappers');
 assert(index.indexOf('comet-dev-exact-scale-v1.js?v=2') > index.indexOf('comet-dev-lab-v1.js?v=2'), 'DEV scale patch must load after dev lab');
 assert(index.indexOf('comet-compact-gravity-v1.js?v=2') > index.indexOf('comet-dev-exact-scale-v1.js?v=2'), 'compact gravity mechanics must load after DEV scale patch');
-assert(index.indexOf('comet-dev-lab-v1.js?v=2') > index.indexOf('comet-gameplay-refine-v1.js?v=2'), 'dev lab must load after gameplay refinements');
 
-// Home entry must be PIN-gated with an on-screen numeric keypad.
-assert(dev.includes("const DEV_PIN = '8888'"), 'DEV PIN must be configured');
-assert(dev.includes("'DEV', C.purple, () => this.showDevPinGate()"), 'Home DEV button must open the PIN gate');
-assert(dev.includes("this.state = 'DEV_PIN'"), 'DEV PIN screen state missing');
-assert(dev.includes("'ENTER 4-DIGIT CODE'"), 'DEV PIN prompt missing');
-assert(dev.includes("'CLEAR'"), 'numpad CLEAR key missing');
-assert(dev.includes("'⌫'"), 'numpad backspace key missing');
-assert(dev.includes("'INCORRECT CODE'"), 'wrong-PIN feedback missing');
-assert(dev.includes("'ACCESS GRANTED'"), 'successful-PIN feedback missing');
-assert(dev.includes('const value = digit++'), 'numpad digit handlers must capture each individual digit');
-assert(dev.includes('this._devPinEntry === DEV_PIN'), 'PIN validation missing');
+// Home still calls showDevPinGate dynamically, but the final loaded implementation is a masked
+// alphabetic password field. The old numeric keypad remains only as a superseded fallback layer.
+assert(dev.includes("'DEV', C.purple, () => this.showDevPinGate()"), 'Home DEV/LAB button must open the access gate');
+assert(password.includes("const DEV_PASSWORD = 'uniatom'"), 'DEV password must be uniatom');
+assert(password.includes("input.type = 'password'"), 'DEV access must use a masked password field');
+assert(password.includes("this.state = 'DEV_PASSWORD'"), 'text password screen state missing');
+assert(password.includes("'INCORRECT PASSWORD'"), 'wrong-password feedback missing');
+assert(password.includes("'ACCESS GRANTED'"), 'successful-password feedback missing');
+assert(password.includes(".toLowerCase() === DEV_PASSWORD"), 'password validation missing');
+assert(reward.includes("const DEV_PASSCODE = 'uniatom'"), 'Phase 4/LAB completion reward must reveal the same password');
+assert(!reward.includes('PASSCODE 8888'), 'old numeric password must not be advertised');
 
 // Two native dropdowns.
 assert(dev.includes("document.createElement('select')"), 'native object dropdown missing');
@@ -93,4 +96,4 @@ assert(dev.includes('restoreRunState(this, snapshot)'), 'dev lab must restore th
 assert(dev.includes("'NEXT', C.cyan, () => this.showDevLab()"), 'NEXT must loop back to selectors');
 assert(dev.includes("'BACK HOME'"), 'dev lab must provide a Home exit');
 
-console.log('dev collision lab + bidirectional compact gravity regression checks passed');
+console.log('dev collision lab + uniatom password + bidirectional compact gravity regression checks passed');
