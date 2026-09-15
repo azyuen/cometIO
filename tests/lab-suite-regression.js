@@ -5,12 +5,17 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'comet-lab-suite-v1.js'), 'utf8');
 const fixes = fs.readFileSync(path.join(root, 'comet-lab-suite-fixes-v1.js'), 'utf8');
+const password = fs.readFileSync(path.join(root, 'comet-dev-password-v1.js'), 'utf8');
+const reward = fs.readFileSync(path.join(root, 'comet-phase4-dev-reward-v1.js'), 'utf8');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 assert(index.includes('comet-lab-suite-v1.js?v=1'), 'LAB suite must be loaded');
 assert(index.includes('comet-lab-suite-fixes-v1.js?v=1'), 'LAB integration fixes must be loaded');
-assert(index.indexOf('comet-lab-suite-v1.js?v=1') > index.indexOf('comet-phase4-dev-reward-v1.js?v=1'), 'LAB suite must load after prior DEV/phase layers');
-assert(index.indexOf('comet-lab-suite-fixes-v1.js?v=1') > index.indexOf('comet-lab-suite-v1.js?v=1'), 'LAB fixes must load last');
+assert(index.includes('comet-phase4-dev-reward-v1.js?v=2'), 'updated LAB completion reward must be loaded');
+assert(index.includes('comet-dev-password-v1.js?v=1'), 'final LAB password override must be loaded');
+assert(index.indexOf('comet-lab-suite-v1.js?v=1') > index.indexOf('comet-phase4-dev-reward-v1.js?v=2'), 'LAB suite must load after prior DEV/phase layers');
+assert(index.indexOf('comet-lab-suite-fixes-v1.js?v=1') > index.indexOf('comet-lab-suite-v1.js?v=1'), 'LAB fixes must load after LAB suite');
+assert(index.indexOf('comet-dev-password-v1.js?v=1') > index.indexOf('comet-lab-suite-fixes-v1.js?v=1'), 'password override must be final after LAB naming wrappers');
 
 assert(source.includes("['LAB','EXP','PHS2','PHS3','PHS4']"), 'LAB must expose five requested tabs');
 assert(source.includes("'COLLISION LAB'"), 'collision tab title must be COLLISION LAB');
@@ -39,5 +44,7 @@ assert(fixes.includes("'LAB MODE UNLOCKED'"), 'visible completion reward must be
 assert(fixes.includes("'FINISH PHS4 TEST'"), 'PHS4 sandbox final card must not offer the real unlock reward');
 assert(fixes.includes('if (this._labSandboxRun && config?.final)'), 'PHS4 sandbox must intercept the real final reward flow');
 assert(fixes.includes('refreshesOrbitalControlsOnTierChange: true'), 'orbital +/- controls must refresh when selectors cross eligible tiers');
+assert(password.includes("const DEV_PASSWORD = 'uniatom'"), 'LAB password must be uniatom');
+assert(reward.includes("const DEV_PASSCODE = 'uniatom'"), 'completion reward must reveal uniatom');
 
-console.log('LAB suite regression checks passed.');
+console.log('LAB suite + uniatom password regression checks passed.');
