@@ -1,5 +1,6 @@
-// Encounter animation refinement v1.
-// - Clean pre-pulsar ABSORB: collide -> burst -> resulting larger object -> pause -> result.
+// Encounter animation refinement v2.
+// - Similar-size clean pre-pulsar ABSORB: collide -> burst -> resulting larger object -> pause.
+// - Clearly larger player ABSORB: smaller target is pulled directly into the larger body.
 // - DEFLECT: visible contact debris/sparks.
 // - AVOID: gravity-like curved trajectories instead of sharp angular turns.
 (() => {
@@ -16,14 +17,8 @@
     const ring = trackFx(scene, scene.add.circle(x, y, 10, color, .10));
     ring.setStrokeStyle(2, color, .9);
 
-    scene.tweens.add({
-      targets: flash, scale: 2.5, alpha: 0, duration: 180, ease: 'Quad.out',
-      onComplete: () => flash.destroy()
-    });
-    scene.tweens.add({
-      targets: ring, scale: 4.5, alpha: 0, duration: 360, ease: 'Cubic.out',
-      onComplete: () => ring.destroy()
-    });
+    scene.tweens.add({targets: flash, scale: 2.5, alpha: 0, duration: 180, ease: 'Quad.out', onComplete: () => flash.destroy()});
+    scene.tweens.add({targets: ring, scale: 4.5, alpha: 0, duration: 360, ease: 'Cubic.out', onComplete: () => ring.destroy()});
 
     for (let i = 0; i < count; i++) {
       const base = biasAngle == null ? Phaser.Math.FloatBetween(0, Math.PI * 2) : biasAngle;
@@ -31,12 +26,8 @@
       const dist = Phaser.Math.Between(20, 62);
       const size = Phaser.Math.Between(2, 4);
       const particle = trackFx(scene, scene.add.rectangle(
-        x + Phaser.Math.Between(-2, 2),
-        y + Phaser.Math.Between(-2, 2),
-        size,
-        Phaser.Math.Between(2, 5),
-        i % 4 === 0 ? C.white : color,
-        Phaser.Math.FloatBetween(.72, 1)
+        x + Phaser.Math.Between(-2, 2), y + Phaser.Math.Between(-2, 2), size,
+        Phaser.Math.Between(2, 5), i % 4 === 0 ? C.white : color, Phaser.Math.FloatBetween(.72, 1)
       ));
       particle.rotation = angle;
       scene.tweens.add({
@@ -58,12 +49,8 @@
       const ring = trackFx(scene, scene.add.circle(x, y, radius, colors[index % colors.length], .08));
       ring.setStrokeStyle(index === 1 ? 3 : 2, colors[index % colors.length], .82 - index * .13);
       scene.tweens.add({
-        targets: ring,
-        scale: 2.4 + index * .35,
-        alpha: 0,
-        duration: 300 + index * 90,
-        ease: 'Cubic.out',
-        onComplete: () => ring.destroy()
+        targets: ring, scale: 2.4 + index * .35, alpha: 0, duration: 300 + index * 90,
+        ease: 'Cubic.out', onComplete: () => ring.destroy()
       });
     });
     impactBurst(scene, x, y, objectColor || C.orange, 22);
@@ -90,7 +77,6 @@
     const gp = scene.growthPoints();
     let tierIndex = scene.tierIndex;
     let growth = scene.growth + gp;
-
     while (tierIndex < TIERS.length - 1 && growth >= TIERS[tierIndex].need) {
       growth -= TIERS[tierIndex].need;
       tierIndex++;
@@ -122,7 +108,13 @@
     };
   }
 
-  function animateAbsorbMerge(scene, p, o, pr, or) {
+  function addTierUpLabel(scene, x, y, object) {
+    const label = scene.addText(x, y, `TIER UP • ${tierShortName(object.name)}`, 9, C.green, { ox: .5, bold: true });
+    label.setAlpha(0);
+    scene.tweens.add({ targets: label, alpha: 1, duration: 210, delay: 90 });
+  }
+
+  function animateAbsorbMerge(scene, p, o, pr) {
     const x = W / 2;
     const y = scene.Y(375);
     const preview = predictedAbsorbObject(scene);
@@ -144,26 +136,88 @@
       const result = scene.drawObject(x, y, resultRadius, preview.object, false, true);
       result.setScale(.48);
       result.setAlpha(.08);
-      scene.tweens.add({
-        targets: result, scale: 1, alpha: 1, duration: 330, ease: 'Back.out'
-      });
+      scene.tweens.add({targets: result, scale: 1, alpha: 1, duration: 330, ease: 'Back.out'});
+      if (preview.evolved) addTierUpLabel(scene, x, y + resultRadius + 26, preview.object);
+    });
 
-      if (preview.evolved) {
-        const label = scene.addText(
-          x,
-          y + resultRadius + 26,
-          `TIER UP • ${tierShortName(preview.object.name)}`,
-          9,
-          C.green,
-          { ox: .5, bold: true }
-        );
-        label.setAlpha(0);
-        scene.tweens.add({ targets: label, alpha: 1, duration: 210, delay: 90 });
+    scene.time.delayedCall(1360, () => scene.resolve());
+  }
+
+  function animateAbsorbIntoLarger(scene, p, o, pr, or) {
+    const preview = predictedAbsorbObject(scene);
+    const start = { x: o.x, y: o.y };
+    const end = { x: p.x, y: p.y };
+    const control = {
+      x: (start.x + end.x) / 2 + 12,
+      y: (start.y + end.y) / 2 - 34
+    };
+    const originalScaleX = p.scaleX || 1;
+    const originalScaleY = p.scaleY || 1;
+
+    scene.tweens.killTweensOf(p);
+    scene.tweens.killTweensOf(o);
+
+    // The dominant body barely moves. The smaller target curves inward, shrinks and disappears.
+    scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 700,
+      ease: 'Cubic.in',
+      onUpdate: tween => {
+        const t = tween.getValue();
+        const u = 1 - t;
+        o.x = u * u * start.x + 2 * u * t * control.x + t * t * end.x;
+        o.y = u * u * start.y + 2 * u * t * control.y + t * t * end.y;
+        const shrink = Math.max(.06, 1 - .94 * t);
+        o.setScale(shrink);
+        o.setAlpha?.(Math.max(0, 1 - .95 * t));
       }
     });
 
-    // Give the new merged/progression object a short beat before the result screen replaces it.
-    scene.time.delayedCall(1360, () => scene.resolve());
+    // A few inward-moving specks reinforce that material is being accreted rather than exploding.
+    for (let i = 0; i < 8; i++) {
+      const dot = trackFx(scene, scene.add.rectangle(start.x, start.y, 2, 2, i % 3 ? C.orange : C.white, .75));
+      scene.tweens.add({
+        targets: dot,
+        x: end.x + Phaser.Math.Between(-3, 3),
+        y: end.y + Phaser.Math.Between(-3, 3),
+        alpha: 0,
+        delay: 240 + i * 35,
+        duration: 360,
+        ease: 'Cubic.in',
+        onComplete: () => dot.destroy()
+      });
+    }
+
+    scene.time.delayedCall(680, () => {
+      o.setAlpha?.(0);
+      const pulse = trackFx(scene, scene.add.circle(end.x, end.y, Math.max(8, pr * .55), scene.player?.color || C.orange, .08));
+      pulse.setStrokeStyle(2, C.white, .35);
+      scene.tweens.add({targets: pulse, scale: 1.8, alpha: 0, duration: 320, ease: 'Quad.out', onComplete: () => pulse.destroy()});
+
+      scene.tweens.add({
+        targets: p,
+        scaleX: originalScaleX * 1.09,
+        scaleY: originalScaleY * 1.09,
+        duration: 150,
+        yoyo: true,
+        ease: 'Sine.out'
+      });
+    });
+
+    if (preview.evolved) {
+      scene.time.delayedCall(830, () => {
+        p.setAlpha?.(0);
+        const resultRadius = Math.min(68, Math.max(pr * 1.18, pr + 7));
+        const result = scene.drawObject(end.x, end.y, resultRadius, preview.object, false, true);
+        result.setScale(.72);
+        result.setAlpha(.15);
+        scene.tweens.add({targets: result, scale: 1, alpha: 1, duration: 300, ease: 'Back.out'});
+        addTierUpLabel(scene, end.x, end.y + resultRadius + 24, preview.object);
+      });
+    }
+
+    scene.time.delayedCall(preview.evolved ? 1390 : 1120, () => scene.resolve());
   }
 
   function animateDeflect(scene, p, o) {
@@ -173,24 +227,15 @@
 
     scene.tweens.killTweensOf(p);
     scene.tweens.killTweensOf(o);
-    scene.tweens.add({
-      targets: p, x: 198, y: scene.Y(340), angle: -25, duration: 540, ease: 'Quad.in'
-    });
-    scene.tweens.add({
-      targets: o, x: 245, y: scene.Y(400), duration: 540, ease: 'Quad.in'
-    });
+    scene.tweens.add({targets: p, x: 198, y: scene.Y(340), angle: -25, duration: 540, ease: 'Quad.in'});
+    scene.tweens.add({targets: o, x: 245, y: scene.Y(400), duration: 540, ease: 'Quad.in'});
 
     scene.time.delayedCall(525, () => {
       impactBurst(scene, impactX, impactY, C.orange, result === 'rough' ? 18 : 13, -.65);
-
       if (result === 'clean') {
-        scene.tweens.add({
-          targets: p, x: 392, y: scene.Y(205), angle: -70, duration: 590, ease: 'Cubic.out'
-        });
+        scene.tweens.add({targets: p, x: 392, y: scene.Y(205), angle: -70, duration: 590, ease: 'Cubic.out'});
       } else if (result === 'rough') {
-        scene.tweens.add({
-          targets: p, x: 368, y: scene.Y(270), angle: -35, scale: .82, duration: 670, ease: 'Cubic.out'
-        });
+        scene.tweens.add({targets: p, x: 368, y: scene.Y(270), angle: -35, scale: .82, duration: 670, ease: 'Cubic.out'});
       }
     });
 
@@ -232,7 +277,6 @@
         p.angle = Phaser.Math.RadToDeg(Math.atan2(tangent.y, tangent.x));
       }
     });
-
     scene.time.delayedCall(1120, () => scene.resolve());
   }
 
@@ -264,33 +308,26 @@
   }
 
   GameScene.prototype.animate = function (choice, p, o, pr, or) {
-    // Preserve pulsar/black-hole custom gravity capture animations.
     if (choice === 'ABSORB' && successfulCleanAbsorb(this) && belowPulsar(this)) {
-      return animateAbsorbMerge(this, p, o, pr, or);
+      // Use the exact revealed display radii the player just saw. A clearly dominant player should
+      // accrete the small target, while near peers still produce the satisfying collision burst.
+      if (pr >= Math.max(1, or) * 1.7) return animateAbsorbIntoLarger(this, p, o, pr, or);
+      return animateAbsorbMerge(this, p, o, pr);
     }
 
-    // Preserve compact-target deflection physics, adding only a small visible contact burst.
     if (choice === 'DEFLECT' && this.pending?.compactGravityDeflect) {
       const result = baseAnimate.call(this, choice, p, o, pr, or);
       if (this.pending?.result !== 'catastrophic') {
         this.time.delayedCall(500, () => {
-          impactBurst(
-            this,
-            (p.x + o.x) / 2,
-            (p.y + o.y) / 2,
-            C.orange,
-            this.pending?.result === 'rough' ? 16 : 11,
-            -.65
-          );
+          impactBurst(this, (p.x + o.x) / 2, (p.y + o.y) / 2, C.orange,
+            this.pending?.result === 'rough' ? 16 : 11, -.65);
         });
       }
       return result;
     }
 
     if (choice === 'DEFLECT') return animateDeflect(this, p, o);
-    if (choice === 'AVOID') {
-      return this.pending?.success ? animateAvoidSuccess(this, p, o) : animateAvoidFailure(this, p, o);
-    }
+    if (choice === 'AVOID') return this.pending?.success ? animateAvoidSuccess(this, p, o) : animateAvoidFailure(this, p, o);
     return baseAnimate.call(this, choice, p, o, pr, or);
   };
 })();
