@@ -5,17 +5,17 @@
     'atom_01','atom_02','atom_03','atom_04','atom_05','atom_06','atom_07'
   ];
 
-  // Use a distinct manifest family name so the historical atomic force-32 corruption workaround
-  // in the renderer does not downgrade this newly exported clean pack. Explicit file paths keep
-  // the assets in the existing /atomic directory.
+  // The current 64px Atom exports can produce the historical rainbow/checker-square corruption on
+  // some Phaser/WebGL paths. Keep both files in the asset pack, but identify them as atomic so the
+  // renderer's proven clean-32 policy is used in live gameplay until the 64px sources are re-exported.
   atomVariants.forEach((variant) => {
     COMET_SPRITE_ASSETS[variant] = {
-      family: 'earthAtom',
+      family: 'atomic',
       lods: [32, 64],
-      version: 5,
+      version: 6,
       files: {
-        32: `assets/sprites/atomic/${variant}_32.png?v=5`,
-        64: `assets/sprites/atomic/${variant}_64.png?v=5`
+        32: `assets/sprites/atomic/${variant}_32.png?v=6`,
+        64: `assets/sprites/atomic/${variant}_64.png?v=6`
       }
     };
   });
@@ -40,7 +40,7 @@
     tintPalette: [],
     mysteryTintPalette: [],
     lodByDisplayedSize: true,
-    fixedLods: { mystery: 32, normal: 64 }
+    fixedLods: { mystery: 32, normal: 32 }
   });
 
   window.CometCosmicSpriteAssetsV1 = Object.freeze({
@@ -48,6 +48,8 @@
     atomVariants: [...atomVariants],
     atomPalette: 'EARTHY_MIXED',
     atomLods: [32, 64],
+    liveAtomLod: 32,
+    stable32Workaround: true,
     universeVariant: 'universe_final',
     universeLods: [32, 64]
   });
