@@ -1,0 +1,18 @@
+const assert=require('assert'),fs=require('fs'),path=require('path');
+const root=path.join(__dirname,'..');
+const loader=fs.readFileSync(path.join(root,'comet-action-icons-v1.js'),'utf8');
+const ui=fs.readFileSync(path.join(root,'comet-phase4-action-icons-v2.js'),'utf8');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+assert(loader.includes("action_absorb_phase4_64.png?v=2"),'Capture sprite asset must be cache-busted');
+assert(loader.includes("action_deflect_phase4_64.png?v=2"),'Graze sprite asset must be cache-busted');
+assert(loader.includes("action_avoid_phase4_64.png?v=2"),'Avoid sprite asset must be cache-busted');
+assert(index.includes('comet-action-icons-v1.js?v=6'),'action icon loader cache version must be bumped');
+assert(index.includes('comet-phase4-action-icons-v2.js?v=1'),'Phase 4 sprite-button override must load');
+assert(index.indexOf('comet-phase4-action-icons-v2.js?v=1')>index.indexOf('comet-phase4-finale-label-v1.js?v=1'),'sprite-button override must load last');
+assert(ui.includes("'CAPTURE',C.green,'ABSORB','action-absorb-phase4'"),'green supplied artwork must map to Capture');
+assert(ui.includes("'GRAZE',C.orange,'DEFLECT','action-deflect-phase4'"),'orange supplied artwork must map to Graze');
+assert(ui.includes("'AVOID',C.blue,'AVOID','action-avoid-phase4'"),'blue supplied artwork must map to Avoid');
+assert(ui.includes('setDisplaySize(54, 54)'),'all three Phase 4 icons must have equal display size');
+assert(ui.includes("'A COSMIC SYSTEM IS AHEAD.'"),'Phase 4 prompt must remain intact');
+assert(!ui.includes('CAN END RUN'),'removed grey risk microtext must not be reintroduced by the new icon layer');
+console.log('Phase 4 supplied action icon regression checks passed.');
