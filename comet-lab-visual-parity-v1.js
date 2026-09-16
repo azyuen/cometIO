@@ -1,5 +1,6 @@
 // LAB/gameplay visual parity.
-// - Planet sprites use 64px art when displayed large enough (generic rocky/gas included).
+// - Clean planet sprites use 64px art when displayed large enough.
+// - Known-corrupt generic rocky 64px sources remain on their clean 32px fallback.
 // - Collision LAB carries the player's visible sprite forward after each action so it can be used to
 //   test the same appearance continuity as the real game. LAB remains isolated from saves/collection.
 (() => {
@@ -9,7 +10,12 @@
   const baseResolve = proto.resolve;
   const baseShowDevLab = proto.showDevLab;
 
-  const BAD_64 = new Set(['dwarf_ceres', 'dwarf_eris', 'planet_saturn', 'planet_neptune']);
+  // These 64px sources have shown rainbow/rectangle corruption. Do not promote them until the PNGs
+  // themselves are re-exported. Generic DWARF PLANET and ROCKY PLANET both use rockyPlanet_01/02.
+  const BAD_64 = new Set([
+    'rockyPlanet_01', 'rockyPlanet_02', 'rockyPlanet_mystery_01',
+    'dwarf_ceres', 'dwarf_eris', 'planet_saturn', 'planet_neptune'
+  ]);
   const APPEARANCE_KEYS = [
     'cometVisualVariant', 'cometVisualRotation', 'cometVisualFlipX',
     'cometVisualTint', 'cometVisualAlpha'
@@ -67,8 +73,8 @@
     return container;
   };
 
-  // visual-renderer-v4 still has an old internal 32px safeguard. Run after it each frame so any
-  // large planet it downgrades is immediately restored to the intended 64px texture.
+  // visual-renderer-v4 still has an old internal 32px safeguard. Run after it each frame so CLEAN
+  // large planets it downgrades are immediately restored to 64px; quarantined variants are ignored.
   proto.update = function (time, delta) {
     if (typeof baseUpdate === 'function') baseUpdate.call(this, time, delta);
     for (const handle of this._cometVisualHandles || []) {
@@ -130,8 +136,6 @@
     const result = baseShowDevLab.call(this);
 
     if (carry && carryKey && carryKey === this._devSelectedA && this.state === 'DEV_LAB') {
-      // baseShowDevLab intentionally rerolls A every time. Replace that reroll with the carried player
-      // appearance so NEXT reflects what the collision animation just produced.
       this._devObjectA = carry;
       if (Number.isInteger(carry.tier)) {
         const selectedTier = Number(String(this._devSelectedA || '').split(':').pop());
@@ -150,6 +154,7 @@
 
   window.CometLabVisualParity = Object.freeze({
     largePlanetLod: 64,
+    quarantined64: [...BAD_64],
     labCarriesPlayerAppearance: true,
     note: 'Collision LAB mirrors visuals but remains isolated from progression saves/collection.'
   });
