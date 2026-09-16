@@ -12,7 +12,8 @@ assert(index.indexOf('comet-score-sprite-snapshot-v1.js?v=1') > index.indexOf('c
 assert(index.indexOf('comet-collection-scroll-polish-v1.js?v=1') > index.indexOf('comet-science-learning-v1.js?v=2'), 'collection polish must load after science collection wrapper');
 
 assert(score.includes('playerSprite: finalPlayerSnapshot(this)'), 'new scores must save the exact player sprite snapshot');
-assert(score.includes('cometVisualVariant'), 'player snapshot must retain serializable appearance fields through object spread/rendering');
+assert(score.includes('...player,'), 'snapshot must preserve the player’s serialized visual appearance fields');
+assert(score.includes('...score.playerSprite,'), 'leaderboard must render from the stored score sprite snapshot');
 assert(score.includes('scoreSpriteObject(score)'), 'leaderboard must rebuild each card from its own score snapshot');
 assert(score.includes("legacyFallback: 'tier-only'"), 'legacy scores must not borrow the current player sprite');
 assert(!score.includes('...(this.player || {})'), 'score cards must not use the current player as their sprite source');
