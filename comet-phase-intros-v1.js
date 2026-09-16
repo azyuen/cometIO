@@ -37,9 +37,9 @@
       subtitle:'COMPACT OBJECTS CAN LOOK SMALL BUT CONTROL THE ENCOUNTER.',
       objectLabel:'GRAVITY BECOMES THE DOMINANT FORCE',
       actions:[
-        ['ABSORB', C.green, 'Compare gravitational strength — not just visible size.'],
-        ['DEFLECT', C.orange, 'Use a close gravity pass when full capture looks risky.'],
-        ['AVOID', C.blue, 'Escape compact objects whose gravity may overpower you.']
+        ['MERGE', C.green, 'Combine when your gravity can dominate the encounter.'],
+        ['SLINGSHOT', C.orange, 'Curve around the gravity well and skim past its outer edge.'],
+        ['ESCAPE', C.blue, 'Stay clear when the other gravity well may overpower you.']
       ],
       rule:'MASS, DENSITY AND GRAVITY MATTER MORE THAN SIZE.'
     }
@@ -58,7 +58,7 @@
 
   function actionLine(scene, y, label, color, explanation) {
     scene.addText(46,scene.Y(y),`• ${label}`,10,color,{bold:true});
-    const x=label==='ABSORB'?132:label==='DEFLECT'?137:120;
+    const x=label==='ABSORB'?132:label==='DEFLECT'?137:label==='MERGE'?126:label==='SLINGSHOT'?154:label==='ESCAPE'?132:120;
     scene.addText(x,scene.Y(y),explanation,8.55,C.white,{bold:true,width:248,lineSpacing:2});
   }
 
@@ -142,6 +142,7 @@
     phase1Lesson:'APPARENT SIZE',
     phase2Lesson:'ORBITALS',
     phase3Lesson:'MASS DENSITY GRAVITY',
+    phase3Actions:['MERGE','SLINGSHOT','ESCAPE'],
     phase4UsesGalaxyIntro:true
   });
 })();
