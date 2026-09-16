@@ -9,9 +9,9 @@ const fixes=fs.readFileSync(path.join(root,'comet-phase4-ending-v4-fixes.js'),'u
 assert(index.includes('comet-phase4-cluster-network-v1.js?v=2'),'revised cluster visual must be cache-busted');
 assert(index.includes('comet-phase4-finale-v3.js?v=2'),'revised five-supercluster finale must be cache-busted');
 assert(index.includes('comet-phase4-ending-v4.js?v=1'),'new ending flow must load');
-assert(index.includes('comet-phase4-ending-v4-fixes.js?v=2'),'ending state guards must load');
+assert(index.includes('comet-phase4-ending-v4-fixes.js?v=3'),'ending state guards must load');
 assert(index.indexOf('comet-phase4-ending-v4.js?v=1')>index.indexOf('comet-universe-sprite-v1.js?v=1'),'ending flow must be the late finale override');
-assert(index.indexOf('comet-phase4-ending-v4-fixes.js?v=2')>index.indexOf('comet-phase4-ending-v4.js?v=1'),'state guards must load last');
+assert(index.indexOf('comet-phase4-ending-v4-fixes.js?v=3')>index.indexOf('comet-phase4-ending-v4.js?v=1'),'state guards must load last');
 
 assert(cluster.includes('clusterCloud:true'),'galaxy cluster must use irregular cluster-cloud geometry');
 assert(cluster.includes('filamentPlacement:false'),'old arm/filament placement must be disabled');
@@ -51,6 +51,8 @@ assert(ending.includes("'OPEN COLLISION LAB'"),'full game completion must offer 
 assert(ending.includes("'PHS4 LAB PREVIEW • SCORE NOT SAVED'"),'PHS4 must show the same end screen without writing a score');
 assert(ending.includes('if(scene._labSandboxRun)return {saved:false,topFive:false,preview:true}'),'LAB ending must remain non-persistent');
 assert(fixes.includes('labExitThroughoutEpilogue:true'),'LAB exit must remain available through the epilogue');
+assert(fixes.includes('phs4EndingShortcut:true'),'PHS4 must expose a direct ending preview shortcut');
+assert(fixes.includes("'ENDING'"),'PHS4 birth screen must expose an ENDING shortcut');
 assert(fixes.includes('this.finaleMergeCount=0'),'WHAT NEXT? must begin a clean five-supercluster sequence');
 
 console.log('Phase 4 ending v4 regression checks passed.');
