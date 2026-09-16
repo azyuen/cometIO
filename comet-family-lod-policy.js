@@ -98,10 +98,8 @@
   }
 
   function selectLod(def, mystery, diameter) {
-    // The uploaded 64px atom PNGs contain literal RGB garbage below the intended sprite.
-    // The 32px atom sources are clean, so keep the same art and simply scale those up.
-    if (def.visualFamily === 'atomic') return 32;
-
+    // The current Atom pack has clean 32px and 64px exports, so Atom now follows the same
+    // display-size LOD policy as the other sprite families.
     if (!def.lodByDisplayedSize) return mystery ? def.fixedLods.mystery : def.fixedLods.normal;
     if (mystery) return def.fixedLods.mystery;
     return diameter <= COMET_VISUAL_SETTINGS.lodThresholds.smallMaxPx
