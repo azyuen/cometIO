@@ -9,10 +9,10 @@
     this.load.image('action-deflect', 'assets/ui/action_deflect_64.png?v=3');
     this.load.image('action-avoid', 'assets/ui/action_avoid_64.png?v=3');
 
-    // Phase 4 action art: same mechanics, galaxy-scale visual language.
-    this.load.image('action-absorb-phase4', 'assets/ui/action_absorb_phase4_64.png?v=1');
-    this.load.image('action-deflect-phase4', 'assets/ui/action_deflect_phase4_64.png?v=1');
-    this.load.image('action-avoid-phase4', 'assets/ui/action_avoid_phase4_64.png?v=1');
+    // Phase 4 action art: supplied galaxy-scale sprites.
+    this.load.image('action-absorb-phase4', 'assets/ui/action_absorb_phase4_64.png?v=2');
+    this.load.image('action-deflect-phase4', 'assets/ui/action_deflect_phase4_64.png?v=2');
+    this.load.image('action-avoid-phase4', 'assets/ui/action_avoid_phase4_64.png?v=2');
   };
 
   const priorClearUI = GameScene.prototype.clearUI;
