@@ -44,8 +44,6 @@
     const r = pending.massRatio || ratio(scene);
     const gap = Number(pending.gap) || 0;
     const speed = speedRatio(scene);
-    // Only serious gravitational mismatches can end the run. Moving faster gives a better chance
-    // of escaping a failed commitment; slow systems linger in the stronger gravity field.
     if (r < 1.20 && gap <= 0) return 0;
     const massRisk = Math.max(0, Math.log10(Math.max(1, r))) * .26;
     const tierRisk = Math.max(0, gap) * .16;
@@ -64,8 +62,6 @@
     const r = pending.massRatio || ratio(scene);
     const gap = Math.max(0, Number(pending.gap) || 0);
     const speed = speedRatio(scene);
-    // Speed finally matters directly in Phase 4: repeated AVOID choices bleed speed, making a later
-    // escape from a massive system less certain even though AVOID remains the safest action.
     const speedBonus = clamp(Math.log10(Math.max(.1, speed)) * .10, -.16, .12);
     return clamp(.965 - gap * .055 - Math.max(0, Math.log10(r)) * .06 + speedBonus, .58, .995);
   }
@@ -78,8 +74,6 @@
     pending.v7SpeedRatio = speedRatio(this);
 
     if (choice === 'ABSORB' && !pending.success) {
-      // v5 intentionally converted the old catastrophic "captured" result into stripped. Its marker
-      // lets us restore that consequence without disturbing the newer exact-member transfer logic.
       const inheritedCatastrophe = !!pending.v5PreventSMBHRegression;
       const fatalChance = inheritedCatastrophe ? 1 : captureFatalChance(this, pending);
       pending.v7FatalChance = fatalChance;
@@ -97,8 +91,6 @@
       const desired = severity >= .72 ? 4 : severity >= .46 ? 3 : severity >= .22 ? 2 : 1;
       ensureOutgoing(this, pending, desired);
 
-      // A Cluster that is heavily stripped can collapse back to Galaxy scale. Galaxy is the floor of
-      // Phase 4, so there is never a regression into the old SMBH gameplay tier.
       if (this.tierIndex >= CLUSTER) {
         const regressChance = severity >= .82 ? .70 : severity >= .58 ? .38 : severity >= .40 ? .16 : 0;
         if (regressChance && Math.random() < regressChance) {
@@ -160,7 +152,7 @@
       scene.wideButton(W/2,scene.Y(752),280,44,'RETURN TO LAB',C.purple,()=>scene.returnFromLabPhase());
     } else {
       scene.wideButton(W/2,scene.Y(690),310,48,'LOAD LAST SAVE',C.blue,()=>scene.load());
-      scene.wideButton(W/2,scene.Y(752),280,44,'RESTART RUN',C.red,()=>scene.resetRun());
+      scene.wideButton(W/2,scene.Y(752),280,44,'RESTART RUN',C.red,()=>scene.startNewRun());
     }
   }
 
@@ -205,7 +197,6 @@
       if (r.choice === 'DEFLECT' && r.result === 'stripped') {
         const n=(r.transferOutMembers||[]).length;
         if (r.v7TierRegression) {
-          // Prevent the older cluster-result wrapper from replacing this more important consequence.
           r.v4ClusterInteraction=false;
           result={...result,title:'SYSTEM DISRUPTED',detail:`GALAXY CLUSTER → GALAXY • ORBITALS -${n}`,reason:'The graze became a major tidal stripping event. Enough of your cluster was pulled away that the surviving bound structure fell back to galaxy scale.',color:C.red};
         } else if (n >= 2) {
@@ -217,9 +208,8 @@
   };
 
   function cleanRiskLegend(scene) {
-    // Keep the buttons themselves visually clean; risk/reward is communicated once in the prompt.
-    scene.addText(W/2,scene.Y(707),'CAPTURE  HIGH REWARD / CAN END RUN   •   GRAZE  MEDIUM RISK',6.25,C.muted,{ox:.5,bold:true,width:400,align:'center'});
-    scene.addText(W/2,scene.Y(724),'AVOID  SAFEST / COSTS SPEED',6.25,C.blue,{ox:.5,bold:true,width:390,align:'center'});
+    // Keep button faces clean: one compact legend sits inside the prompt panel, above the buttons.
+    scene.addText(W/2,scene.Y(704),'CAPTURE: HIGH / CAN END RUN   •   GRAZE: MEDIUM   •   AVOID: SAFE / SPEED COST',5.8,C.muted,{ox:.5,bold:true,width:398,align:'center'});
   }
 
   proto.drawPrompt = function() {
@@ -231,8 +221,6 @@
   proto.showPhase4SystemBirth = function() {
     const result=baseShowBirth.call(this);
     if(this.state==='P4_SYSTEM_BIRTH'){
-      // v5's tutorial already explains the actions; add one concise consequence line without adding
-      // another stat or panel.
       this.addText(W/2,this.Y(662),'CAPTURE CAN END THE RUN • GRAZE CAN COST ORBITALS • AVOID COSTS SPEED',6.9,C.orange,{ox:.5,bold:true,width:380,align:'center'});
     }
     return result;
