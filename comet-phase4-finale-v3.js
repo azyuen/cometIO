@@ -1,4 +1,4 @@
-// Final Phase v3: same encounter language as normal gameplay.
+// Final Phase v3: post-Phase-4 cosmic epilogue.
 // One MERGE action; each incoming supercluster visibly joins the persistent player structure until five are connected.
 (() => {
   if(!window.CometPhase4FinaleV2||!window.CometPhase4)return;
@@ -72,7 +72,7 @@
   proto.startUniverseFinale=function(){
     this.tweens.killAll();this.clearUI();ensureState(this);this.state='FINAL_PHASE_ENCOUNTER';
     const connected=this._finalJoinedSuperclusters.length;
-    this.addText(14,this.Y(18),'FINAL PHASE?',12,C.white,{bold:true});
+    this.addText(14,this.Y(18),'BEYOND PHASE 4',12,C.white,{bold:true});
     this.addText(W-14,this.Y(20),`${connected} / 5 CONNECTED`,9,C.cyan,{bold:true,ox:1});
 
     const d=this.add.graphics();d.lineStyle(8,C.cyan,.07).lineBetween(0,this.Y(610),W,this.Y(226));d.lineStyle(3,C.cyan,.9).lineBetween(0,this.Y(610),W,this.Y(226));this.ui.add(d);
@@ -112,7 +112,7 @@
     this.addText(W/2,this.Y(85),`SUPERCLUSTERS CONNECTED: ${count} / 5`,15,count>=5?C.green:C.cyan,{ox:.5,bold:true});
     const v=drawJoined(this,W/2,this.Y(405),116,true);v.setScale(.72);this.tweens.add({targets:v,scale:.82,duration:500,ease:'Back.out'});
     this.addText(W/2,this.Y(580),count>=5?'THE CONNECTED STRUCTURE IS COMPLETE.':'THIS CONNECTED STRUCTURE IS NOW YOUR OBJECT.',8.5,C.white,{ox:.5,bold:true});
-    this.time.delayedCall(count>=5?1700:900,()=>{if(count>=5)this.completeUniverseAssembly();else this.startUniverseFinale();});
+    this.time.delayedCall(count>=5?1800:900,()=>{if(count>=5)this.completeUniverseAssembly();else this.startUniverseFinale();});
   };
 
   proto.chooseFinalSupercluster=function(){return this.chooseFinalSuperclusterV3();};
@@ -120,11 +120,27 @@
 
   proto.completeUniverseAssembly=function(){
     this.tweens.killAll();this.clearUI();this.state='FINAL_PHASE_COMPLETE';ensureState(this);
-    this.addText(W/2,this.Y(68),'FIVE SUPERCLUSTERS CONNECTED',19,C.green,{ox:.5,bold:true});
-    const v=drawJoined(this,W/2,this.Y(405),132,true);v.setScale(.72);this.tweens.add({targets:v,scale:.88,duration:900,ease:'Sine.inOut'});
-    this.addText(W/2,this.Y(607),'ONE LARGE-SCALE CONNECTED STRUCTURE',8,C.cyan,{ox:.5,bold:true});
-    this.time.delayedCall(2200,()=>this.showUniverseAtomEncounter());
+    this.addText(W/2,this.Y(64),'FIVE SUPERCLUSTERS CONNECTED',19,C.green,{ox:.5,bold:true});
+    this.addText(W/2,this.Y(98),'THE LARGE-SCALE COSMIC WEB IS COMPLETE',8.5,C.muted,{ox:.5,bold:true});
+    const v=drawJoined(this,W/2,this.Y(405),132,true);v.setScale(.72);this.tweens.add({targets:v,scale:.90,duration:900,ease:'Sine.inOut'});
+    this.addText(W/2,this.Y(607),'PAUSE. THE FIVE STRUCTURES NOW DEFINE YOUR OBSERVABLE COSMOS.',8,C.cyan,{ox:.5,bold:true,width:380,align:'center'});
+
+    this.time.delayedCall(1550,()=>{
+      this.addText(W/2,this.Y(135),'YOU ARE NOW THE OBSERVABLE UNIVERSE',16,C.white,{ox:.5,bold:true,width:390,align:'center'});
+      this.cameras.main.flash(240,32,217,255,false);
+    });
+
+    this.time.delayedCall(2250,()=>{
+      const universeObject={name:'OBSERVABLE UNIVERSE',realName:'OBSERVABLE UNIVERSE',tier:SUPERCLUSTER,radiusM:4.4e26,massKg:1e53,speedMS:0,kind:'universe',color:C.cyan,solid:false};
+      const simple=this.drawObject(W/2,this.Y(405),32,universeObject,false,true);
+      simple.setAlpha(0).setScale(.38);
+      this.tweens.add({targets:v,scale:.10,alpha:0,duration:1050,ease:'Cubic.inOut'});
+      this.tweens.add({targets:simple,scale:1,alpha:1,delay:560,duration:520,ease:'Back.out'});
+      this.addText(W/2,this.Y(650),'ZOOMING OUT TO THE OBSERVABLE HORIZON…',8.5,C.muted,{ox:.5,bold:true});
+    });
+
+    this.time.delayedCall(3900,()=>this.showUniverseAtomEncounter());
   };
 
-  window.CometPhase4FinaleV3=Object.freeze({enabled:true,normalDiagonalEncounter:true,onlyAction:'MERGE',captureSpriteForMerge:true,persistentJoinedObject:true,totalSuperclusters:5});
+  window.CometPhase4FinaleV3=Object.freeze({enabled:true,postPhase4Epilogue:true,normalDiagonalEncounter:true,onlyAction:'MERGE',captureSpriteForMerge:true,persistentJoinedObject:true,totalSuperclusters:5,observableUniversePause:true});
 })();
