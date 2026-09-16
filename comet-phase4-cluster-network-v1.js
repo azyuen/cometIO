@@ -78,8 +78,10 @@
     g.fillStyle(C.cyan,.025).fillEllipse(0,0,radius*2.05,radius*1.48);c.add(g);
 
     const visible=(members||[]).slice(-14);
-    visible.forEach((m,i)=>{const s=filamentSlot(i,visible.length,outer*.93),rr=Math.max(5.5,radius*(i===0?.12:.10));miniGalaxy(scene,c,s.x,s.y,rr,m,i);});
-    const centreMember=visible.find(m=>m.blackHoleCore)||visible[0];
+    const centreIndex=Math.max(0,visible.findIndex(m=>m.blackHoleCore));
+    const centreMember=visible[centreIndex]||visible[0];
+    const filamentMembers=visible.filter((_,i)=>i!==centreIndex);
+    filamentMembers.forEach((m,i)=>{const s=filamentSlot(i,filamentMembers.length,outer*.93),rr=Math.max(5.5,radius*.10);miniGalaxy(scene,c,s.x,s.y,rr,m,i);});
     if(centreMember)miniGalaxy(scene,c,0,0,Math.max(7,radius*.14),centreMember,99);
     if((members||[]).length>visible.length){const t=scene.add.text(0,radius*.92,`+${members.length-visible.length} GALAXIES`,{fontFamily:FONT,fontSize:'6px',fontStyle:'bold',color:'#8db7ca'}).setOrigin(.5);c.add(t);}
     scene.ui.add(c);return c;
