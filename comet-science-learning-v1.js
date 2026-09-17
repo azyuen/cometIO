@@ -54,10 +54,10 @@
     nebula_tarantula:['TARANTULA NEBULA','A huge star-forming region in the Large Magellanic Cloud.','It is one of the most active stellar nurseries in the Local Group of galaxies.'],
     nebula_horsehead:['HORSEHEAD NEBULA','A dark tower of dust silhouetted against the bright emission nebula IC 434.','It looks dark because dense dust blocks the glowing hydrogen behind it.'],
 
-    pulsar_crab:['CRAB PULSAR','A rapidly rotating neutron star left by a supernova.','It is tiny compared with a star, but packs enormous mass into a very small volume.'],
-    pulsar_vela:['VELA PULSAR','A rapidly spinning neutron star.','Phase 3 changes the rule: compactness and gravity can matter more than visible size.'],
-    pulsar_geminga:['GEMINGA','A nearby neutron star detected strongly in gamma rays.','Some extreme objects are easier to discover in invisible wavelengths than visible light.'],
-    pulsar_b1509:['PSR B1509–58','A young energetic pulsar surrounded by high-energy structures.','Fast rotation and strong magnetic fields can drive powerful particle winds.'],
+    pulsar_crab:['CRAB PULSAR','At the centre of the Crab Nebula, it spins once every 33 milliseconds — about 30 times a second.','Its particle wind powers the glowing remnant of the supernova recorded by astronomers in 1054.'],
+    pulsar_vela:['VELA PULSAR','Vela completes one rotation in just 89 milliseconds.','Its particle jet has been observed racing along the spin axis at about 70% of the speed of light.'],
+    pulsar_geminga:['GEMINGA','Geminga is a bright gamma-ray pulsar with no bright radio emission.','Chandra sees swept-back X-ray trails as this neutron star races supersonically through the Galaxy.'],
+    pulsar_b1509:['PSR B1509–58','This young pulsar spins almost seven times every second.','Its X-ray pulsar-wind nebula has a striking hand-like shape nicknamed the “Hand of God”.'],
 
     blackHole_cygnusX1:['CYGNUS X-1','One of the best-known stellar-mass black-hole systems.','A black hole can be physically small yet have gravity strong enough to dominate a close encounter.'],
     blackHole_v404Cygni:['V404 CYGNI','A stellar-mass black hole in a binary system.','Matter pulled from a companion can heat up brightly before crossing the event horizon.'],
