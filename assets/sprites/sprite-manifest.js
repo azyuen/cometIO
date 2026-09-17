@@ -113,14 +113,14 @@ const COMET_SPRITE_ASSETS = {
   nebula_tarantula:     { family: 'nebula', lods: [32, 64], version: 1 },
   nebula_horsehead:     { family: 'nebula', lods: [32, 64], version: 1 },
 
-  // PULSAR.
-  pulsar_01:            { family: 'pulsar', lods: [32, 64], version: 1 },
-  pulsar_02:            { family: 'pulsar', lods: [32, 64], version: 1 },
-  pulsar_mystery_01:    { family: 'pulsar', lods: [32, 64], version: 1 },
-  pulsar_crab:          { family: 'pulsar', lods: [32, 64], version: 1 },
-  pulsar_vela:          { family: 'pulsar', lods: [32, 64], version: 1 },
-  pulsar_geminga:       { family: 'pulsar', lods: [32, 64], version: 1 },
-  pulsar_b1509:         { family: 'pulsar', lods: [32, 64], version: 1 },
+  // PULSAR. v2 is the completed sprite pack: two generic, one mystery and four real named collectibles.
+  pulsar_01:            { family: 'pulsar', lods: [32, 64], version: 2 },
+  pulsar_02:            { family: 'pulsar', lods: [32, 64], version: 2 },
+  pulsar_mystery_01:    { family: 'pulsar', lods: [32, 64], version: 2 },
+  pulsar_crab:          { family: 'pulsar', lods: [32, 64], version: 2 },
+  pulsar_vela:          { family: 'pulsar', lods: [32, 64], version: 2 },
+  pulsar_geminga:       { family: 'pulsar', lods: [32, 64], version: 2 },
+  pulsar_b1509:         { family: 'pulsar', lods: [32, 64], version: 2 },
 
   // Stellar-mass BLACK HOLE.
   blackHole_01:             { family: 'blackHole', lods: [32, 64], version: 1 },
