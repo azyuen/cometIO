@@ -1,11 +1,8 @@
-// Phase 3 trajectory mechanics v2.
-// The player sets RADIAL <-> TANGENTIAL before MERGE / SLING / ESCAPE.
-// v2 fixes two issues from v1:
-// 1) extreme SMBH gravity could crush the base AVOID chance before trajectory was applied, so even
-//    maximum tangential angular momentum barely helped;
-// 2) redrawing on pointer-down interrupted slider dragging.
-// High tangential angular momentum now represents a genuinely large impact parameter: it strongly
-// lowers capture probability without making survival certain, while radial approaches remain lethal.
+// Phase 3 trajectory mechanics v3.
+// RADIAL <-> TANGENTIAL is chosen before MERGE / SLING / ESCAPE.
+// v3 compacts the trajectory UI, moves orbital assist away from the opponent label, and lets the
+// player commit any number of available orbitals using +/- controls. Multiple sacrificed orbitals
+// reduce capture risk with diminishing returns rather than an arbitrary hard cap.
 (() => {
   if (typeof GameScene === 'undefined') return;
   const proto = GameScene.prototype;
@@ -30,11 +27,17 @@
   }
   function angularMomentum(t) { return clamp((t + MAX_T) / (MAX_T * 2), 0, 1); }
   function curve(a, power = 1.65) { return Math.pow(clamp(a,0,1), power); }
+  function availableOrbitals(scene) { return Math.max(0, Math.floor(Number(scene?.orbitalCount) || 0)); }
+  function assistCount(scene) {
+    if (scene._p3OrbitalAssistCount === true) scene._p3OrbitalAssistCount = 1; // v2 compatibility
+    const n = Math.max(0, Math.floor(Number(scene._p3OrbitalAssistCount) || 0));
+    scene._p3OrbitalAssistCount = Math.min(n, availableOrbitals(scene));
+    return scene._p3OrbitalAssistCount;
+  }
   function speedRatio(scene) {
     return clamp((Number(scene?.player?.speedMS)||1) / Math.max(1, Number(scene?.other?.speedMS)||1), .15, 3);
   }
   function speedAdjustment(scene) {
-    // Existing speed remains relevant, but cannot erase the geometric protection of a large impact parameter.
     const ratio = speedRatio(scene);
     return clamp(Math.log10(ratio) * .10, -.07, .07);
   }
@@ -43,203 +46,195 @@
     const gap = Math.max(0, Number(scene?.other?.tier||0)-Number(scene?.tierIndex||0));
     const high = curve(a);
     const speed = speedAdjustment(scene);
-    if (choice === 'AVOID') {
-      // Tangential trajectory means the object never dives deeply into the gravity well.
-      return clamp(.16 + high * .76 - gap * .025 + speed, .08, .94);
-    }
-    if (choice === 'DEFLECT') {
-      // A sling needs a closer pass than ESCAPE, so its survival ceiling is deliberately lower.
-      return clamp(.12 + high * .70 - gap * .035 + speed, .06, .88);
-    }
-    // MERGE remains an all-in choice. High angular momentum mostly converts a failed capture attempt
-    // into a survivable shear/flyby rather than making the merger itself likely.
-    return clamp(.06 + high * .60 - gap * .045 + speed*.5, .025, .72);
+    if (choice === 'AVOID') return clamp(.16 + high*.76 - gap*.025 + speed, .08, .94);
+    if (choice === 'DEFLECT') return clamp(.12 + high*.70 - gap*.035 + speed, .06, .88);
+    return clamp(.06 + high*.60 - gap*.045 + speed*.5, .025, .72);
+  }
+
+  function assistRiskMultiplier(count, choice) {
+    const n = Math.max(0, Number(count)||0);
+    if (!n) return 1;
+    // Each extra body adds another possible gravitational energy/angular-momentum exchange, but the
+    // useful geometry becomes progressively harder to exploit. Hence sub-linear exponent/diminishing returns.
+    const coefficient = choice === 'ABSORB' ? .48 : .80;
+    return Math.exp(-coefficient * Math.pow(n, .72));
+  }
+  function survivalWithAssist(scene, choice, survival) {
+    const n = assistCount(scene);
+    if (!n) return clamp(survival,0,1);
+    const baseRisk = 1-clamp(survival,0,1);
+    const floorRisk = choice === 'ABSORB' ? .025 : choice === 'DEFLECT' ? .008 : .005;
+    return 1-Math.max(floorRisk, baseRisk*assistRiskMultiplier(n,choice));
   }
 
   function riskWord(choice, t, scene) {
     const a = angularMomentum(t);
     if (choice === 'ABSORB') {
-      const mergeBias = clamp(.82 - a*.70 - Math.max(0,(scene.other?.tier||0)-scene.tierIndex)*.10,.02,.90);
-      return mergeBias > .62 ? 'BEST MERGE' : mergeBias > .32 ? 'POSSIBLE' : 'VERY LOW';
+      const mergeBias = clamp(.82-a*.70-Math.max(0,(scene.other?.tier||0)-scene.tierIndex)*.10,.02,.90);
+      return mergeBias>.62?'BEST MERGE':mergeBias>.32?'POSSIBLE':'VERY LOW';
     }
-    const s = predictedSurvival(scene, choice, a);
-    return s >= .82 ? 'VERY HIGH' : s >= .68 ? 'HIGH' : s >= .48 ? 'GOOD' : s >= .28 ? 'RISKY' : 'EXTREME';
+    const s = survivalWithAssist(scene,choice,predictedSurvival(scene,choice,a));
+    return s>=.93?'EXCELLENT':s>=.82?'VERY HIGH':s>=.68?'HIGH':s>=.48?'GOOD':s>=.28?'RISKY':'EXTREME';
   }
 
   proto.startEncounter = function(...args) {
     this._p3Trajectory = 0;
+    this._p3OrbitalAssistCount = 0;
     this._p3OrbitalAssist = false;
-    return baseStartEncounter.apply(this, args);
+    return baseStartEncounter.apply(this,args);
   };
 
   proto.drawArena = function(...args) {
-    const result = baseDrawArena.apply(this, args);
-    if (!active(this) || !this.otherSprite?.active) return result;
-    const x = this.otherSprite.x, y = this.otherSprite.y;
-    try { this.otherSprite.destroy(true); } catch (e) {}
-    this.otherSprite = this.drawObject(x, y, 42, this.other, false, true);
-    const visit = node => {
-      if (!node) return;
-      if (typeof node.text === 'string' && node.text.trim() === 'UNKNOWN') {
-        node.setText('IDENTIFIED'); node.setColor?.('#ff9f43');
-      }
-      if (Array.isArray(node.list)) node.list.forEach(visit);
-    };
+    const result=baseDrawArena.apply(this,args);
+    if(!active(this)||!this.otherSprite?.active)return result;
+    const x=this.otherSprite.x,y=this.otherSprite.y;
+    try{this.otherSprite.destroy(true);}catch(e){}
+    this.otherSprite=this.drawObject(x,y,42,this.other,false,true);
+    const visit=node=>{if(!node)return;if(typeof node.text==='string'&&node.text.trim()==='UNKNOWN'){node.setText('IDENTIFIED');node.setColor?.('#ff9f43');}if(Array.isArray(node.list))node.list.forEach(visit);};
     visit(this.ui);
-    this.addText(W - 14, this.Y(620), this.other.realName || this.other.name, 7.2, C.orange, {ox:1,bold:true,width:190,align:'right'});
+    // Kept unobstructed on the right; orbital controls now live to the left and trajectory starts below.
+    this.addText(W-14,this.Y(620),this.other.realName||this.other.name,7.2,C.orange,{ox:1,bold:true,width:190,align:'right'});
     return result;
   };
 
-  proto.choice = function(x, y, label, color, risk) {
-    if (active(this)) risk = riskWord(label, trajectory(this), this);
-    return baseChoice.call(this, x, y, label, color, risk);
+  proto.choice=function(x,y,label,color,risk){
+    if(active(this))risk=riskWord(label,trajectory(this),this);
+    return baseChoice.call(this,x,y,label,color,risk);
   };
 
-  function addTrajectoryControl(scene) {
-    const y = scene.Y(669), x0 = 72, x1 = 348, width = x1 - x0;
-    let t = trajectory(scene), a = angularMomentum(t);
-    scene.addText(W/2, scene.Y(624), 'TRAJECTORY', 8.8, C.cyan, {ox:.5,bold:true});
-    scene.addText(x0, scene.Y(641), 'RADIAL', 7.7, C.orange, {ox:.5,bold:true});
-    scene.addText(x1, scene.Y(641), 'TANGENTIAL', 7.7, C.green, {ox:.5,bold:true});
-    scene.addText(x0, scene.Y(653), 'DIRECT', 5.8, C.muted, {ox:.5,bold:true});
-    scene.addText(x1, scene.Y(653), 'SIDEWAYS FLYBY', 5.8, C.muted, {ox:.5,bold:true});
-
-    const track = scene.add.graphics();
-    track.lineStyle(7, 0x183248, 1).lineBetween(x0, y, x1, y);
-    track.lineStyle(3, C.cyan, .68).lineBetween(x0, y, x1, y);
-    scene.ui.add(track);
-    const thumb = scene.add.circle(x0 + a*width, y, 9, C.white, 1).setStrokeStyle(2, C.cyan, 1);
-    scene.ui.add(thumb);
-    const momentumText = scene.addText(W/2, scene.Y(685), '', 7.2, C.white, {ox:.5,bold:true});
-
-    function paint(value) {
-      scene._p3Trajectory = clamp(value,-MAX_T,MAX_T);
-      t = trajectory(scene); a = angularMomentum(t);
-      thumb.x = x0 + a*width;
-      const momentum = a < .34 ? 'LOW' : a < .67 ? 'MEDIUM' : 'HIGH';
-      momentumText.setText(`ANGULAR MOMENTUM: ${momentum}`);
-      momentumText.setColor?.(a > .66 ? '#25f29a' : a < .34 ? '#ff9d3d' : '#f7fbff');
-    }
-    paint(t);
-
-    const hit = scene.add.rectangle(W/2, y, width + 34, 42, 0xffffff, .001).setInteractive({useHandCursor:true});
-    scene.ui.add(hit);
-    let dragging = false;
-    const fromPointer = pointer => ((clamp(pointer.x,x0,x1)-x0)/width*2-1)*MAX_T;
-    hit.on('pointerdown', pointer => { dragging=true; paint(fromPointer(pointer)); });
-    hit.on('pointermove', pointer => { if (dragging && pointer.isDown) paint(fromPointer(pointer)); });
-    const finish = pointer => {
-      if (!dragging) return;
-      dragging=false;
-      if (pointer) paint(fromPointer(pointer));
-      // Only redraw after the gesture finishes, so dragging cannot destroy its own hit area.
-      scene.drawEncounter();
-    };
-    hit.on('pointerup', finish);
-    hit.on('pointerout', pointer => { if (dragging && !pointer.isDown) finish(pointer); });
-
-    if ((Number(scene.orbitalCount) || 0) > 0) {
-      const on = scene._p3OrbitalAssist === true;
-      const by = scene.Y(709);
-      const button = scene.add.container(W/2, by), g = scene.add.graphics();
-      g.fillStyle(on ? C.orange : C.panel, on ? .20 : .95).fillRoundedRect(-151,-13,302,26,5);
-      g.lineStyle(1.3, on ? C.orange : C.cyan, .86).strokeRoundedRect(-151,-13,302,26,5);
-      const text = scene.add.text(0,0,on?'ORBITAL ASSIST ARMED • COST 1':'USE ORBITAL ASSIST • COST 1',{fontFamily:FONT,fontSize:'7.6px',fontStyle:'bold',color:'#fff'}).setOrigin(.5);
-      const bhit = scene.add.rectangle(0,0,302,26,0xffffff,.001).setInteractive({useHandCursor:true});
-      bhit.on('pointerdown',()=>{scene._p3OrbitalAssist=!on;scene.drawEncounter();});
-      button.add([g,text,bhit]); scene.ui.add(button);
-    }
+  function addOrbitalAssist(scene) {
+    const available=availableOrbitals(scene);
+    if(!available)return;
+    const selected=assistCount(scene);
+    // Compact upper-left control so the opponent name remains visible on the right.
+    const cx=103,cy=scene.Y(616),w=186,h=34;
+    const c=scene.add.container(cx,cy),g=scene.add.graphics();
+    g.fillStyle(C.panel,.96).fillRoundedRect(-w/2,-h/2,w,h,5);
+    g.lineStyle(1.2,selected?C.orange:C.cyan,.78).strokeRoundedRect(-w/2,-h/2,w,h,5);
+    const label=scene.add.text(-55,-7,'ORBITAL ASSIST',{fontFamily:FONT,fontSize:'6.5px',fontStyle:'bold',color:'#8db7ca'}).setOrigin(.5);
+    const count=scene.add.text(0,7,`${selected} / ${available}`,{fontFamily:FONT,fontSize:'9px',fontStyle:'bold',color:selected?'#ff9d3d':'#f7fbff'}).setOrigin(.5);
+    const minusBg=scene.add.rectangle(-73,6,29,25,0xffffff,.001).setInteractive({useHandCursor:true});
+    const plusBg=scene.add.rectangle(73,6,29,25,0xffffff,.001).setInteractive({useHandCursor:true});
+    const minus=scene.add.text(-73,6,'−',{fontFamily:FONT,fontSize:'17px',fontStyle:'bold',color:selected?'#20d9ff':'#526f7b'}).setOrigin(.5);
+    const plus=scene.add.text(73,6,'+',{fontFamily:FONT,fontSize:'17px',fontStyle:'bold',color:selected<available?'#20d9ff':'#526f7b'}).setOrigin(.5);
+    minusBg.on('pointerdown',()=>{scene._p3OrbitalAssistCount=Math.max(0,assistCount(scene)-1);scene.drawEncounter();});
+    plusBg.on('pointerdown',()=>{scene._p3OrbitalAssistCount=Math.min(availableOrbitals(scene),assistCount(scene)+1);scene.drawEncounter();});
+    c.add([g,label,count,minusBg,plusBg,minus,plus]);scene.ui.add(c);
   }
 
-  proto.drawPrompt = function(...args) {
-    if (!active(this)) return baseDrawPrompt.apply(this, args);
-    const g = this.add.graphics();
-    g.fillStyle(C.panel,.98).fillRoundedRect(10,this.Y(612),400,112,8);
-    g.lineStyle(2,C.cyan,.88).strokeRoundedRect(10,this.Y(612),400,112,8);this.ui.add(g);
+  function addTrajectoryControl(scene) {
+    // Slim strip: 72px tall instead of the old 112px block.
+    const panelTop=scene.Y(642),panelHeight=72;
+    const pg=scene.add.graphics();
+    pg.fillStyle(C.panel,.97).fillRoundedRect(15,panelTop,390,panelHeight,7);
+    pg.lineStyle(1.5,C.cyan,.82).strokeRoundedRect(15,panelTop,390,panelHeight,7);scene.ui.add(pg);
+
+    const y=scene.Y(681),x0=74,x1=346,width=x1-x0;
+    let t=trajectory(scene),a=angularMomentum(t);
+    scene.addText(W/2,scene.Y(648),'TRAJECTORY',7.8,C.cyan,{ox:.5,bold:true});
+    scene.addText(x0,scene.Y(661),'RADIAL',7.1,C.orange,{ox:.5,bold:true});
+    scene.addText(x1,scene.Y(661),'TANGENTIAL',7.1,C.green,{ox:.5,bold:true});
+    scene.addText(x0,scene.Y(672),'DIRECT',5.3,C.muted,{ox:.5,bold:true});
+    scene.addText(x1,scene.Y(672),'SIDEWAYS FLYBY',5.3,C.muted,{ox:.5,bold:true});
+
+    const track=scene.add.graphics();track.lineStyle(6,0x183248,1).lineBetween(x0,y,x1,y);track.lineStyle(2.5,C.cyan,.7).lineBetween(x0,y,x1,y);scene.ui.add(track);
+    const thumb=scene.add.circle(x0+a*width,y,8,C.white,1).setStrokeStyle(2,C.cyan,1);scene.ui.add(thumb);
+    const momentumText=scene.addText(W/2,scene.Y(698),'',6.6,C.white,{ox:.5,bold:true});
+
+    function paint(value){
+      scene._p3Trajectory=clamp(value,-MAX_T,MAX_T);t=trajectory(scene);a=angularMomentum(t);thumb.x=x0+a*width;
+      const momentum=a<.34?'LOW':a<.67?'MEDIUM':'HIGH';momentumText.setText(`ANGULAR MOMENTUM: ${momentum}`);
+      momentumText.setColor?.(a>.66?'#25f29a':a<.34?'#ff9d3d':'#f7fbff');
+    }
+    paint(t);
+    const hit=scene.add.rectangle(W/2,y,width+34,36,0xffffff,.001).setInteractive({useHandCursor:true});scene.ui.add(hit);
+    let dragging=false;const fromPointer=p=>((clamp(p.x,x0,x1)-x0)/width*2-1)*MAX_T;
+    hit.on('pointerdown',p=>{dragging=true;paint(fromPointer(p));});
+    hit.on('pointermove',p=>{if(dragging&&p.isDown)paint(fromPointer(p));});
+    const finish=p=>{if(!dragging)return;dragging=false;if(p)paint(fromPointer(p));scene.drawEncounter();};
+    hit.on('pointerup',finish);hit.on('pointerout',p=>{if(dragging&&!p.isDown)finish(p);});
+  }
+
+  proto.drawPrompt=function(...args){
+    if(!active(this))return baseDrawPrompt.apply(this,args);
+    addOrbitalAssist(this);
     addTrajectoryControl(this);
     this.choice(73,this.Y(786),'ABSORB',C.green,'');
     this.choice(210,this.Y(786),'DEFLECT',C.orange,'');
     this.choice(347,this.Y(786),'AVOID',C.blue,'');
   };
 
-  function fatalChance(p) {
-    if (Number.isFinite(Number(p?.fatalChance))) return clamp(Number(p.fatalChance),0,1);
-    if (Number.isFinite(Number(p?.chance))) return clamp(1-Number(p.chance),0,1);
-    return p?.success === false ? 1 : 0;
+  function fatalChance(p){
+    if(Number.isFinite(Number(p?.fatalChance)))return clamp(Number(p.fatalChance),0,1);
+    if(Number.isFinite(Number(p?.chance)))return clamp(1-Number(p.chance),0,1);
+    return p?.success===false?1:0;
   }
 
-  function applyTrajectory(scene, choice, pending) {
-    const t = trajectory(scene), a = angularMomentum(t), high = curve(a);
-    pending.phase3Trajectory = t;
-    pending.angularMomentum = a;
-    pending.trajectoryLabel = a < .34 ? 'RADIAL' : a > .66 ? 'TANGENTIAL' : 'OBLIQUE';
+  function applyTrajectory(scene,choice,pending){
+    const t=trajectory(scene),a=angularMomentum(t),high=curve(a);
+    pending.phase3Trajectory=t;pending.angularMomentum=a;pending.trajectoryLabel=a<.34?'RADIAL':a>.66?'TANGENTIAL':'OBLIQUE';
 
-    if (choice === 'ABSORB') {
-      const baseSafe = clamp(Number(pending.chance) || (pending.success ? .6 : .2), .01, .99);
-      let safe = clamp(baseSafe * (1.20 - .55*a), .015, .985);
-      if (pending.compactGravityReverse) {
-        // Against a dominant compact object, angular momentum mainly prevents capture; it does NOT
-        // turn a tangential pass into a successful SMBH merger. Survival is therefore a shear/flyby.
-        const targetSafe = predictedSurvival(scene,'ABSORB',a);
-        safe = clamp(Math.max(1-fatalChance(pending), targetSafe), .015, .92);
-        pending.fatalChance = 1-safe;
-        pending.fragmentChance = safe;
+    if(choice==='ABSORB'){
+      const baseSafe=clamp(Number(pending.chance)||(pending.success?.6:.2),.01,.99);
+      let safe=clamp(baseSafe*(1.20-.55*a),.015,.985);
+      if(pending.compactGravityReverse){
+        safe=clamp(Math.max(1-fatalChance(pending),predictedSurvival(scene,'ABSORB',a)),.015,.92);
+        pending.fatalChance=1-safe;pending.fragmentChance=safe;
       }
-      pending.chance = safe;
-      pending.success = Math.random() < safe;
-      if (pending.compactGravityReverse) pending.result = pending.success ? 'fragment' : 'catastrophic';
-      else if (!pending.success) pending.result = pending.result || 'catastrophic';
-    } else if (choice === 'DEFLECT') {
-      const survival = Math.max(1-fatalChance(pending), predictedSurvival(scene,'DEFLECT',a));
-      const fatal = clamp(1-survival,.002,.94);
-      const cleanBase = clamp(Number(pending.cleanChance)||.35,0,1-fatal);
-      const cleanFloor = survival * clamp(.24 + high*.58, .18, .78);
-      const clean = clamp(Math.max(cleanBase,cleanFloor),.03,1-fatal);
-      const roll=Math.random();
-      pending.fatalChance=fatal; pending.cleanChance=clean; pending.chance=1-fatal;
-      pending.result=roll<fatal?'catastrophic':roll<fatal+clean?'clean':'rough';
-      pending.success=pending.result!=='catastrophic';
-    } else {
-      // IMPORTANT: do not multiply the legacy AVOID chance. Its escape-velocity term correctly says
-      // a radial plunge near an SMBH is hopeless, but a high-impact-parameter tangential flyby never
-      // enters that deep potential well. Use the greater of the legacy chance and trajectory model.
-      const legacy = clamp(Number(pending.chance)||.08,.01,.995);
-      const chance = clamp(Math.max(legacy,predictedSurvival(scene,'AVOID',a)),.08,.995);
-      pending.chance=chance; pending.fatalChance=1-chance;
-      pending.success=Math.random()<chance;
+      pending.chance=safe;pending.success=Math.random()<safe;
+      if(pending.compactGravityReverse)pending.result=pending.success?'fragment':'catastrophic';
+      else if(!pending.success)pending.result=pending.result||'catastrophic';
+    }else if(choice==='DEFLECT'){
+      const survival=Math.max(1-fatalChance(pending),predictedSurvival(scene,'DEFLECT',a));
+      const fatal=clamp(1-survival,.002,.94);
+      const cleanBase=clamp(Number(pending.cleanChance)||.35,0,1-fatal);
+      const cleanFloor=survival*clamp(.24+high*.58,.18,.78);
+      const clean=clamp(Math.max(cleanBase,cleanFloor),.03,1-fatal);
+      const roll=Math.random();pending.fatalChance=fatal;pending.cleanChance=clean;pending.chance=1-fatal;
+      pending.result=roll<fatal?'catastrophic':roll<fatal+clean?'clean':'rough';pending.success=pending.result!=='catastrophic';
+    }else{
+      const legacy=clamp(Number(pending.chance)||.08,.01,.995);
+      const chance=clamp(Math.max(legacy,predictedSurvival(scene,'AVOID',a)),.08,.995);
+      pending.chance=chance;pending.fatalChance=1-chance;pending.success=Math.random()<chance;
     }
 
-    if (scene._p3OrbitalAssist && (Number(scene.orbitalCount)||0)>0) {
-      scene.orbitalCount=Math.max(0,Number(scene.orbitalCount)-1); scene.craters=scene.orbitalCount;
-      pending.orbitalsSacrificed=1; pending.phase3OrbitalAssist=true;
-      if (choice==='ABSORB') {
-        const fatal=fatalChance(pending)*.72;
+    const used=Math.min(assistCount(scene),availableOrbitals(scene));
+    if(used>0){
+      scene.orbitalCount=Math.max(0,availableOrbitals(scene)-used);scene.craters=scene.orbitalCount;
+      pending.orbitalsSacrificed=used;pending.phase3OrbitalAssist=true;pending.phase3OrbitalAssistCount=used;
+      const multiplier=assistRiskMultiplier(used,choice);
+
+      if(choice==='ABSORB'){
+        // Assist helps avoid being swallowed if the merger fails, but deliberately does not make a
+        // direct SMBH merger itself attractive. It is less efficient than assist used for a flyby.
+        const fatal=Math.max(.025,fatalChance(pending)*multiplier);
         pending.fatalChance=fatal;pending.chance=1-fatal;pending.success=Math.random()>=fatal;
         if(pending.compactGravityReverse)pending.result=pending.success?'fragment':'catastrophic';
-      } else if(choice==='DEFLECT') {
-        const fatal=fatalChance(pending)*.42;
+      }else if(choice==='DEFLECT'){
+        const fatal=Math.max(.008,fatalChance(pending)*multiplier);
         pending.fatalChance=fatal;pending.chance=1-fatal;
-        const clean=clamp(Math.max(Number(pending.cleanChance)||0,(1-fatal)*.72),0,1-fatal);
+        const cleanTarget=clamp((1-fatal)*(.72+.18*(1-Math.exp(-used*.35))),0,1-fatal);
+        const clean=Math.max(Number(pending.cleanChance)||0,cleanTarget);
+        pending.cleanChance=clean;
         const roll=Math.random();pending.result=roll<fatal?'catastrophic':roll<fatal+clean?'clean':'rough';pending.success=pending.result!=='catastrophic';
-      } else {
-        // Orbital sacrifice supplies an additional gravitational energy/angular-momentum exchange.
-        pending.chance=clamp(1-(1-Number(pending.chance))*0.38,.08,.995);
-        pending.fatalChance=1-pending.chance;pending.success=Math.random()<pending.chance;
+      }else{
+        const fatal=Math.max(.005,(1-Number(pending.chance))*multiplier);
+        pending.fatalChance=fatal;pending.chance=1-fatal;pending.success=Math.random()<pending.chance;
       }
     }
     return pending;
   }
 
-  proto.choose = function(choice) {
-    if (!active(this) || this.state !== 'APPROACH') return baseChoose.call(this, choice);
-    let pending=this.outcome(choice);
-    pending=applyTrajectory(this,choice,pending);
+  proto.choose=function(choice){
+    if(!active(this)||this.state!=='APPROACH')return baseChoose.call(this,choice);
+    let pending=this.outcome(choice);pending=applyTrajectory(this,choice,pending);
     this.pending=pending;this.state='REVEAL';this.tweens.killAll();this.reveal(choice);
   };
 
   window.CometPhase3Trajectory=Object.freeze({
-    enabled:true,version:2,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
-    preActionDecision:true,orbitalAssistCost:1,oldHighRiskPopupBypassed:true,
-    maxTangentialEscapeTarget:'~85–94% depending on tier gap and speed',sliderDragFixed:true
+    enabled:true,version:3,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
+    preActionDecision:true,orbitalAssist:'multi-select-unlimited-by-design',orbitalAssistHardCap:null,
+    orbitalAssistDiminishingReturns:true,oldHighRiskPopupBypassed:true,compactTrajectoryPanel:true,
+    maxTangentialEscapeTarget:'~85–94% before orbital assists, depending on tier gap and speed'
   });
 })();
