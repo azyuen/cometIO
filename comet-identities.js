@@ -53,11 +53,19 @@ const COMET_NAMED_IDENTITIES = [
   { id:'redHypergiant_uyScuti', name:'UY SCUTI', gameplayTiers:['RED HYPERGIANT STAR'], scienceClass:'RED SUPERGIANT', status:'star', spriteVariant:'redHypergiant_uyScuti', collectible:true, allowRotation:false, allowFlip:false },
   { id:'redHypergiant_nmlCygni', name:'NML CYGNI', gameplayTiers:['RED HYPERGIANT STAR'], scienceClass:'RED HYPERGIANT', status:'star', spriteVariant:'redHypergiant_nmlCygni', collectible:true, allowRotation:false, allowFlip:false },
 
-  // Visually distinctive nebulae.
-  { id:'nebula_orion', name:'ORION NEBULA', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_orion', collectible:true, allowRotation:false, allowFlip:false },
-  { id:'nebula_carina', name:'CARINA NEBULA', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_carina', collectible:true, allowRotation:false, allowFlip:false },
-  { id:'nebula_eagle', name:'EAGLE NEBULA', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_eagle', collectible:true, allowRotation:false, allowFlip:false },
-  { id:'nebula_helix', name:'HELIX NEBULA', gameplayTiers:['NEBULA'], scienceClass:'PLANETARY NEBULA', status:'nebula', spriteVariant:'nebula_helix', collectible:true, allowRotation:false, allowFlip:false },
+  // Visually distinctive nebulae. Named nebulae share the same gameplay tier but keep real identities.
+  { id:'nebula_orion', name:'ORION NEBULA', designation:'M42', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_orion', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_carina', name:'CARINA NEBULA', designation:'NGC 3372', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_carina', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_eagle', name:'EAGLE NEBULA', designation:'M16', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_eagle', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_helix', name:'HELIX NEBULA', designation:'NGC 7293', gameplayTiers:['NEBULA'], scienceClass:'PLANETARY NEBULA', status:'nebula', spriteVariant:'nebula_helix', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_ring', name:'RING NEBULA', designation:'M57 / NGC 6720', gameplayTiers:['NEBULA'], scienceClass:'PLANETARY NEBULA', status:'nebula', spriteVariant:'nebula_ring', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_dumbbell', name:'DUMBBELL NEBULA', designation:'M27 / NGC 6853', gameplayTiers:['NEBULA'], scienceClass:'PLANETARY NEBULA', status:'nebula', spriteVariant:'nebula_dumbbell', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_butterfly', name:'BUTTERFLY NEBULA', designation:'NGC 6302', gameplayTiers:['NEBULA'], scienceClass:'PLANETARY NEBULA', status:'nebula', spriteVariant:'nebula_butterfly', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_catsEye', name:"CAT'S EYE NEBULA", designation:'NGC 6543', gameplayTiers:['NEBULA'], scienceClass:'PLANETARY NEBULA', status:'nebula', spriteVariant:'nebula_catsEye', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_hourglass', name:'HOURGLASS NEBULA', designation:'MyCn 18', gameplayTiers:['NEBULA'], scienceClass:'PLANETARY NEBULA', status:'nebula', spriteVariant:'nebula_hourglass', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_rosette', name:'ROSETTE NEBULA', designation:'NGC 2237 / NGC 2244', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_rosette', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_tarantula', name:'TARANTULA NEBULA', designation:'30 DORADUS', gameplayTiers:['NEBULA'], scienceClass:'EMISSION NEBULA', status:'nebula', spriteVariant:'nebula_tarantula', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'nebula_horsehead', name:'HORSEHEAD NEBULA', designation:'BARNARD 33', gameplayTiers:['NEBULA'], scienceClass:'DARK NEBULA', status:'nebula', spriteVariant:'nebula_horsehead', collectible:true, allowRotation:false, allowFlip:false },
 
   // Pulsars are visually identified through their beam/wind-nebula treatment in the sprite art.
   { id:'pulsar_crab', name:'CRAB PULSAR', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_crab', collectible:true, allowRotation:false, allowFlip:false },
