@@ -22,8 +22,8 @@ const comets = identities.filter(x => x.scienceClass === 'COMET');
 const dwarfs = identities.filter(x => x.gameplayTiers.includes('DWARF PLANET'));
 const planets = identities.filter(x => x.status === 'planet');
 
-assert(identities.length === 49, `expected 49 named identities including five non-collectible comets, got ${identities.length}`);
-assert(collectibles.length === 44, `expected 44 collectible identities from Dwarf Planet onward, got ${collectibles.length}`);
+assert(identities.length === 57, `expected 57 named identities including five non-collectible comets, got ${identities.length}`);
+assert(collectibles.length === 52, `expected 52 collectible identities from Dwarf Planet onward, got ${collectibles.length}`);
 assert(comets.length === 5, `expected 5 named comets, got ${comets.length}`);
 assert(comets.every(x => x.collectible === false), 'named comets must remain non-collectible flavour encounters');
 assert(dwarfs.length === 8, `expected 8 dwarf-planet identities, got ${dwarfs.length}`);
@@ -45,7 +45,7 @@ const expectedTierCounts = {
   'YELLOW DWARF STAR': 4,
   'BLUE GIANT STAR': 4,
   'RED HYPERGIANT STAR': 4,
-  'NEBULA': 4,
+  'NEBULA': 12,
   'PULSAR': 4,
   'BLACK HOLE': 4,
   'SUPER MASSIVE BLACK HOLE': 4
@@ -60,6 +60,8 @@ assert(identities.find(x => x.id === 'planet_uranus').scienceClass === 'ICE GIAN
 assert(identities.find(x => x.id === 'planet_neptune').scienceClass === 'ICE GIANT', 'Neptune should be scientifically tagged as ice giant');
 assert(identities.find(x => x.id === 'redHypergiant_betelgeuse').scienceClass === 'RED SUPERGIANT', 'Betelgeuse science label should remain accurate');
 assert(identities.find(x => x.id === 'nebula_helix').scienceClass === 'PLANETARY NEBULA', 'Helix should be tagged as a planetary nebula');
+assert(identities.find(x => x.id === 'nebula_horsehead').scienceClass === 'DARK NEBULA', 'Horsehead should be tagged as a dark nebula');
+assert(identities.find(x => x.id === 'nebula_ring').designation.includes('M57'), 'Ring Nebula should keep its M57 designation');
 
 for (const identity of identities) {
   assert(manifestSource.includes(`${identity.spriteVariant}:`), `manifest placeholder missing for ${identity.spriteVariant}`);
@@ -69,7 +71,7 @@ assert(runtimeSource.includes('object.identityId = identity.id'), 'encounter ide
 assert(runtimeSource.includes('object.realName = identity.name'), 'revealed realName is not sourced from identity catalogue');
 assert(namedVisualsSource.includes('if (mystery || !object?.identityId'), 'named art must remain hidden during mystery stage');
 assert(namedVisualsSource.includes('availableNamedTexture'), 'named sprite fallback hook missing');
-assert(indexSource.includes('comet-identities.js?v=2'), 'phase-two identity catalogue cache bust missing');
+assert(indexSource.includes('comet-identities.js?v=3'), 'nebula-expanded identity catalogue cache bust missing');
 assert(indexSource.includes('comet-identity-runtime.js'), 'identity runtime not loaded');
 assert(indexSource.includes('comet-named-visuals.js'), 'named visual hook not loaded');
 
