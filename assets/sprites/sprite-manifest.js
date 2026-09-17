@@ -96,14 +96,22 @@ const COMET_SPRITE_ASSETS = {
   redHypergiant_uyScuti:         { family: 'star', lods: [32, 64], version: 1 },
   redHypergiant_nmlCygni:        { family: 'star', lods: [32, 64], version: 1 },
 
-  // NEBULA.
+  // NEBULA. Named reveal art is loaded as independent collectible identities.
   nebula_01:            { family: 'nebula', lods: [32, 64], version: 1 },
   nebula_02:            { family: 'nebula', lods: [32, 64], version: 1 },
   nebula_mystery_01:    { family: 'nebula', lods: [32, 64], version: 1 },
   nebula_orion:         { family: 'nebula', lods: [32, 64], version: 1 },
   nebula_carina:        { family: 'nebula', lods: [32, 64], version: 1 },
-  nebula_eagle:         { family: 'nebula', lods: [32, 64], version: 1 },
-  nebula_helix:         { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_eagle:         { family: 'nebula', lods: [32, 64], version: 2 },
+  nebula_helix:         { family: 'nebula', lods: [32, 64], version: 2 },
+  nebula_ring:          { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_dumbbell:      { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_butterfly:     { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_catsEye:       { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_hourglass:     { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_rosette:       { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_tarantula:     { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_horsehead:     { family: 'nebula', lods: [32, 64], version: 1 },
 
   // PULSAR.
   pulsar_01:            { family: 'pulsar', lods: [32, 64], version: 1 },
