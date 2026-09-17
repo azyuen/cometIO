@@ -120,8 +120,8 @@
   proto.drawHud = function(controls = false) {
     const result = baseDrawHud.call(this, controls);
     if (controls && this.state === 'APPROACH' && typeof this.miniButton === 'function') {
-      // Existing row: SAVE, COLLECTION, HOME. Keep SETTINGS on the same baseline at top-right.
-      this.miniButton(W - 31, 50, 54, 24, '⚙', C.purple, () => openGameplaySettings(this));
+      // SAVE / LOAD / HOME use SAFE_TOP + 15 in the active HUD; use the exact same baseline here.
+      this.miniButton(W - 31, SAFE_TOP + 15, 54, 24, '⚙', C.purple, () => openGameplaySettings(this));
     }
     return result;
   };
