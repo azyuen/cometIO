@@ -151,6 +151,16 @@
 
   proto.pickOpponent = function() {
     const phase=phaseForTier(this.tierIndex),region=currentRegion(this);
+
+    // Gentle onboarding: the very first encounter is always another atom. While the player remains
+    // an Atom, encounters stay overwhelmingly atomic so a new player can learn the three actions
+    // before regional danger starts to matter. Dust is uncommon; Tiny Meteorite is a rare surprise.
+    if (!this._devModeActive && Number(this.tierIndex) === 0) {
+      const roll=Math.random();
+      const idx=this.encounters===0 ? 0 : (roll < .92 ? 0 : roll < .99 ? 1 : 2);
+      return objectForTier(this,idx,region);
+    }
+
     if (phase === 4 && this.tierIndex < SUPERCLUSTER) return choosePhase4Candidate(this,region);
     if (phase <= 3) {
       const idx=Math.random()<region.chance ? weightedIndex(region.pool) : localTier(this,phase);
@@ -175,20 +185,30 @@
     this.drawHud(false);
     const phase=phaseForTier(this.tierIndex);
     this.addText(W/2,this.Y(154),`PHASE ${phase} • CHOOSE YOUR REGION`,16,C.white,{ox:.5,bold:true});
-    this.addText(W/2,this.Y(180),'SAFER REGIONS GROW SLOWER • RISKIER REGIONS OFFER BIGGER ENCOUNTERS',8.1,C.muted,{ox:.5,bold:true,width:390,align:'center'});
-    regionsFor(this).forEach((r,i)=>this.regionButton(108+(i%2)*204,this.Y(247+Math.floor(i/2)*126),r));
+    this.addText(W/2,this.Y(181),'CHOOSE WHERE TO TRAVEL NEXT',8.5,C.muted,{ox:.5,bold:true});
+    regionsFor(this).forEach((r,i)=>this.regionButton(108+(i%2)*204,this.Y(304+Math.floor(i/2)*202),r));
   };
 
   proto.regionButton = function(x,y,r) {
-    const sel=r.id===currentRegion(this).id,c=this.add.container(x,y),g=this.add.graphics(),color=sel?C.green:C.cyan;
-    g.fillStyle(color,sel?.16:.08).fillRoundedRect(-94,-54,188,108,7);
-    g.lineStyle(sel?2:1.5,color,.9).strokeRoundedRect(-94,-54,188,108,7);
-    const a=this.add.text(0,-35,r.name,{fontFamily:FONT,fontSize:'9.6px',fontStyle:'bold',color:'#fff',align:'center',wordWrap:{width:174}}).setOrigin(.5);
-    const b=this.add.text(0,-9,r.science,{fontFamily:FONT,fontSize:'7.5px',color:'#8db7ca',align:'center',wordWrap:{width:170}}).setOrigin(.5);
-    const d=this.add.text(0,18,`COMMON: ${r.common}`,{fontFamily:FONT,fontSize:'6.8px',fontStyle:'bold',color:`#${color.toString(16).padStart(6,'0')}`,align:'center',wordWrap:{width:174}}).setOrigin(.5);
-    const e=this.add.text(0,39,r.risk,{fontFamily:FONT,fontSize:'6.6px',fontStyle:'bold',color:`#${(r.risk.includes('RISK')?C.orange:C.muted).toString(16).padStart(6,'0')}`}).setOrigin(.5);
-    const hit=this.add.rectangle(0,0,188,108,0xffffff,.001).setInteractive({useHandCursor:true});
-    [a,b,d,e].forEach(t=>t.setResolution&&t.setResolution(Math.min(window.devicePixelRatio||1,3)));
+    const sel=r.id===currentRegion(this).id;
+    const c=this.add.container(x,y),g=this.add.graphics(),color=sel?C.green:C.cyan;
+    const w=184,h=184;
+
+    // Large square card with a deliberately open image well for future region sprites.
+    g.fillStyle(C.panel,.96).fillRoundedRect(-w/2,-h/2,w,h,9);
+    g.lineStyle(sel?2.5:1.5,color,sel?.96:.72).strokeRoundedRect(-w/2,-h/2,w,h,9);
+    g.fillStyle(C.panel2,.34).fillRoundedRect(-78,-76,156,124,6);
+    g.lineStyle(1,C.cyan,.14).strokeRoundedRect(-78,-76,156,124,6);
+    g.lineStyle(1,color,.30).lineBetween(-72,51,72,51);
+
+    // A few tiny neutral stars keep the image well intentional without depicting the region yet.
+    const starPts=[[-58,-51],[-22,-35],[31,-57],[57,-22],[-45,8],[18,-4],[52,24],[-7,30]];
+    starPts.forEach((p,i)=>g.fillStyle(i%3?C.star:C.cyan,i%3?.30:.45).fillRect(p[0],p[1],i%4===0?2:1,i%4===0?2:1));
+
+    const nameSize=r.name.length>20?'8.7px':r.name.length>16?'9.4px':'10.2px';
+    const a=this.add.text(0,69,r.name,{fontFamily:FONT,fontSize:nameSize,fontStyle:'bold',color:'#fff',align:'center',wordWrap:{width:164}}).setOrigin(.5);
+    if(a.setResolution)a.setResolution(Math.min(window.devicePixelRatio||1,3));
+    const hit=this.add.rectangle(0,0,w,h,0xffffff,.001).setInteractive({useHandCursor:true});
     hit.on('pointerdown',()=>{
       this.regionId=r.id;
       this.lastRegionPromptEncounter=this.encounters;
@@ -196,7 +216,7 @@
       this.other=this.pickOpponent();
       this.drawEncounter();
     });
-    c.add([g,a,b,d,e,hit]);this.ui.add(c);
+    c.add([g,a,hit]);this.ui.add(c);
   };
 
   // Phase 4's specialised HUD used to hard-code DEEP COSMOS. Replace that one label after it draws.
@@ -231,7 +251,7 @@
   }
 
   window.CometPhaseRegions = Object.freeze({
-    version:1,
+    version:2,
     phaseForTier,
     regionsForPhase:phase=>PHASE_REGIONS[phase]||[],
     allRegions:ALL_REGIONS.map(r=>r.id)
