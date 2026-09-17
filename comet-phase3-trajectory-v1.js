@@ -1,6 +1,7 @@
-// Phase 3 trajectory mechanics v4.
+// Phase 3 trajectory mechanics v5.
 // RADIAL <-> TANGENTIAL is chosen before MERGE / SLING / ESCAPE.
-// v4 keeps the compact v3 UI and multi-orbital assist, with corrected fallback syntax.
+// v5 further compacts the UI, keeps the opponent name clear, always shows orbital-assist +/- controls,
+// and removes redundant captions beneath the three action buttons.
 (() => {
   if (typeof GameScene === 'undefined') return;
   const proto = GameScene.prototype;
@@ -54,23 +55,6 @@
     const coefficient = choice === 'ABSORB' ? .48 : .80;
     return Math.exp(-coefficient * Math.pow(n, .72));
   }
-  function survivalWithAssist(scene, choice, survival) {
-    const n = assistCount(scene);
-    if (!n) return clamp(survival,0,1);
-    const baseRisk = 1-clamp(survival,0,1);
-    const floorRisk = choice === 'ABSORB' ? .025 : choice === 'DEFLECT' ? .008 : .005;
-    return 1-Math.max(floorRisk, baseRisk*assistRiskMultiplier(n,choice));
-  }
-
-  function riskWord(choice, t, scene) {
-    const a = angularMomentum(t);
-    if (choice === 'ABSORB') {
-      const mergeBias = clamp(.82-a*.70-Math.max(0,(scene.other?.tier||0)-scene.tierIndex)*.10,.02,.90);
-      return mergeBias>.62?'BEST MERGE':mergeBias>.32?'POSSIBLE':'VERY LOW';
-    }
-    const s = survivalWithAssist(scene,choice,predictedSurvival(scene,choice,a));
-    return s>=.93?'EXCELLENT':s>=.82?'VERY HIGH':s>=.68?'HIGH':s>=.48?'GOOD':s>=.28?'RISKY':'EXTREME';
-  }
 
   proto.startEncounter = function(...args) {
     this._p3Trajectory = 0;
@@ -91,47 +75,47 @@
     return result;
   };
 
+  // Phase 3 now teaches risk through the trajectory/orbital controls themselves. The tiny text under
+  // MERGE/SLING/ESCAPE was visually noisy and is intentionally removed.
   proto.choice=function(x,y,label,color,risk){
-    if(active(this))risk=riskWord(label,trajectory(this),this);
+    if(active(this)) risk='';
     return baseChoice.call(this,x,y,label,color,risk);
   };
 
   function addOrbitalAssist(scene) {
     const available=availableOrbitals(scene);
-    if(!available)return;
     const selected=assistCount(scene);
-    const cx=103,cy=scene.Y(616),w=186,h=34;
+    const cx=101,cy=scene.Y(617),w=178,h=32;
     const c=scene.add.container(cx,cy),g=scene.add.graphics();
     g.fillStyle(C.panel,.96).fillRoundedRect(-w/2,-h/2,w,h,5);
-    g.lineStyle(1.2,selected?C.orange:C.cyan,.78).strokeRoundedRect(-w/2,-h/2,w,h,5);
-    const label=scene.add.text(-55,-7,'ORBITAL ASSIST',{fontFamily:FONT,fontSize:'6.5px',fontStyle:'bold',color:'#8db7ca'}).setOrigin(.5);
-    const count=scene.add.text(0,7,`${selected} / ${available}`,{fontFamily:FONT,fontSize:'9px',fontStyle:'bold',color:selected?'#ff9d3d':'#f7fbff'}).setOrigin(.5);
-    const minusBg=scene.add.rectangle(-73,6,29,25,0xffffff,.001).setInteractive({useHandCursor:true});
-    const plusBg=scene.add.rectangle(73,6,29,25,0xffffff,.001).setInteractive({useHandCursor:true});
-    const minus=scene.add.text(-73,6,'−',{fontFamily:FONT,fontSize:'17px',fontStyle:'bold',color:selected?'#20d9ff':'#526f7b'}).setOrigin(.5);
-    const plus=scene.add.text(73,6,'+',{fontFamily:FONT,fontSize:'17px',fontStyle:'bold',color:selected<available?'#20d9ff':'#526f7b'}).setOrigin(.5);
-    minusBg.on('pointerdown',()=>{scene._p3OrbitalAssistCount=Math.max(0,assistCount(scene)-1);scene.drawEncounter();});
-    plusBg.on('pointerdown',()=>{scene._p3OrbitalAssistCount=Math.min(availableOrbitals(scene),assistCount(scene)+1);scene.drawEncounter();});
+    g.lineStyle(1.15,selected?C.orange:C.cyan,.78).strokeRoundedRect(-w/2,-h/2,w,h,5);
+    const label=scene.add.text(-48,-7,'ORBITAL ASSIST',{fontFamily:FONT,fontSize:'6.2px',fontStyle:'bold',color:'#8db7ca'}).setOrigin(.5);
+    const count=scene.add.text(0,7,`${selected} / ${available}`,{fontFamily:FONT,fontSize:'8.8px',fontStyle:'bold',color:selected?'#ff9d3d':'#f7fbff'}).setOrigin(.5);
+    const minusBg=scene.add.rectangle(-69,6,28,24,0xffffff,.001).setInteractive({useHandCursor:true});
+    const plusBg=scene.add.rectangle(69,6,28,24,0xffffff,.001).setInteractive({useHandCursor:true});
+    const minus=scene.add.text(-69,6,'−',{fontFamily:FONT,fontSize:'16px',fontStyle:'bold',color:selected?'#20d9ff':'#526f7b'}).setOrigin(.5);
+    const plus=scene.add.text(69,6,'+',{fontFamily:FONT,fontSize:'16px',fontStyle:'bold',color:selected<available?'#20d9ff':'#526f7b'}).setOrigin(.5);
+    minusBg.on('pointerdown',()=>{if(assistCount(scene)<=0)return;scene._p3OrbitalAssistCount=Math.max(0,assistCount(scene)-1);scene.drawEncounter();});
+    plusBg.on('pointerdown',()=>{if(assistCount(scene)>=availableOrbitals(scene))return;scene._p3OrbitalAssistCount=Math.min(availableOrbitals(scene),assistCount(scene)+1);scene.drawEncounter();});
     c.add([g,label,count,minusBg,plusBg,minus,plus]);scene.ui.add(c);
   }
 
   function addTrajectoryControl(scene) {
-    const panelTop=scene.Y(642),panelHeight=72;
+    const panelTop=scene.Y(646),panelHeight=60;
     const pg=scene.add.graphics();
     pg.fillStyle(C.panel,.97).fillRoundedRect(15,panelTop,390,panelHeight,7);
     pg.lineStyle(1.5,C.cyan,.82).strokeRoundedRect(15,panelTop,390,panelHeight,7);scene.ui.add(pg);
 
-    const y=scene.Y(681),x0=74,x1=346,width=x1-x0;
+    const y=scene.Y(677),x0=74,x1=346,width=x1-x0;
     let t=trajectory(scene),a=angularMomentum(t);
-    scene.addText(W/2,scene.Y(648),'TRAJECTORY',7.8,C.cyan,{ox:.5,bold:true});
-    scene.addText(x0,scene.Y(661),'RADIAL',7.1,C.orange,{ox:.5,bold:true});
-    scene.addText(x1,scene.Y(661),'TANGENTIAL',7.1,C.green,{ox:.5,bold:true});
-    scene.addText(x0,scene.Y(672),'DIRECT',5.3,C.muted,{ox:.5,bold:true});
-    scene.addText(x1,scene.Y(672),'SIDEWAYS FLYBY',5.3,C.muted,{ox:.5,bold:true});
+    scene.addText(W/2,scene.Y(651),'TRAJECTORY',7.6,C.cyan,{ox:.5,bold:true});
+    scene.addText(x0,scene.Y(663),'RADIAL',7.1,C.orange,{ox:.5,bold:true});
+    scene.addText(x1,scene.Y(663),'TANGENTIAL',7.1,C.green,{ox:.5,bold:true});
 
     const track=scene.add.graphics();track.lineStyle(6,0x183248,1).lineBetween(x0,y,x1,y);track.lineStyle(2.5,C.cyan,.7).lineBetween(x0,y,x1,y);scene.ui.add(track);
     const thumb=scene.add.circle(x0+a*width,y,8,C.white,1).setStrokeStyle(2,C.cyan,1);scene.ui.add(thumb);
-    const momentumText=scene.addText(W/2,scene.Y(698),'',6.6,C.white,{ox:.5,bold:true});
+    // Raised closer to the slider so it does not sit against the bottom border.
+    const momentumText=scene.addText(W/2,scene.Y(693),'',6.6,C.white,{ox:.5,bold:true});
 
     function paint(value){
       scene._p3Trajectory=clamp(value,-MAX_T,MAX_T);t=trajectory(scene);a=angularMomentum(t);thumb.x=x0+a*width;
@@ -139,7 +123,7 @@
       momentumText.setColor?.(a>.66?'#25f29a':a<.34?'#ff9d3d':'#f7fbff');
     }
     paint(t);
-    const hit=scene.add.rectangle(W/2,y,width+34,36,0xffffff,.001).setInteractive({useHandCursor:true});scene.ui.add(hit);
+    const hit=scene.add.rectangle(W/2,y,width+34,34,0xffffff,.001).setInteractive({useHandCursor:true});scene.ui.add(hit);
     let dragging=false;const fromPointer=p=>((clamp(p.x,x0,x1)-x0)/width*2-1)*MAX_T;
     hit.on('pointerdown',p=>{dragging=true;paint(fromPointer(p));});
     hit.on('pointermove',p=>{if(dragging&&p.isDown)paint(fromPointer(p));});
@@ -149,7 +133,7 @@
 
   proto.drawPrompt=function(...args){
     if(!active(this))return baseDrawPrompt.apply(this,args);
-    addOrbitalAssist(this);
+    addOrbitalAssist(this); // always visible, including 0 / 0
     addTrajectoryControl(this);
     this.choice(73,this.Y(786),'ABSORB',C.green,'');
     this.choice(210,this.Y(786),'DEFLECT',C.orange,'');
@@ -222,9 +206,9 @@
   };
 
   window.CometPhase3Trajectory=Object.freeze({
-    enabled:true,version:4,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
-    preActionDecision:true,orbitalAssist:'multi-select-unlimited-by-design',orbitalAssistHardCap:null,
+    enabled:true,version:5,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
+    preActionDecision:true,orbitalAssist:'multi-select-always-visible',orbitalAssistHardCap:null,
     orbitalAssistDiminishingReturns:true,oldHighRiskPopupBypassed:true,compactTrajectoryPanel:true,
-    maxTangentialEscapeTarget:'~85–94% before orbital assists, depending on tier gap and speed'
+    actionRiskCaptions:false
   });
 })();
