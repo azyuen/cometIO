@@ -110,6 +110,16 @@ Named:
 - `nebula_carina_32.png` / `nebula_carina_64.png`
 - `nebula_eagle_32.png` / `nebula_eagle_64.png`
 - `nebula_helix_32.png` / `nebula_helix_64.png`
+- `nebula_ring_32.png` / `nebula_ring_64.png`
+- `nebula_dumbbell_32.png` / `nebula_dumbbell_64.png`
+- `nebula_butterfly_32.png` / `nebula_butterfly_64.png`
+- `nebula_catsEye_32.png` / `nebula_catsEye_64.png`
+- `nebula_hourglass_32.png` / `nebula_hourglass_64.png`
+- `nebula_rosette_32.png` / `nebula_rosette_64.png`
+- `nebula_tarantula_32.png` / `nebula_tarantula_64.png`
+- `nebula_horsehead_32.png` / `nebula_horsehead_64.png`
+
+The current Eagle and Helix sprite pairs are refreshed art; overwrite the existing files with the same filenames. Their manifest asset versions are bumped so cached installs request the new images.
 
 ## Pulsar
 
@@ -166,11 +176,11 @@ Collectibles begin at Dwarf Planet:
 - Yellow Dwarf Star: 4
 - Blue Giant Star: 4
 - Red Hypergiant Star: 4
-- Nebula: 4
+- Nebula: 12
 - Pulsar: 4
 - Black Hole: 4
 - Super Massive Black Hole: 4
 
-Total: **44 unique collectible objects**.
+Total: **52 unique collectible objects**.
 
 Named comets remain outside the collection and may repeat after any outcome.
