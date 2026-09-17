@@ -1,7 +1,11 @@
-// Phase 3 trajectory mechanics: make compact-object encounters strategic rather than a post-choice
-// high-risk popup. The player sets RADIAL <-> TANGENTIAL approach before MERGE / SLING / ESCAPE.
-// Tangential motion raises angular momentum and favours flyby/escape; radial motion favours merger
-// but increases capture risk. One orbital may be committed in advance as an emergency gravity assist.
+// Phase 3 trajectory mechanics v2.
+// The player sets RADIAL <-> TANGENTIAL before MERGE / SLING / ESCAPE.
+// v2 fixes two issues from v1:
+// 1) extreme SMBH gravity could crush the base AVOID chance before trajectory was applied, so even
+//    maximum tangential angular momentum barely helped;
+// 2) redrawing on pointer-down interrupted slider dragging.
+// High tangential angular momentum now represents a genuinely large impact parameter: it strongly
+// lowers capture probability without making survival certain, while radial approaches remain lethal.
 (() => {
   if (typeof GameScene === 'undefined') return;
   const proto = GameScene.prototype;
@@ -17,26 +21,49 @@
 
   function active(scene) {
     const tier = Number(scene?.tierIndex);
-    return PULSAR >= 0 && SMBH >= 0 && tier >= PULSAR && tier <= SMBH && !scene._devModeActive;
+    const lab = scene?._labSandboxRun === true;
+    return PULSAR >= 0 && SMBH >= 0 && tier >= PULSAR && tier <= SMBH && (!scene._devModeActive || lab);
   }
   function trajectory(scene) {
     if (!Number.isFinite(Number(scene._p3Trajectory))) scene._p3Trajectory = 0;
     return clamp(Number(scene._p3Trajectory), -MAX_T, MAX_T);
   }
   function angularMomentum(t) { return clamp((t + MAX_T) / (MAX_T * 2), 0, 1); }
-  function riskWord(choice, t, scene) {
-    const a = angularMomentum(t);
-    const gap = Number(scene?.other?.tier || 0) - Number(scene?.tierIndex || 0);
-    if (choice === 'ABSORB') {
-      const q = clamp(.76 - a * .58 - Math.max(0, gap) * .13, .04, .92);
-      return q > .64 ? 'BEST MERGE' : q > .36 ? 'POSSIBLE' : 'VERY LOW';
+  function curve(a, power = 1.65) { return Math.pow(clamp(a,0,1), power); }
+  function speedRatio(scene) {
+    return clamp((Number(scene?.player?.speedMS)||1) / Math.max(1, Number(scene?.other?.speedMS)||1), .15, 3);
+  }
+  function speedAdjustment(scene) {
+    // Existing speed remains relevant, but cannot erase the geometric protection of a large impact parameter.
+    const ratio = speedRatio(scene);
+    return clamp(Math.log10(ratio) * .10, -.07, .07);
+  }
+
+  function predictedSurvival(scene, choice, a) {
+    const gap = Math.max(0, Number(scene?.other?.tier||0)-Number(scene?.tierIndex||0));
+    const high = curve(a);
+    const speed = speedAdjustment(scene);
+    if (choice === 'AVOID') {
+      // Tangential trajectory means the object never dives deeply into the gravity well.
+      return clamp(.16 + high * .76 - gap * .025 + speed, .08, .94);
     }
     if (choice === 'DEFLECT') {
-      const q = clamp(.24 + a * .68 - Math.max(0, gap) * .06, .08, .94);
-      return q > .72 ? 'STRONG' : q > .45 ? 'GOOD' : 'RISKY';
+      // A sling needs a closer pass than ESCAPE, so its survival ceiling is deliberately lower.
+      return clamp(.12 + high * .70 - gap * .035 + speed, .06, .88);
     }
-    const q = clamp(.30 + a * .64 - Math.max(0, gap) * .07, .08, .96);
-    return q > .78 ? 'HIGH' : q > .52 ? 'GOOD' : 'RISKY';
+    // MERGE remains an all-in choice. High angular momentum mostly converts a failed capture attempt
+    // into a survivable shear/flyby rather than making the merger itself likely.
+    return clamp(.06 + high * .60 - gap * .045 + speed*.5, .025, .72);
+  }
+
+  function riskWord(choice, t, scene) {
+    const a = angularMomentum(t);
+    if (choice === 'ABSORB') {
+      const mergeBias = clamp(.82 - a*.70 - Math.max(0,(scene.other?.tier||0)-scene.tierIndex)*.10,.02,.90);
+      return mergeBias > .62 ? 'BEST MERGE' : mergeBias > .32 ? 'POSSIBLE' : 'VERY LOW';
+    }
+    const s = predictedSurvival(scene, choice, a);
+    return s >= .82 ? 'VERY HIGH' : s >= .68 ? 'HIGH' : s >= .48 ? 'GOOD' : s >= .28 ? 'RISKY' : 'EXTREME';
   }
 
   proto.startEncounter = function(...args) {
@@ -45,14 +72,12 @@
     return baseStartEncounter.apply(this, args);
   };
 
-  // Phase 3 is no longer a mystery-choice phase: identify the gravity source before trajectory setup.
   proto.drawArena = function(...args) {
     const result = baseDrawArena.apply(this, args);
     if (!active(this) || !this.otherSprite?.active) return result;
     const x = this.otherSprite.x, y = this.otherSprite.y;
     try { this.otherSprite.destroy(true); } catch (e) {}
     this.otherSprite = this.drawObject(x, y, 42, this.other, false, true);
-    // Replace the old UNKNOWN label in the live arena.
     const visit = node => {
       if (!node) return;
       if (typeof node.text === 'string' && node.text.trim() === 'UNKNOWN') {
@@ -65,7 +90,6 @@
     return result;
   };
 
-  // Keep existing button art/Phase-3 relabelling, but replace generic risk captions with live trajectory guidance.
   proto.choice = function(x, y, label, color, risk) {
     if (active(this)) risk = riskWord(label, trajectory(this), this);
     return baseChoice.call(this, x, y, label, color, risk);
@@ -73,7 +97,7 @@
 
   function addTrajectoryControl(scene) {
     const y = scene.Y(669), x0 = 72, x1 = 348, width = x1 - x0;
-    const t = trajectory(scene), a = angularMomentum(t);
+    let t = trajectory(scene), a = angularMomentum(t);
     scene.addText(W/2, scene.Y(624), 'TRAJECTORY', 8.8, C.cyan, {ox:.5,bold:true});
     scene.addText(x0, scene.Y(641), 'RADIAL', 7.7, C.orange, {ox:.5,bold:true});
     scene.addText(x1, scene.Y(641), 'TANGENTIAL', 7.7, C.green, {ox:.5,bold:true});
@@ -84,23 +108,35 @@
     track.lineStyle(7, 0x183248, 1).lineBetween(x0, y, x1, y);
     track.lineStyle(3, C.cyan, .68).lineBetween(x0, y, x1, y);
     scene.ui.add(track);
-    const thumbX = x0 + a * width;
-    const thumb = scene.add.circle(thumbX, y, 9, C.white, 1).setStrokeStyle(2, C.cyan, 1);
+    const thumb = scene.add.circle(x0 + a*width, y, 9, C.white, 1).setStrokeStyle(2, C.cyan, 1);
     scene.ui.add(thumb);
+    const momentumText = scene.addText(W/2, scene.Y(685), '', 7.2, C.white, {ox:.5,bold:true});
 
-    const momentum = a < .34 ? 'LOW' : a < .67 ? 'MEDIUM' : 'HIGH';
-    scene.addText(W/2, scene.Y(685), `ANGULAR MOMENTUM: ${momentum}`, 7.2, a > .66 ? C.green : a < .34 ? C.orange : C.white, {ox:.5,bold:true});
+    function paint(value) {
+      scene._p3Trajectory = clamp(value,-MAX_T,MAX_T);
+      t = trajectory(scene); a = angularMomentum(t);
+      thumb.x = x0 + a*width;
+      const momentum = a < .34 ? 'LOW' : a < .67 ? 'MEDIUM' : 'HIGH';
+      momentumText.setText(`ANGULAR MOMENTUM: ${momentum}`);
+      momentumText.setColor?.(a > .66 ? '#25f29a' : a < .34 ? '#ff9d3d' : '#f7fbff');
+    }
+    paint(t);
 
-    const hit = scene.add.rectangle(W/2, y, width + 30, 38, 0xffffff, .001).setInteractive({useHandCursor:true});
+    const hit = scene.add.rectangle(W/2, y, width + 34, 42, 0xffffff, .001).setInteractive({useHandCursor:true});
     scene.ui.add(hit);
-    const update = pointer => {
-      const frac = clamp((pointer.x - x0) / width, 0, 1);
-      scene._p3Trajectory = (frac * 2 - 1) * MAX_T;
-      // Redraw the same encounter so labels and angular-momentum teaching update live.
+    let dragging = false;
+    const fromPointer = pointer => ((clamp(pointer.x,x0,x1)-x0)/width*2-1)*MAX_T;
+    hit.on('pointerdown', pointer => { dragging=true; paint(fromPointer(pointer)); });
+    hit.on('pointermove', pointer => { if (dragging && pointer.isDown) paint(fromPointer(pointer)); });
+    const finish = pointer => {
+      if (!dragging) return;
+      dragging=false;
+      if (pointer) paint(fromPointer(pointer));
+      // Only redraw after the gesture finishes, so dragging cannot destroy its own hit area.
       scene.drawEncounter();
     };
-    hit.on('pointerdown', update);
-    hit.on('pointermove', p => { if (p.isDown) update(p); });
+    hit.on('pointerup', finish);
+    hit.on('pointerout', pointer => { if (dragging && !pointer.isDown) finish(pointer); });
 
     if ((Number(scene.orbitalCount) || 0) > 0) {
       const on = scene._p3OrbitalAssist === true;
@@ -117,7 +153,6 @@
 
   proto.drawPrompt = function(...args) {
     if (!active(this)) return baseDrawPrompt.apply(this, args);
-    // Compact Phase-3 decision panel: encounter is already identified, so use this space for trajectory.
     const g = this.add.graphics();
     g.fillStyle(C.panel,.98).fillRoundedRect(10,this.Y(612),400,112,8);
     g.lineStyle(2,C.cyan,.88).strokeRoundedRect(10,this.Y(612),400,112,8);this.ui.add(g);
@@ -134,20 +169,20 @@
   }
 
   function applyTrajectory(scene, choice, pending) {
-    const t = trajectory(scene), a = angularMomentum(t);
+    const t = trajectory(scene), a = angularMomentum(t), high = curve(a);
     pending.phase3Trajectory = t;
     pending.angularMomentum = a;
     pending.trajectoryLabel = a < .34 ? 'RADIAL' : a > .66 ? 'TANGENTIAL' : 'OBLIQUE';
 
-    // Radial approach improves merger commitment; tangential approach improves flyby/escape.
     if (choice === 'ABSORB') {
       const baseSafe = clamp(Number(pending.chance) || (pending.success ? .6 : .2), .01, .99);
-      let safe = clamp(baseSafe * (1.22 - .48*a), .015, .985);
+      let safe = clamp(baseSafe * (1.20 - .55*a), .015, .985);
       if (pending.compactGravityReverse) {
-        const baseFatal = fatalChance(pending);
-        const fatal = clamp(baseFatal * (1.22 - .66*a), .015, .985);
-        safe = 1 - fatal;
-        pending.fatalChance = fatal;
+        // Against a dominant compact object, angular momentum mainly prevents capture; it does NOT
+        // turn a tangential pass into a successful SMBH merger. Survival is therefore a shear/flyby.
+        const targetSafe = predictedSurvival(scene,'ABSORB',a);
+        safe = clamp(Math.max(1-fatalChance(pending), targetSafe), .015, .92);
+        pending.fatalChance = 1-safe;
         pending.fragmentChance = safe;
       }
       pending.chance = safe;
@@ -155,37 +190,41 @@
       if (pending.compactGravityReverse) pending.result = pending.success ? 'fragment' : 'catastrophic';
       else if (!pending.success) pending.result = pending.result || 'catastrophic';
     } else if (choice === 'DEFLECT') {
-      const oldFatal = fatalChance(pending);
-      const fatal = clamp(oldFatal * (1.18 - .72*a), .002, .92);
-      const cleanBase = clamp(Number(pending.cleanChance) || .45, 0, 1-fatal);
-      const clean = clamp(cleanBase * (.72 + .68*a), .04, 1-fatal);
-      const roll = Math.random();
-      pending.fatalChance = fatal; pending.cleanChance = clean; pending.chance = 1-fatal;
-      pending.result = roll < fatal ? 'catastrophic' : roll < fatal+clean ? 'clean' : 'rough';
-      pending.success = pending.result !== 'catastrophic';
+      const survival = Math.max(1-fatalChance(pending), predictedSurvival(scene,'DEFLECT',a));
+      const fatal = clamp(1-survival,.002,.94);
+      const cleanBase = clamp(Number(pending.cleanChance)||.35,0,1-fatal);
+      const cleanFloor = survival * clamp(.24 + high*.58, .18, .78);
+      const clean = clamp(Math.max(cleanBase,cleanFloor),.03,1-fatal);
+      const roll=Math.random();
+      pending.fatalChance=fatal; pending.cleanChance=clean; pending.chance=1-fatal;
+      pending.result=roll<fatal?'catastrophic':roll<fatal+clean?'clean':'rough';
+      pending.success=pending.result!=='catastrophic';
     } else {
-      const base = clamp(Number(pending.chance) || .5, .01, .99);
-      const chance = clamp(base * (.72 + .55*a), .08, .995);
-      pending.chance = chance; pending.success = Math.random() < chance;
+      // IMPORTANT: do not multiply the legacy AVOID chance. Its escape-velocity term correctly says
+      // a radial plunge near an SMBH is hopeless, but a high-impact-parameter tangential flyby never
+      // enters that deep potential well. Use the greater of the legacy chance and trajectory model.
+      const legacy = clamp(Number(pending.chance)||.08,.01,.995);
+      const chance = clamp(Math.max(legacy,predictedSurvival(scene,'AVOID',a)),.08,.995);
+      pending.chance=chance; pending.fatalChance=1-chance;
+      pending.success=Math.random()<chance;
     }
 
-    // Pre-committed orbital assist: one member is sacrificed to exchange energy/angular momentum
-    // with the encounter. It is strongest for SLING/ESCAPE and deliberately cannot make MERGE safe.
-    if (scene._p3OrbitalAssist && (Number(scene.orbitalCount)||0) > 0) {
-      scene.orbitalCount = Math.max(0, Number(scene.orbitalCount)-1); scene.craters = scene.orbitalCount;
-      pending.orbitalsSacrificed = 1; pending.phase3OrbitalAssist = true;
-      if (choice === 'ABSORB') {
-        const fatal = fatalChance(pending) * .78;
-        pending.fatalChance = fatal; pending.chance = 1-fatal;
-        pending.success = Math.random() >= fatal;
-        if (pending.compactGravityReverse) pending.result = pending.success ? 'fragment' : 'catastrophic';
-      } else if (choice === 'DEFLECT') {
-        const fatal = fatalChance(pending) * .48;
-        pending.fatalChance = fatal; pending.chance = 1-fatal;
-        const roll = Math.random();
-        pending.result = roll < fatal ? 'catastrophic' : 'clean'; pending.success = pending.result !== 'catastrophic';
+    if (scene._p3OrbitalAssist && (Number(scene.orbitalCount)||0)>0) {
+      scene.orbitalCount=Math.max(0,Number(scene.orbitalCount)-1); scene.craters=scene.orbitalCount;
+      pending.orbitalsSacrificed=1; pending.phase3OrbitalAssist=true;
+      if (choice==='ABSORB') {
+        const fatal=fatalChance(pending)*.72;
+        pending.fatalChance=fatal;pending.chance=1-fatal;pending.success=Math.random()>=fatal;
+        if(pending.compactGravityReverse)pending.result=pending.success?'fragment':'catastrophic';
+      } else if(choice==='DEFLECT') {
+        const fatal=fatalChance(pending)*.42;
+        pending.fatalChance=fatal;pending.chance=1-fatal;
+        const clean=clamp(Math.max(Number(pending.cleanChance)||0,(1-fatal)*.72),0,1-fatal);
+        const roll=Math.random();pending.result=roll<fatal?'catastrophic':roll<fatal+clean?'clean':'rough';pending.success=pending.result!=='catastrophic';
       } else {
-        pending.chance = clamp(Number(pending.chance)+.18,.08,.995); pending.success=Math.random()<pending.chance;
+        // Orbital sacrifice supplies an additional gravitational energy/angular-momentum exchange.
+        pending.chance=clamp(1-(1-Number(pending.chance))*0.38,.08,.995);
+        pending.fatalChance=1-pending.chance;pending.success=Math.random()<pending.chance;
       }
     }
     return pending;
@@ -193,22 +232,14 @@
 
   proto.choose = function(choice) {
     if (!active(this) || this.state !== 'APPROACH') return baseChoose.call(this, choice);
-    // Crucially bypass the old post-choice HIGH-RISK orbital popup. Trajectory and orbital assist
-    // have already been selected; pressing an action is the commitment.
-    let pending = this.outcome(choice);
-    pending = applyTrajectory(this, choice, pending);
-    this.pending = pending;
-    this.state = 'REVEAL';
-    this.tweens.killAll();
-    this.reveal(choice);
+    let pending=this.outcome(choice);
+    pending=applyTrajectory(this,choice,pending);
+    this.pending=pending;this.state='REVEAL';this.tweens.killAll();this.reveal(choice);
   };
 
-  window.CometPhase3Trajectory = Object.freeze({
-    enabled:true,
-    endpoints:['RADIAL','TANGENTIAL'],
-    teachesAngularMomentum:true,
-    preActionDecision:true,
-    orbitalAssistCost:1,
-    oldHighRiskPopupBypassed:true
+  window.CometPhase3Trajectory=Object.freeze({
+    enabled:true,version:2,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
+    preActionDecision:true,orbitalAssistCost:1,oldHighRiskPopupBypassed:true,
+    maxTangentialEscapeTarget:'~85–94% depending on tier gap and speed',sliderDragFixed:true
   });
 })();
