@@ -1,8 +1,6 @@
-// Phase 3 trajectory mechanics v3.
+// Phase 3 trajectory mechanics v4.
 // RADIAL <-> TANGENTIAL is chosen before MERGE / SLING / ESCAPE.
-// v3 compacts the trajectory UI, moves orbital assist away from the opponent label, and lets the
-// player commit any number of available orbitals using +/- controls. Multiple sacrificed orbitals
-// reduce capture risk with diminishing returns rather than an arbitrary hard cap.
+// v4 keeps the compact v3 UI and multi-orbital assist, with corrected fallback syntax.
 (() => {
   if (typeof GameScene === 'undefined') return;
   const proto = GameScene.prototype;
@@ -29,7 +27,7 @@
   function curve(a, power = 1.65) { return Math.pow(clamp(a,0,1), power); }
   function availableOrbitals(scene) { return Math.max(0, Math.floor(Number(scene?.orbitalCount) || 0)); }
   function assistCount(scene) {
-    if (scene._p3OrbitalAssistCount === true) scene._p3OrbitalAssistCount = 1; // v2 compatibility
+    if (scene._p3OrbitalAssistCount === true) scene._p3OrbitalAssistCount = 1;
     const n = Math.max(0, Math.floor(Number(scene._p3OrbitalAssistCount) || 0));
     scene._p3OrbitalAssistCount = Math.min(n, availableOrbitals(scene));
     return scene._p3OrbitalAssistCount;
@@ -38,8 +36,7 @@
     return clamp((Number(scene?.player?.speedMS)||1) / Math.max(1, Number(scene?.other?.speedMS)||1), .15, 3);
   }
   function speedAdjustment(scene) {
-    const ratio = speedRatio(scene);
-    return clamp(Math.log10(ratio) * .10, -.07, .07);
+    return clamp(Math.log10(speedRatio(scene)) * .10, -.07, .07);
   }
 
   function predictedSurvival(scene, choice, a) {
@@ -54,8 +51,6 @@
   function assistRiskMultiplier(count, choice) {
     const n = Math.max(0, Number(count)||0);
     if (!n) return 1;
-    // Each extra body adds another possible gravitational energy/angular-momentum exchange, but the
-    // useful geometry becomes progressively harder to exploit. Hence sub-linear exponent/diminishing returns.
     const coefficient = choice === 'ABSORB' ? .48 : .80;
     return Math.exp(-coefficient * Math.pow(n, .72));
   }
@@ -92,7 +87,6 @@
     this.otherSprite=this.drawObject(x,y,42,this.other,false,true);
     const visit=node=>{if(!node)return;if(typeof node.text==='string'&&node.text.trim()==='UNKNOWN'){node.setText('IDENTIFIED');node.setColor?.('#ff9f43');}if(Array.isArray(node.list))node.list.forEach(visit);};
     visit(this.ui);
-    // Kept unobstructed on the right; orbital controls now live to the left and trajectory starts below.
     this.addText(W-14,this.Y(620),this.other.realName||this.other.name,7.2,C.orange,{ox:1,bold:true,width:190,align:'right'});
     return result;
   };
@@ -106,7 +100,6 @@
     const available=availableOrbitals(scene);
     if(!available)return;
     const selected=assistCount(scene);
-    // Compact upper-left control so the opponent name remains visible on the right.
     const cx=103,cy=scene.Y(616),w=186,h=34;
     const c=scene.add.container(cx,cy),g=scene.add.graphics();
     g.fillStyle(C.panel,.96).fillRoundedRect(-w/2,-h/2,w,h,5);
@@ -123,7 +116,6 @@
   }
 
   function addTrajectoryControl(scene) {
-    // Slim strip: 72px tall instead of the old 112px block.
     const panelTop=scene.Y(642),panelHeight=72;
     const pg=scene.add.graphics();
     pg.fillStyle(C.panel,.97).fillRoundedRect(15,panelTop,390,panelHeight,7);
@@ -175,7 +167,7 @@
     pending.phase3Trajectory=t;pending.angularMomentum=a;pending.trajectoryLabel=a<.34?'RADIAL':a>.66?'TANGENTIAL':'OBLIQUE';
 
     if(choice==='ABSORB'){
-      const baseSafe=clamp(Number(pending.chance)||(pending.success?.6:.2),.01,.99);
+      const baseSafe=clamp(Number(pending.chance)||(pending.success ? .6 : .2),.01,.99);
       let safe=clamp(baseSafe*(1.20-.55*a),.015,.985);
       if(pending.compactGravityReverse){
         safe=clamp(Math.max(1-fatalChance(pending),predictedSurvival(scene,'ABSORB',a)),.015,.92);
@@ -205,8 +197,6 @@
       const multiplier=assistRiskMultiplier(used,choice);
 
       if(choice==='ABSORB'){
-        // Assist helps avoid being swallowed if the merger fails, but deliberately does not make a
-        // direct SMBH merger itself attractive. It is less efficient than assist used for a flyby.
         const fatal=Math.max(.025,fatalChance(pending)*multiplier);
         pending.fatalChance=fatal;pending.chance=1-fatal;pending.success=Math.random()>=fatal;
         if(pending.compactGravityReverse)pending.result=pending.success?'fragment':'catastrophic';
@@ -232,7 +222,7 @@
   };
 
   window.CometPhase3Trajectory=Object.freeze({
-    enabled:true,version:3,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
+    enabled:true,version:4,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
     preActionDecision:true,orbitalAssist:'multi-select-unlimited-by-design',orbitalAssistHardCap:null,
     orbitalAssistDiminishingReturns:true,oldHighRiskPopupBypassed:true,compactTrajectoryPanel:true,
     maxTangentialEscapeTarget:'~85–94% before orbital assists, depending on tier gap and speed'
