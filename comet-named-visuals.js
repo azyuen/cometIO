@@ -8,18 +8,7 @@
     const lods = Array.isArray(entry?.lods) ? [...entry.lods] : [];
     if (!lods.length) return [];
 
-    // Use 32px only for variants whose 64px source has shown black/rainbow rectangle corruption.
-    // Keeping the workaround variant-specific lets clean 64px Earth/Mars/Jupiter/etc. retain detail.
-    const force32 =
-      variant === 'dwarf_ceres' ||
-      variant === 'dwarf_eris' ||
-      variant === 'planet_saturn' ||
-      variant === 'planet_neptune' ||
-      String(variant || '').startsWith('yellowDwarf_');
-
-    if (force32 && lods.includes(32)) {
-      return [32, ...lods.filter(lod => lod !== 32)];
-    }
+    // All current named sprite packs use normal displayed-size LOD selection.
 
     const threshold = COMET_VISUAL_SETTINGS?.lodThresholds?.smallMaxPx ?? 48;
     const preferred = diameterPx <= threshold ? 32 : 64;
