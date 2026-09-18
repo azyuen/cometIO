@@ -56,30 +56,32 @@
   }
 
   function phase3Teaching(scene) {
-    // Keep the opening card deliberately brief. The live Phase 3 HUD teaches the finer
-    // trajectory/angular-momentum details once the player begins.
-    const top=scene.Y(408),height=236;
+    // Phase 3 introduces two genuinely new controls. Explain those controls clearly here,
+    // while leaving the detailed probabilities to the live encounter HUD.
+    const top=scene.Y(398),height=278;
     const panel=scene.add.graphics();
     panel.fillStyle(C.panel,.96).fillRoundedRect(24,top,372,height,9);
     panel.lineStyle(1.5,C.cyan,.62).strokeRoundedRect(24,top,372,height,9);
     scene.ui.add(panel);
 
-    scene.addText(W/2,scene.Y(432),'GRAVITY CHANGES THE RULES',9.6,C.white,{ox:.5,bold:true});
+    scene.addText(W/2,scene.Y(420),'GRAVITY CHANGES THE RULES',9.6,C.white,{ox:.5,bold:true});
 
-    scene.addText(48,scene.Y(474),'RADIAL',8.7,C.green,{bold:true});
-    scene.addText(132,scene.Y(474),'FAVOURS MERGE',8.0,C.white,{bold:true});
-
-    scene.addText(48,scene.Y(510),'TANGENTIAL',8.7,C.orange,{bold:true});
-    scene.addText(151,scene.Y(510),'FAVOURS SLING + ESCAPE',8.0,C.white,{bold:true});
+    scene.addText(48,scene.Y(452),'TRAJECTORY',8.8,C.cyan,{bold:true});
+    scene.addText(48,scene.Y(476),'Move the slider before choosing an action.',7.55,C.white,{bold:true,width:324});
+    scene.addText(48,scene.Y(499),'RADIAL',8.2,C.green,{bold:true});
+    scene.addText(112,scene.Y(499),'lower angular momentum • favours MERGE',7.15,C.muted,{bold:true,width:258});
+    scene.addText(48,scene.Y(522),'TANGENTIAL',8.2,C.orange,{bold:true});
+    scene.addText(143,scene.Y(522),'higher angular momentum • favours SLING / ESCAPE',7.15,C.muted,{bold:true,width:228});
 
     const line=scene.add.graphics();
-    line.lineStyle(1,C.cyan,.28).lineBetween(48,scene.Y(544),372,scene.Y(544));
+    line.lineStyle(1,C.cyan,.28).lineBetween(48,scene.Y(552),372,scene.Y(552));
     scene.ui.add(line);
 
-    scene.addText(48,scene.Y(568),'ORBITAL ASSIST',8.7,C.cyan,{bold:true});
-    scene.addText(48,scene.Y(592),'Sacrifice orbitals to reduce capture risk.',7.7,C.muted,{bold:true,width:324});
+    scene.addText(48,scene.Y(574),'ORBITAL ASSIST',8.8,C.cyan,{bold:true});
+    scene.addText(48,scene.Y(598),'Use  − / +  to choose how many orbitals to sacrifice.',7.45,C.white,{bold:true,width:324});
+    scene.addText(48,scene.Y(621),'More sacrificed orbitals reduce capture risk.',7.25,C.muted,{bold:true,width:324});
 
-    scene.addText(W/2,scene.Y(624),'MERGE  •  SLING  •  ESCAPE',9.1,C.white,{ox:.5,bold:true});
+    scene.addText(W/2,scene.Y(651),'MERGE  •  SLING  •  ESCAPE',9.0,C.white,{ox:.5,bold:true});
   }
 
   proto.showPhaseStartCard = function(phase) {
@@ -112,7 +114,7 @@
 
     if(phase===3){
       phase3Teaching(this);
-      this.wideButton(W/2,this.Y(698),320,54,'BEGIN PHASE 3',C.cyan,()=>{
+      this.wideButton(W/2,this.Y(728),320,54,'BEGIN PHASE 3',C.cyan,()=>{
         if(this.state!=='PHASE_START_CARD')return;
         this._activePhaseStart=null;
         this.state='PHASE_START_EXIT';
