@@ -68,7 +68,7 @@
 
     const playerIndex = scene.ui?.getIndex?.(scene.youSprite) ?? -1;
     if (playerIndex >= 0 && typeof scene.ui?.addAt === 'function') {
-      scene.ui.addAt(front, Math.min(scene.ui.length, playerIndex + 1));
+      scene.ui.addAt(front, Math.min((scene.ui.list || []).length, playerIndex + 1));
     } else {
       scene.ui?.add?.(front);
     }
