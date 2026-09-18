@@ -1,17 +1,14 @@
-// Phase 4 sprite-composite enhancement v2.
-// Named galaxies keep their procedural identity but use a dominant real SMBH core and only tiny
-// pulsar/nebula sprites in their arms. Named clusters use a dominant animated central galaxy with
-// an SMBH core plus animated member galaxies. Apparent size follows compressed representative
-// physical extent: ordering is meaningful, but the scale is deliberately compressed for playability.
+// Phase 4 sprite-composite enhancement v3.
+// Galaxy scale: one dominant readable SMBH core, with many very small pulsar/nebula knots following
+// the arms. Cluster scale: the cluster is a field of animated galaxy swirls; member SMBHs are no
+// longer individually visible, while the dominant central galaxy retains only a subtle core.
 (() => {
-  if (typeof GameScene === 'undefined' || !window.CometPhase4NamedStructuresV1) return;
+  if(typeof GameScene==='undefined'||!window.CometPhase4NamedStructuresV1)return;
 
   const proto=GameScene.prototype;
   const baseDrawObject=proto.drawObject;
 
-  const ARM_VARIANTS=Object.freeze([
-    'pulsar_01','nebula_01','pulsar_02','nebula_02'
-  ]);
+  const ARM_VARIANTS=Object.freeze(['pulsar_01','nebula_01','pulsar_02','nebula_02']);
 
   const CORE_BY_PROFILE=Object.freeze({
     milkyway:'smbh_sagittariusA',
@@ -26,8 +23,8 @@
     pandora:'smbh_02'
   });
 
-  // Representative visible/structural diameters, in thousands of light years (kly).
-  // Cluster extents are millions of light-years, hence the much larger numbers.
+  // Representative structural diameters (thousands of light-years). These drive only compressed
+  // apparent-size differences; encounter physics and progression remain unchanged.
   const PHYSICAL_DIAMETER_KLY=Object.freeze({
     milkyway:100,
     andromeda:152,
@@ -42,14 +39,9 @@
   });
 
   function visualScale(object){
-    const profile=object?.phase4NamedProfile;
-    const d=PHYSICAL_DIAMETER_KLY[profile];
+    const d=PHYSICAL_DIAMETER_KLY[object?.phase4NamedProfile];
     if(!d)return 1;
-    if(object?.phase4NamedType==='cluster'){
-      // Preserve real ordering but compress ~100–200x physical galaxy/cluster differences into
-      // a playable ~1.3–1.6x visual tier difference.
-      return clamp(1.45*Math.pow(d/15000,.22),1.28,1.62);
-    }
+    if(object?.phase4NamedType==='cluster')return clamp(1.45*Math.pow(d/15000,.22),1.28,1.62);
     return clamp(Math.pow(d/100,.30),.80,1.18);
   }
 
@@ -84,7 +76,7 @@
     parent.once('destroy',()=>{try{tween.stop();}catch(_){}});
   }
 
-  function pulse(scene,parent,target,scale=.08,duration=2700,alphaLow=.82){
+  function pulse(scene,parent,target,scale=.07,duration=2800,alphaLow=.84){
     if(!target)return;
     const tw=scene.tweens.add({
       targets:target,
@@ -92,6 +84,16 @@
       scaleY:{from:1-scale/2,to:1+scale/2},
       alpha:{from:alphaLow,to:1},
       duration,yoyo:true,repeat:-1,ease:'Sine.inOut'
+    });
+    stopOnDestroy(parent,tw);
+  }
+
+  function twinkle(scene,parent,target,index=0){
+    if(!target)return;
+    const base=target.alpha||.7;
+    const tw=scene.tweens.add({
+      targets:target,alpha:{from:Math.max(.38,base-.20),to:Math.min(.90,base+.08)},
+      duration:1700+(index%5)*260,yoyo:true,repeat:-1,ease:'Sine.inOut'
     });
     stopOnDestroy(parent,tw);
   }
@@ -104,17 +106,71 @@
     return image;
   }
 
-  function addTinyArmField(scene,parent,radius,points,offset=0,duration=39000){
+  function addSpiralKnots(scene,parent,radius,opts={}){
     const field=scene.add.container(0,0);parent.add(field);
-    points.forEach((p,i)=>{
-      const variant=p.variant||ARM_VARIANTS[(i+offset)%ARM_VARIANTS.length];
-      // Always much smaller than the SMBH core.
-      const size=clamp(radius*(p.size||.042),3,6.5);
-      const img=sprite(scene,field,variant,p.x*radius,p.y*radius,size,p.alpha??.80,p.angle||0);
-      if(img&&p.pulse!==false)pulse(scene,parent,img,.08,2100+i*190,.62);
+    const arms=Math.max(1,opts.arms||2);
+    const perArm=Math.max(2,opts.perArm||6);
+    const turns=opts.turns||1.30;
+    const flat=opts.flat??.66;
+    const startRadius=opts.startRadius??.28;
+    const endRadius=opts.endRadius??.84;
+    const phase=opts.phase||0;
+    let idx=0;
+
+    for(let arm=0;arm<arms;arm++){
+      const armStart=phase+arm*Math.PI*2/arms;
+      for(let j=0;j<perArm;j++){
+        const t=perArm===1?0:j/(perArm-1);
+        const a=armStart+t*Math.PI*turns;
+        const d=radius*(startRadius+(endRadius-startRadius)*t);
+        const jitter=((j+arm*3)%3-1)*radius*.012;
+        const x=Math.cos(a)*(d+jitter);
+        const y=Math.sin(a)*(d+jitter)*flat;
+        const variant=ARM_VARIANTS[(idx+(opts.offset||0))%ARM_VARIANTS.length];
+        // Intentionally tiny: these are star-forming/compact-object accents, not mini-icons.
+        const size=clamp(radius*(opts.spriteScale||.018)*(idx%5===0?1.12:.90),1.5,3.2);
+        const image=sprite(scene,field,variant,x,y,size,.68+(idx%3)*.045,(idx%4)*22);
+        if(image)twinkle(scene,parent,image,idx);
+        idx++;
+      }
+    }
+
+    const spin=scene.tweens.add({
+      targets:field,angle:opts.reverse?-360:360,
+      duration:opts.duration||42000,repeat:-1,ease:'Linear'
     });
-    const tw=scene.tweens.add({targets:field,angle:points.some(p=>p.reverse)?-360:360,duration,repeat:-1,ease:'Linear'});
-    stopOnDestroy(parent,tw);return field;
+    stopOnDestroy(parent,spin);
+    return field;
+  }
+
+  function addDiskKnots(scene,parent,radius,count=10,duration=60000){
+    const field=scene.add.container(0,0);parent.add(field);
+    for(let i=0;i<count;i++){
+      const t=(i+.5)/count;
+      const x=radius*(-.72+1.44*t);
+      const y=radius*((i%2?1:-1)*.018);
+      const size=clamp(radius*.016*(i%4===0?1.12:.88),1.5,2.8);
+      const image=sprite(scene,field,ARM_VARIANTS[i%ARM_VARIANTS.length],x,y,size,.64+(i%3)*.05);
+      if(image)twinkle(scene,parent,image,i);
+    }
+    const sway=scene.tweens.add({targets:field,angle:{from:-1.5,to:1.5},duration,yoyo:true,repeat:-1,ease:'Sine.inOut'});
+    stopOnDestroy(parent,sway);return field;
+  }
+
+  function addRingKnots(scene,parent,radius,count=16,duration=34000){
+    const field=scene.add.container(0,0);parent.add(field);
+    for(let i=0;i<count;i++){
+      const a=i*Math.PI*2/count+(i%2)*.025;
+      const d=radius*.79;
+      const size=clamp(radius*.016*(i%4===0?1.12:.88),1.5,3.0);
+      const image=sprite(
+        scene,field,ARM_VARIANTS[i%ARM_VARIANTS.length],
+        Math.cos(a)*d,Math.sin(a)*d,size,.66+(i%3)*.045
+      );
+      if(image)twinkle(scene,parent,image,i);
+    }
+    const spin=scene.tweens.add({targets:field,angle:360,duration,repeat:-1,ease:'Linear'});
+    stopOnDestroy(parent,spin);return field;
   }
 
   function galaxySprites(scene,visual,object,r){
@@ -123,66 +179,47 @@
 
     if(p==='milkyway'){
       addDominantCore(scene,visual,p,r,{scale:.31,max:29});
-      addTinyArmField(scene,visual,r,[
-        {x:-.52,y:-.12,size:.042},{x:.42,y:.21,size:.045},{x:.17,y:-.43,size:.038},{x:-.18,y:.39,size:.040}
-      ],0,41000);return;
+      addSpiralKnots(scene,visual,r,{arms:4,perArm:5,turns:1.28,flat:.58,phase:.18,duration:41000});
+      return;
     }
 
     if(p==='andromeda'){
       addDominantCore(scene,visual,p,r,{scale:.29,max:28});
-      addTinyArmField(scene,visual,r,[
-        {x:-.60,y:.10,size:.038},{x:.52,y:-.08,size:.042},{x:.28,y:.24,size:.035}
-      ],1,52000);return;
+      addSpiralKnots(scene,visual,r,{arms:2,perArm:8,turns:1.32,flat:.38,phase:.15,offset:1,duration:52000});
+      return;
     }
 
     if(p==='whirlpool'){
       addDominantCore(scene,visual,p,r,{scale:.31,max:29});
-      // The companion is another galaxy, so its own SMBH is appropriate; the spiral arms themselves
-      // still contain only tiny pulsar/nebula sprites.
       const companion=addDominantCore(scene,visual,p,r,{
-        variant:'smbh_01',x:r*.88,y:-r*.25,scale:.105,min:6,max:11,pulseScale:.06,duration:3600
+        variant:'smbh_01',x:r*.88,y:-r*.25,scale:.10,min:5.5,max:9.5,pulseScale:.05,duration:3600
       });
       if(companion){
         const tw=scene.tweens.add({targets:companion,x:r*.82,y:-r*.31,duration:4200,yoyo:true,repeat:-1,ease:'Sine.inOut'});
         stopOnDestroy(visual,tw);
       }
-      addTinyArmField(scene,visual,r,[
-        {x:-.38,y:-.18,size:.038},{x:.22,y:.44,size:.040},{x:-.15,y:.50,size:.035}
-      ],2,30000);return;
+      addSpiralKnots(scene,visual,r,{arms:2,perArm:7,turns:1.62,flat:.82,phase:.15,offset:2,duration:30000});
+      return;
     }
 
     if(p==='sombrero'){
       addDominantCore(scene,visual,p,r,{scale:.30,max:28,alpha:.96});
-      addTinyArmField(scene,visual,r,[
-        {x:-.55,y:-.015,size:.033,pulse:false,variant:'pulsar_01'},
-        {x:.49,y:.018,size:.033,pulse:false,variant:'nebula_01'}
-      ],0,62000);return;
+      addDiskKnots(scene,visual,r,12,62000);
+      return;
     }
 
     if(p==='cartwheel'){
       addDominantCore(scene,visual,p,r,{scale:.29,max:28});
-      const pts=[];
-      for(let i=0;i<8;i++){
-        const a=i*Math.PI*2/8;
-        pts.push({
-          x:Math.cos(a)*.79,y:Math.sin(a)*.79,
-          size:i%3===0?.040:.032,
-          variant:i%2===0?'pulsar_01':'nebula_02'
-        });
-      }
-      addTinyArmField(scene,visual,r,pts,0,34000);return;
+      addRingKnots(scene,visual,r,18,34000);
+      return;
     }
 
     if(p==='antennae'){
-      // Antennae is an interacting pair, so each merging galaxy gets a dominant SMBH core.
-      const left=addDominantCore(scene,visual,p,r,{variant:'smbh_01',x:-r*.22,y:-r*.05,scale:.22,min:10,max:21,duration:3000});
-      const right=addDominantCore(scene,visual,p,r,{variant:'smbh_02',x:r*.22,y:r*.06,scale:.22,min:10,max:21,duration:3300});
-      addTinyArmField(scene,visual,r,[
-        {x:-.08,y:.02,size:.040,variant:'nebula_01'},
-        {x:.08,y:-.02,size:.036,variant:'pulsar_02'},
-        {x:-.52,y:-.22,size:.030,variant:'pulsar_01'},
-        {x:.50,y:.24,size:.030,variant:'nebula_02'}
-      ],1,46000);
+      const left=addDominantCore(scene,visual,p,r,{variant:'smbh_01',x:-r*.22,y:-r*.05,scale:.21,min:9,max:19,duration:3000});
+      const right=addDominantCore(scene,visual,p,r,{variant:'smbh_02',x:r*.22,y:r*.06,scale:.21,min:9,max:19,duration:3300});
+      addSpiralKnots(scene,visual,r*.58,{arms:2,perArm:5,turns:1.15,flat:.72,phase:.10,offset:1,duration:44000});
+      const knots2=addSpiralKnots(scene,visual,r*.58,{arms:2,perArm:5,turns:1.10,flat:.70,phase:.90,offset:3,duration:47000,reverse:true});
+      knots2.x=r*.05;knots2.y=r*.04;
       if(left&&right){
         const tl=scene.tweens.add({targets:left,x:-r*.17,y:-r*.09,duration:4200,yoyo:true,repeat:-1,ease:'Sine.inOut'});
         const tr=scene.tweens.add({targets:right,x:r*.17,y:r*.10,duration:4200,yoyo:true,repeat:-1,ease:'Sine.inOut'});
@@ -204,78 +241,112 @@
     }
   }
 
-  function animatedGalaxy(scene,parent,x,y,r,index,opts={}){
+  function animatedClusterGalaxy(scene,parent,x,y,r,index,opts={}){
     const c=scene.add.container(x,y),body=scene.add.container(0,0),g=scene.add.graphics();
-    const color=opts.color||((index%3===0)?C.purple:C.cyan);
     const dominant=!!opts.dominant;
-    const flat=opts.flat??(.52+(index%3)*.09);
-    const arms=opts.elliptical?0:(opts.arms||2+(index%2));
+    const color=opts.color||((index%4===0)?0xffd9aa:(index%3===0?C.purple:C.cyan));
+    const flat=opts.flat??(.48+(index%4)*.09);
+    const elliptical=!!opts.elliptical;
 
-    g.fillStyle(color,dominant?.085:.055).fillEllipse(0,0,r*2.05,r*(.92+flat));
-    if(opts.elliptical){
-      g.fillStyle(0xffe8c7,.10).fillEllipse(0,0,r*1.55,r*1.15);
-      g.lineStyle(Math.max(1,r*.06),color,.24).strokeEllipse(0,0,r*1.72,r*.98);
+    g.fillStyle(color,dominant?.075:.045).fillEllipse(0,0,r*2.05,r*(.90+flat));
+    if(elliptical){
+      g.fillStyle(0xffe8c7,dominant?.10:.055).fillEllipse(0,0,r*1.62,r*1.10);
+      g.lineStyle(Math.max(1,r*.055),color,dominant?.25:.17).strokeEllipse(0,0,r*1.76,r*.98);
     }else{
-      spiralPath(g,r*.86,color,arms,opts.turns||1.28,flat,dominant?.63:.48,dominant?.10:.085);
+      spiralPath(g,r*.88,color,2+(index%2),1.18+(index%3)*.13,flat,dominant?.59:.43,dominant?.085:.072);
     }
+
+    // A luminous stellar bulge gives each tiny cluster member a centre without exposing its SMBH.
+    g.fillStyle(0xfff0d0,dominant?.78:.62).fillCircle(0,0,Math.max(.7,r*(dominant?.11:.09)));
     body.add(g);c.add(body);
 
-    const coreVariant=opts.coreVariant||((index%2)?'smbh_01':'smbh_02');
-    const bhSize=clamp(r*(dominant?.36:.27),dominant?7:4,dominant?18:9);
-    const bh=sprite(scene,c,coreVariant,0,0,bhSize,dominant?.98:.90);
-    if(bh)pulse(scene,c,bh,.06,2600+index*130,.78);
-
-    // A member galaxy may contain one tiny bright star-forming accent, never another arm black hole.
-    if(!dominant&&index%3===0){
-      sprite(scene,c,index%2?'pulsar_01':'nebula_01',r*.40,-r*.10,clamp(r*.15,2.5,4.2),.68);
+    // Only the dominant cluster galaxy shows a subtle SMBH sprite. At this zoom level even that
+    // should be small relative to its host, not the giant icon used at standalone galaxy scale.
+    if(dominant){
+      const core=sprite(scene,c,opts.coreVariant||'smbh_01',0,0,clamp(r*.17,3.0,6.5),.86);
+      if(core)pulse(scene,c,core,.045,3200,.74);
     }
 
     parent.add(c);
     const spin=scene.tweens.add({
       targets:body,angle:index%2?360:-360,
-      duration:(dominant?43000:29000)+index*1600,repeat:-1,ease:'Linear'
+      duration:(dominant?50000:30000)+(index%7)*1500,repeat:-1,ease:'Linear'
     });
     const drift=scene.tweens.add({
-      targets:c,x:x+(index%2?2.8:-2.8),y:y+((index%3)-1)*2.0,
-      duration:4300+(index%5)*470,yoyo:true,repeat:-1,ease:'Sine.inOut'
+      targets:c,x:x+(index%2?2.0:-2.0),y:y+((index%3)-1)*1.5,
+      duration:4600+(index%6)*430,yoyo:true,repeat:-1,ease:'Sine.inOut'
     });
     stopOnDestroy(parent,spin);stopOnDestroy(parent,drift);
     return c;
   }
 
   function dimOriginalClusterGlyphs(visual){
-    // Keep the original named cluster haze/filaments as atmospheric structure, but push its old
-    // procedural mini-galaxy cloud into the background so the new animated galaxies read clearly.
-    for(const child of visual.list||[]){
-      if(child?.type==='Container'&&typeof child.setAlpha==='function')child.setAlpha(.20);
+    const list=visual.list||[];
+    list.forEach((child,i)=>{
+      if(child?.type==='Container'&&typeof child.setAlpha==='function')child.setAlpha(.06);
+      else if(i>0&&child?.type==='Graphics'&&typeof child.setAlpha==='function')child.setAlpha(.16);
+    });
+  }
+
+  function hashSeed(seed,i){
+    const x=Math.sin((seed*97+i*31.7)*12.9898+78.233)*43758.5453;
+    return x-Math.floor(x);
+  }
+
+  function clusterPoints(profile,count,seed){
+    const pts=[];
+    for(let i=0;i<count;i++){
+      let x,y;
+      const a=i*2.399963+seed*.39;
+      const radial=.20+Math.pow(hashSeed(seed,i),.72)*.42;
+
+      if(profile==='bullet'){
+        const side=i%2?-1:1;
+        const local=.08+hashSeed(seed+5,i)*.24;
+        x=side*(.28+local)+Math.cos(a)*.09;
+        y=Math.sin(a)*(.15+hashSeed(seed+9,i)*.12);
+      }else{
+        x=Math.cos(a)*radial;
+        y=Math.sin(a)*radial*.72;
+        if(profile==='pandora'){
+          x+=((i%4)-1.5)*.035;
+          y+=(((i*3)%5)-2)*.022;
+        }
+      }
+
+      const size=.043+hashSeed(seed+13,i)*.028;
+      pts.push([x,y,size]);
     }
+    return pts;
   }
 
   function addClusterGalaxySystem(scene,visual,profile,r,config){
     dimOriginalClusterGlyphs(visual);
 
-    const centralR=r*(config.centralScale||.26);
-    animatedGalaxy(scene,visual,0,0,centralR,99,{
+    const centralR=r*(config.centralScale||.20);
+    animatedClusterGalaxy(scene,visual,0,0,centralR,99,{
       dominant:true,
       elliptical:config.elliptical!==false,
       coreVariant:config.centralCore||CORE_BY_PROFILE[profile]||'smbh_01',
       color:config.centralColor||0xffd9aa,
-      flat:config.centralFlat??.72
+      flat:config.centralFlat??.70
     });
 
     const field=scene.add.container(0,0);visual.add(field);
-    const points=config.points||[];
+    const points=clusterPoints(profile,config.count||12,config.seed||1);
     points.forEach((p,i)=>{
-      animatedGalaxy(scene,field,p[0]*r,p[1]*r,r*(p[2]||.095),i,{
+      const depth=.78+hashSeed((config.seed||1)+31,i)*.42;
+      const member=animatedClusterGalaxy(scene,field,p[0]*r,p[1]*r,r*p[2]*depth,i,{
         arms:2+(i%2),
-        turns:1.18+(i%3)*.12,
-        flat:.50+(i%3)*.11,
-        coreVariant:i%2?'smbh_01':'smbh_02',
-        color:i%3===0?C.purple:C.cyan
+        flat:.47+(i%4)*.08,
+        elliptical:i%7===0,
+        color:i%5===0?0xffd5a0:(i%3===0?C.purple:C.cyan)
       });
+      member.setAlpha(.68+depth*.20);
     });
+
     const sway=scene.tweens.add({
-      targets:field,angle:{from:-4,to:4},duration:7000+(config.seed||0)*450,
+      targets:field,angle:{from:-3.2,to:3.2},duration:7600+(config.seed||0)*410,
       yoyo:true,repeat:-1,ease:'Sine.inOut'
     });
     stopOnDestroy(visual,sway);
@@ -288,44 +359,25 @@
 
     if(p==='virgo'){
       addClusterGalaxySystem(scene,visual,p,r,{
-        centralScale:.29,centralCore:'smbh_m87',elliptical:true,seed:1,
-        points:[
-          [-.45,-.19,.105],[.35,-.31,.098],[.49,.18,.090],[-.28,.41,.096],
-          [.08,.50,.082],[-.12,-.53,.088],[.55,-.08,.075]
-        ]
+        centralScale:.22,centralCore:'smbh_m87',elliptical:true,count:13,seed:1
       });return;
     }
 
     if(p==='coma'){
       addClusterGalaxySystem(scene,visual,p,r,{
-        centralScale:.31,centralCore:'smbh_02',elliptical:true,seed:2,
-        points:[
-          [-.48,-.24,.105],[.36,-.37,.102],[.51,.16,.096],[-.33,.38,.100],
-          [.20,.45,.090],[-.08,-.56,.088],[.57,-.08,.082],[-.53,.12,.086],
-          [.42,.36,.075]
-        ]
+        centralScale:.23,centralCore:'smbh_02',elliptical:true,count:16,seed:2
       });return;
     }
 
     if(p==='bullet'){
-      // Preserve the two-lobed collision signature, but still give the overall cluster a dominant
-      // central galaxy plus animated galaxies in both lobes.
       addClusterGalaxySystem(scene,visual,p,r,{
-        centralScale:.24,centralCore:'smbh_01',elliptical:false,centralFlat:.58,seed:3,
-        points:[
-          [-.52,-.13,.100],[-.39,.18,.086],[-.25,-.28,.080],
-          [.51,.12,.098],[.38,-.18,.087],[.25,.29,.078]
-        ]
+        centralScale:.18,centralCore:'smbh_01',elliptical:false,centralFlat:.58,count:12,seed:3
       });return;
     }
 
     if(p==='pandora'){
       addClusterGalaxySystem(scene,visual,p,r,{
-        centralScale:.27,centralCore:'smbh_02',elliptical:true,seed:4,
-        points:[
-          [-.47,-.28,.092],[.35,-.36,.087],[.48,.22,.094],[-.35,.39,.089],
-          [.16,.49,.078],[-.08,-.55,.081],[.55,-.04,.073],[-.52,.11,.077]
-        ]
+        centralScale:.20,centralCore:'smbh_02',elliptical:true,count:15,seed:4
       });
     }
   }
@@ -335,9 +387,9 @@
     const scale=named?visualScale(object):1;
     const renderRadius=radius*scale;
     const visual=baseDrawObject.call(this,x,y,renderRadius,object,mystery,glow);
-    if(!visual||!named||visual._phase4SpriteCompositeV2)return visual;
+    if(!visual||!named||visual._phase4SpriteCompositeV3)return visual;
 
-    visual._phase4SpriteCompositeV2=true;
+    visual._phase4SpriteCompositeV3=true;
     visual.phase4PhysicalDiameterKly=PHYSICAL_DIAMETER_KLY[object.phase4NamedProfile]||null;
     visual.phase4CompressedScale=scale;
 
@@ -348,11 +400,14 @@
 
   window.CometPhase4SpriteCompositeV1=Object.freeze({
     enabled:true,
-    version:2,
+    version:3,
     galaxyCoreHierarchy:'DOMINANT_SMBH',
     galaxyArmSprites:['pulsar_01','pulsar_02','nebula_01','nebula_02'],
+    galaxyArmSpriteScale:'TINY_DENSE_KNOTS',
     blackHolesInGalaxyArms:false,
-    clusters:'DOMINANT_CENTRAL_GALAXY_PLUS_ANIMATED_MEMBER_GALAXIES',
+    clusterMemberStyle:'SMALL_ANIMATED_GALAXY_SWIRLS',
+    clusterMemberVisibleSMBH:false,
+    clusterCentralGalaxyVisibleSMBH:'SUBTLE_ONLY',
     compressedPhysicalScale:true,
     physicalDiameterKly:{...PHYSICAL_DIAMETER_KLY}
   });
