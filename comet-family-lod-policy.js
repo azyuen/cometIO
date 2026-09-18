@@ -98,10 +98,7 @@
   }
 
   function selectLod(def, mystery, diameter) {
-    // The current Atom pack has clean 32px and 64px exports, so Atom now follows the same
-    // display-size LOD policy as the other sprite families.
     if (!def.lodByDisplayedSize) return mystery ? def.fixedLods.mystery : def.fixedLods.normal;
-    if (mystery) return def.fixedLods.mystery;
     return diameter <= COMET_VISUAL_SETTINGS.lodThresholds.smallMaxPx
       ? def.fixedLods.mystery
       : def.fixedLods.normal;
@@ -184,10 +181,22 @@
     container.cometCollisionFamily = def.collisionFamily;
     container.setVisualDisplayDiameter = function (diameterPx) {
       handle.baseDisplayDiameterPx = Math.max(1, diameterPx);
+      const nextLod = selectLod(def, mystery, handle.baseDisplayDiameterPx);
+      if (nextLod && nextLod !== handle.lod && textureReady(handle.scene, handle.variant, nextLod)) {
+        const nextKey = cometSpriteTextureKey(handle.variant, nextLod);
+        image.setTexture(nextKey);
+        const texture = handle.scene.textures.get?.(nextKey);
+        if (texture?.setFilter && typeof Phaser !== 'undefined' && Phaser.Textures?.FilterMode) {
+          texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+        }
+        handle.lod = nextLod;
+      }
       setDisplayDiameter(image, handle.baseDisplayDiameterPx);
       return container;
     };
-    container.refreshVisualLOD = () => container;
+    container.refreshVisualLOD = function () {
+      return container.setVisualDisplayDiameter(handle.baseDisplayDiameterPx);
+    };
 
     addDebug(this, container, object, def, state, lod, diameter, state.tint);
     return container;
