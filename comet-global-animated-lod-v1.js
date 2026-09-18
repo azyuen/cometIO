@@ -13,7 +13,7 @@
 
   function availableLods(handle) {
     const variant = handle?.variant;
-    const entry = variant && window.COMET_SPRITE_ASSETS?.[variant];
+    const entry = variant && typeof COMET_SPRITE_ASSETS !== 'undefined' ? COMET_SPRITE_ASSETS[variant] : null;
     return Array.isArray(entry?.lods) ? entry.lods.filter(Number.isFinite) : [];
   }
 
@@ -25,8 +25,9 @@
 
   function desiredLod(lods, diameter) {
     if (!lods.length) return null;
-    const small = Number(window.COMET_VISUAL_SETTINGS?.lodThresholds?.smallMaxPx) || 48;
-    const normal = Number(window.COMET_VISUAL_SETTINGS?.lodThresholds?.normalMaxPx) || 96;
+    const settings = typeof COMET_VISUAL_SETTINGS !== 'undefined' ? COMET_VISUAL_SETTINGS : null;
+    const small = Number(settings?.lodThresholds?.smallMaxPx) || 48;
+    const normal = Number(settings?.lodThresholds?.normalMaxPx) || 96;
     const desired = diameter <= small ? 32 : diameter <= normal ? 64 : 128;
     return [...lods].sort((a,b) => {
       const da = Math.abs(Math.log2(a / desired));
