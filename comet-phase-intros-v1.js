@@ -101,7 +101,7 @@
 
     this.addText(W/2,this.Y(36),cfg.title,20,C.white,{ox:.5,bold:true});
     this.addText(W/2,this.Y(70),cfg.age,11,C.cyan,{ox:.5,bold:true});
-    this.addText(W/2,this.Y(100),cfg.subtitle,7.8,C.muted,{ox:.5,bold:true,width:380,align:'center'});
+    // Keep the opening header deliberately spare: title + age only.
 
     const object=phaseObject(this,phase);
     const visual=this.drawObject(W/2,this.Y(270),phase===1?47:phase===2?56:58,object,false,true);
