@@ -50,17 +50,10 @@
     const entry = COMET_SPRITE_ASSETS[variant];
     if (!entry || !lods.includes(32)) return null;
 
-    // Known bad 64px sources only. Do NOT blanket-downgrade whole planet families: doing so made
-    // otherwise-clean planets lose detail. These variants stay on their stable 32px sources until
-    // the original 64px PNGs are re-exported.
+    // Only retain legacy 32px safeguards for packs that have not yet been re-exported.
+    // Dwarf, rocky and gas planets now have clean 64px art and must follow displayed-size LOD.
     const force32 =
       entry.family === 'atomic' ||
-      variant.startsWith('rockyPlanet_') ||
-      variant === 'dwarf_ceres' ||
-      variant === 'dwarf_eris' ||
-      variant.startsWith('gasPlanet_') ||
-      variant === 'planet_saturn' ||
-      variant === 'planet_neptune' ||
       variant.startsWith('yellowDwarf_');
 
     return force32 ? 32 : null;
