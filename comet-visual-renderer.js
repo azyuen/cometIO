@@ -47,16 +47,9 @@
   }
 
   function forceClean32ForKnownCorruptPack(variant, lods) {
-    const entry = COMET_SPRITE_ASSETS[variant];
-    if (!entry || !lods.includes(32)) return null;
-
-    // Only retain legacy 32px safeguards for packs that have not yet been re-exported.
-    // Dwarf, rocky and gas planets now have clean 64px art and must follow displayed-size LOD.
-    const force32 =
-      entry.family === 'atomic' ||
-      variant.startsWith('yellowDwarf_');
-
-    return force32 ? 32 : null;
+    // No active 64px quarantines. All current sprite packs should follow displayed-size LOD.
+    // Keep this hook so a genuinely broken source can be isolated later without changing policy.
+    return null;
   }
 
   function closestAvailableLod(scene, variant, displayDiameterPx) {
