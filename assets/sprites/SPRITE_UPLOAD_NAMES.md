@@ -135,6 +135,14 @@ Named:
 - `pulsar_vela_32.png` / `pulsar_vela_64.png`
 - `pulsar_geminga_32.png` / `pulsar_geminga_64.png`
 - `pulsar_b1509_32.png` / `pulsar_b1509_64.png`
+- `pulsar_b1257_12_32.png` / `pulsar_b1257_12_64.png`
+- `pulsar_b1957_20_32.png` / `pulsar_b1957_20_64.png`
+- `pulsar_j0337_1715_32.png` / `pulsar_j0337_1715_64.png`
+- `pulsar_j1748_2446ad_32.png` / `pulsar_j1748_2446ad_64.png`
+- `pulsar_j0437_4715_32.png` / `pulsar_j0437_4715_64.png`
+- `pulsar_j1023_0038_32.png` / `pulsar_j1023_0038_64.png`
+- `pulsar_b1919_21_32.png` / `pulsar_b1919_21_64.png`
+- `pulsar_j2124_3358_32.png` / `pulsar_j2124_3358_64.png`
 
 ## Black Hole
 
@@ -177,10 +185,10 @@ Collectibles begin at Dwarf Planet:
 - Blue Giant Star: 4
 - Red Hypergiant Star: 4
 - Nebula: 12
-- Pulsar: 4
+- Pulsar: 12
 - Black Hole: 4
 - Super Massive Black Hole: 4
 
-Total: **52 unique collectible objects**.
+Total: **60 unique collectible objects**.
 
 Named comets remain outside the collection and may repeat after any outcome.
