@@ -37,7 +37,6 @@
     } else if (scene.growth <= 0) {
       scene.growth = TIERS[GALAXY].need * startPct;
     } else {
-      // Old v2/v3 saves may carry an SMBH progress value. Cap it to a sensible early-galaxy start.
       scene.growth = Math.min(scene.growth, TIERS[GALAXY].need * .60);
     }
     scene.setPlayer(true);
@@ -128,9 +127,6 @@
   }
 
   proto.drawObject = function(x,y,radius,object,mystery=false,glow=false) {
-    // A standalone named SMBH (Sagittarius A*, M87*, etc.) is always its actual sprite. Phase 4's
-    // player is now a GALAXY, so there is no reason for an SMBH encounter/LAB object to be rebuilt
-    // as a procedural galactic system during reveal or zoom animations.
     if (!mystery && Number(object?.tier) === SMBH && object?.kind === 'blackhole' && object?.identityId && object?.namedSpriteBase) {
       const named=renderNamedSMBH(this,x,y,radius,object,glow);
       if(named)return named;
@@ -140,8 +136,6 @@
 
   proto.outcome = function(choice) {
     const pending=baseOutcome.call(this,choice);
-    // Phase 4 no longer has a playable SMBH tier. A disastrous encounter can strip almost the whole
-    // galaxy, but the surviving galactic system remains a Galaxy rather than reverting to Phase 3.
     if (activePhase4(this) && pending?.result === 'captured') {
       pending.result='stripped';
       pending.success=false;
@@ -151,8 +145,6 @@
   };
 
   proto.startEncounter = function() {
-    // This catches the Phase 3 -> 4 handoff and old saves that still point at the old SMBH Phase 4
-    // tier. The opening tutorial promotes the system before any Phase 4 encounter can occur.
     if (!this._devModeActive && this.tierIndex === SMBH) {
       if (this.phase4BirthShown) {
         promotePhase4ToGalaxy(this, false);
@@ -164,33 +156,38 @@
   };
 
   proto.showPhase4SystemBirth = function() {
-    // v3 will already have created inherited members during the normal Phase 3 handoff. PHS4 and old
-    // saves may not, so setPlayer() lets the existing v3 continuity layer seed them before drawing.
     if (!Array.isArray(this.phase4Members)) this.phase4Members=[];
     promotePhase4ToGalaxy(this, true);
     this.phase4BirthShown=false;
     this.clearUI();this.state='P4_SYSTEM_BIRTH';
 
-    this.addText(W/2,this.Y(42),'A GALAXY BEGINS',22,C.white,{ox:.5,bold:true});
-    this.addText(W/2,this.Y(77),'YOUR SUPERMASSIVE BLACK HOLE IS NOW THE CORE OF AN EARLY GALAXY',8.2,C.muted,{ox:.5,bold:true,width:376,align:'center'});
-    this.addText(W/2,this.Y(108),`STARTING ORBITALS ${Array.isArray(this.phase4Members)?this.phase4Members.length:0}`,8.5,C.cyan,{ox:.5,bold:true});
+    // Match the Phase 1-3 opening-card hierarchy.
+    this.addText(W/2,this.Y(36),'PHASE 4 BEGINS',20,C.white,{ox:.5,bold:true});
+    this.addText(W/2,this.Y(70),'THE COSMIC AGE',11,C.cyan,{ox:.5,bold:true});
+    this.addText(W/2,this.Y(100),'YOUR SUPERMASSIVE BLACK HOLE IS NOW THE CORE OF AN EARLY GALAXY',7.8,C.muted,{ox:.5,bold:true,width:380,align:'center'});
 
-    this.drawObject(W/2,this.Y(300),82,this.player,false,true);
-    this.addText(W/2,this.Y(407),'YOUR GALAXY',9.2,C.green,{ox:.5,bold:true});
+    this.drawObject(W/2,this.Y(270),76,this.player,false,true);
+    this.addText(W/2,this.Y(350),'YOUR GALAXY',8.9,C.green,{ox:.5,bold:true,width:340,align:'center'});
+    this.addText(W/2,this.Y(376),`STARTING ORBITALS ${Array.isArray(this.phase4Members)?this.phase4Members.length:0}`,7.8,C.cyan,{ox:.5,bold:true,width:350,align:'center'});
 
     const panel=this.add.graphics();
-    panel.fillStyle(C.panel,.96).fillRoundedRect(24,this.Y(448),372,202,9);
-    panel.lineStyle(1.5,C.cyan,.55).strokeRoundedRect(24,this.Y(448),372,202,9);this.ui.add(panel);
-    this.addText(43,this.Y(466),'PHASE 4 ACTIONS',9.5,C.white,{bold:true});
-    this.addText(46,this.Y(500),'• CAPTURE',10,C.green,{bold:true});
-    this.addText(132,this.Y(500),'Pull members into your system.',9,C.white,{bold:true});
-    this.addText(46,this.Y(544),'• GRAZE',10,C.orange,{bold:true});
-    this.addText(123,this.Y(544),'Pass close — you may gain or lose members.',8.7,C.white,{bold:true,width:250});
-    this.addText(46,this.Y(588),'• AVOID',10,C.blue,{bold:true});
-    this.addText(120,this.Y(588),'Keep your distance and protect your system.',8.7,C.white,{bold:true,width:255});
-    this.addText(W/2,this.Y(628),'BUILD SYSTEM MASS TO BECOME A GALAXY CLUSTER.',7.6,C.muted,{ox:.5,bold:true});
+    panel.fillStyle(C.panel,.96).fillRoundedRect(24,this.Y(432),372,226,9);
+    panel.lineStyle(1.5,C.cyan,.55).strokeRoundedRect(24,this.Y(432),372,226,9);this.ui.add(panel);
+    this.addText(43,this.Y(449),'PHASE 4 ACTIONS',9.5,C.white,{bold:true});
 
-    this.wideButton(W/2,this.Y(724),320,56,'BEGIN PHASE 4',C.cyan,()=>{
+    const explanationX=145;
+    this.addText(46,this.Y(482),'• CAPTURE',10,C.green,{bold:true});
+    this.addText(explanationX,this.Y(482),'Pull members into your system.',8.35,C.white,{bold:true,width:225});
+
+    this.addText(46,this.Y(529),'• GRAZE',10,C.orange,{bold:true});
+    this.addText(explanationX,this.Y(529),'Pass close — you may gain or lose members.',8.25,C.white,{bold:true,width:225});
+
+    this.addText(46,this.Y(576),'• AVOID',10,C.blue,{bold:true});
+    this.addText(explanationX,this.Y(576),'Keep your distance and protect your system.',8.25,C.white,{bold:true,width:225});
+
+    this.addText(W/2,this.Y(631),'BUILD SYSTEM MASS TO BECOME A GALAXY CLUSTER.',7.25,C.muted,{ox:.5,bold:true,width:354,align:'center'});
+
+    this.wideButton(W/2,this.Y(725),320,56,'BEGIN PHASE 4',C.cyan,()=>{
       this.phase4BirthShown=true;
       this.phase4V3Seeded=true;
       return this.startEncounter();
