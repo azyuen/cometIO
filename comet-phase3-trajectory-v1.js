@@ -65,10 +65,37 @@
 
   proto.drawArena = function(...args) {
     const result=baseDrawArena.apply(this,args);
-    if(!active(this)||!this.otherSprite?.active)return result;
-    const x=this.otherSprite.x,y=this.otherSprite.y;
+    if(!active(this)||!this.youSprite?.active||!this.otherSprite?.active)return result;
+
+    // Phase 3 is a split-screen presentation: visible size is deliberately normalized so the
+    // player's compact remnant remains readable beside the identified opponent. This is cosmetic
+    // only; physical radius, mass, gravity and encounter calculations remain unchanged.
+    const px=this.youSprite.x,py=this.youSprite.y;
+    const ox=this.otherSprite.x,oy=this.otherSprite.y;
+    this.tweens.killTweensOf(this.youSprite);
+    this.tweens.killTweensOf(this.otherSprite);
+    try{this.youSprite.destroy(true);}catch(e){}
     try{this.otherSprite.destroy(true);}catch(e){}
-    this.otherSprite=this.drawObject(x,y,42,this.other,false,true);
+
+    const pulsarTier=TIERS.findIndex(t=>t.name==='PULSAR');
+    const playerRadius=Number(this.tierIndex)===pulsarTier?45:42;
+    const opponentRadius=42;
+    this.youSprite=this.drawObject(px,py,playerRadius,this.player,false,true);
+    this.otherSprite=this.drawObject(ox,oy,opponentRadius,this.other,false,true);
+
+    // Keep both objects alive without implying violent motion. The opponent gets a slightly
+    // different period/direction so the two sides do not bob in lockstep.
+    this.tweens.add({
+      targets:this.youSprite,
+      x:px+3,y:py-2,
+      duration:1250,yoyo:true,repeat:-1,ease:'Sine.inOut'
+    });
+    this.tweens.add({
+      targets:this.otherSprite,
+      x:ox-4,y:oy+3,
+      duration:1550,yoyo:true,repeat:-1,ease:'Sine.inOut'
+    });
+
     const visit=node=>{if(!node)return;if(typeof node.text==='string'&&node.text.trim()==='UNKNOWN'){node.setText('IDENTIFIED');node.setColor?.('#ff9f43');}if(Array.isArray(node.list))node.list.forEach(visit);};
     visit(this.ui);
     this.addText(W-14,this.Y(620),this.other.realName||this.other.name,7.2,C.orange,{ox:1,bold:true,width:190,align:'right'});
