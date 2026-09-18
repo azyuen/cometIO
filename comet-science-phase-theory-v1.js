@@ -1,10 +1,10 @@
-// Phase science is now folded directly into the grey subtitle sentence on each opening card.
-// Keep the feature marker for regression checks, but do not draw a separate explanation line.
+// Opening phase cards intentionally omit the old grey explanatory copy.
+// Keep only a feature marker for regression checks; this file draws nothing.
 (() => {
   if(!window.CometPhaseIntros)return;
   window.CometSciencePhaseTheory=Object.freeze({
     enabled:true,
     principle:'SCIENCE EXPLAINS GAMEPLAY',
-    presentation:'CONTINUED IN PHASE SUBTITLE'
+    presentation:'REMOVED FROM OPENING CARD'
   });
 })();
