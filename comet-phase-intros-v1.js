@@ -10,7 +10,7 @@
     1: {
       title:'PHASE 1 BEGINS',
       age:'THE AGE OF ACCRETION',
-      subtitle:'START SMALL. GROW THROUGH SAFE COLLISIONS.',
+      subtitle:'START SMALL. GROW THROUGH SAFE COLLISIONS. Collisions and gravity build larger objects from smaller material.',
       objectLabel:'YOU BEGIN AS AN ATOM',
       actions:[
         ['ABSORB', C.green, 'Smaller objects are usually safer to absorb.'],
@@ -22,8 +22,8 @@
     2: {
       title:'PHASE 2 BEGINS',
       age:'THE AGE OF SYSTEMS',
-      subtitle:'A DWARF PLANET FORMS. MOONS AND ORBITALS NOW MATTER.',
-      objectLabel:'YOU ARE NOW A DWARF PLANET — ORBITALS UNLOCK',
+      subtitle:'A DWARF PLANET FORMS. MOONS AND ORBITALS NOW MATTER. Gravity does more than collide objects — it can hold them in stable orbital systems.',
+      objectLabel:'YOU ARE NOW A DWARF PLANET\nORBITALS UNLOCK',
       actions:[
         ['ABSORB', C.green, 'Keep growing through worlds, stars and nebulae.'],
         ['DEFLECT', C.orange, 'Build orbital protection for future dangerous encounters.'],
@@ -34,7 +34,7 @@
     3: {
       title:'PHASE 3 BEGINS',
       age:'THE AGE OF GRAVITY',
-      subtitle:'A COMPACT REMNANT FORMS.',
+      subtitle:'A COMPACT REMNANT FORMS. A neutron star or black hole can pack enormous mass into a tiny region.',
       objectLabel:'YOU ARE NOW A PULSAR'
     }
   };
@@ -69,9 +69,9 @@
     scene.addText(48,scene.Y(452),'TRAJECTORY',8.8,C.cyan,{bold:true});
     scene.addText(48,scene.Y(476),'Move the slider before choosing an action.',7.55,C.white,{bold:true,width:324});
     scene.addText(48,scene.Y(499),'RADIAL',8.2,C.green,{bold:true});
-    scene.addText(112,scene.Y(499),'lower angular momentum • favours MERGE',7.15,C.muted,{bold:true,width:258});
+    scene.addText(150,scene.Y(499),'lower angular momentum • favours MERGE',7.15,C.muted,{bold:true,width:220});
     scene.addText(48,scene.Y(522),'TANGENTIAL',8.2,C.orange,{bold:true});
-    scene.addText(143,scene.Y(522),'higher angular momentum • favours SLING / ESCAPE',7.15,C.muted,{bold:true,width:228});
+    scene.addText(150,scene.Y(522),'higher angular momentum • favours SLING / ESCAPE',7.15,C.muted,{bold:true,width:220});
 
     // No divider here: keeping this open makes the tutorial feel less boxed-in.
     scene.addText(48,scene.Y(560),'ORBITAL ASSIST',8.8,C.cyan,{bold:true});
