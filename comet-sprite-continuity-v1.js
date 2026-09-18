@@ -34,12 +34,17 @@
     return cometSpriteTextureKey(variant, lod);
   }
 
-  function loadedLod(scene, variant, preferredLod) {
+  function loadedLod(scene, variant, preferredLod, displayDiameterPx) {
     const entry = COMET_SPRITE_ASSETS?.[variant];
     const lods = Array.isArray(entry?.lods) ? [...entry.lods] : [];
+    const small = Number(COMET_VISUAL_SETTINGS?.lodThresholds?.smallMaxPx) || 48;
+    const normal = Number(COMET_VISUAL_SETTINGS?.lodThresholds?.normalMaxPx) || 96;
+    const diameter = Math.max(1, Number(displayDiameterPx) || 1);
+    const sizeOrder = diameter <= small ? [32, 64, 128]
+      : diameter <= normal ? [64, 32, 128]
+      : [128, 64, 32];
     const order = [];
-    if (preferredLod) order.push(preferredLod);
-    [64, 32, 128, ...lods].forEach(lod => {
+    [...sizeOrder, preferredLod, ...lods].forEach(lod => {
       if (lod && !order.includes(lod)) order.push(lod);
     });
     for (const lod of order) {
@@ -80,7 +85,8 @@
     // itself through the UNKNOWN silhouette.
     const variant = object.cometVisualVariant;
     if (variant && variant !== handle.variant) {
-      const texture = loadedLod(scene, variant, handle.lod);
+      const diameter = Number(handle.baseDisplayDiameterPx) || Math.max(image.displayWidth || 1, 1);
+      const texture = loadedLod(scene, variant, handle.lod, diameter);
       if (texture) {
         image.setTexture(texture.key);
         const phaserTexture = scene.textures.get?.(texture.key);
