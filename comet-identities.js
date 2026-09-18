@@ -68,10 +68,20 @@ const COMET_NAMED_IDENTITIES = [
   { id:'nebula_horsehead', name:'HORSEHEAD NEBULA', designation:'BARNARD 33', gameplayTiers:['NEBULA'], scienceClass:'DARK NEBULA', status:'nebula', spriteVariant:'nebula_horsehead', collectible:true, allowRotation:false, allowFlip:false },
 
   // Pulsars are visually identified through their beam/wind-nebula treatment in the sprite art.
-  { id:'pulsar_crab', name:'CRAB PULSAR', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_crab', collectible:true, allowRotation:false, allowFlip:false },
-  { id:'pulsar_vela', name:'VELA PULSAR', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_vela', collectible:true, allowRotation:false, allowFlip:false },
-  { id:'pulsar_geminga', name:'GEMINGA', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_geminga', collectible:true, allowRotation:false, allowFlip:false },
-  { id:'pulsar_b1509', name:'PSR B1509–58', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_b1509', collectible:true, allowRotation:false, allowFlip:false },
+  // The expanded set deliberately mixes isolated pulsars, planetary systems, companions, accretion
+  // states and bow shocks so Phase 3 encounters remain scientifically grounded and visually varied.
+  { id:'pulsar_crab', name:'CRAB PULSAR', designation:'PSR B0531+21', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_crab', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_vela', name:'VELA PULSAR', designation:'PSR B0833−45', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_vela', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_geminga', name:'GEMINGA', designation:'PSR J0633+1746', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_geminga', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_b1509', name:'PSR B1509–58', designation:'PSR B1509−58', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_b1509', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_b1257_12', name:'PSR B1257+12', designation:'PSR B1257+12', gameplayTiers:['PULSAR'], scienceClass:'PULSAR PLANETARY SYSTEM', status:'pulsar', spriteVariant:'pulsar_b1257_12', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_b1957_20', name:'BLACK WIDOW PULSAR', designation:'PSR B1957+20', gameplayTiers:['PULSAR'], scienceClass:'MILLISECOND PULSAR BINARY', status:'pulsar', spriteVariant:'pulsar_b1957_20', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_j0337_1715', name:'PSR J0337+1715', designation:'PSR J0337+1715', gameplayTiers:['PULSAR'], scienceClass:'TRIPLE-SYSTEM MILLISECOND PULSAR', status:'pulsar', spriteVariant:'pulsar_j0337_1715', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_j1748_2446ad', name:'PSR J1748−2446ad', designation:'PSR J1748−2446ad', gameplayTiers:['PULSAR'], scienceClass:'MILLISECOND PULSAR', status:'pulsar', spriteVariant:'pulsar_j1748_2446ad', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_j0437_4715', name:'PSR J0437−4715', designation:'PSR J0437−4715', gameplayTiers:['PULSAR'], scienceClass:'MILLISECOND PULSAR BINARY', status:'pulsar', spriteVariant:'pulsar_j0437_4715', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_j1023_0038', name:'PSR J1023+0038', designation:'PSR J1023+0038', gameplayTiers:['PULSAR'], scienceClass:'TRANSITIONAL MILLISECOND PULSAR', status:'pulsar', spriteVariant:'pulsar_j1023_0038', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_b1919_21', name:'PSR B1919+21', designation:'PSR B1919+21', gameplayTiers:['PULSAR'], scienceClass:'PULSAR', status:'pulsar', spriteVariant:'pulsar_b1919_21', collectible:true, allowRotation:false, allowFlip:false },
+  { id:'pulsar_j2124_3358', name:'PSR J2124−3358', designation:'PSR J2124−3358', gameplayTiers:['PULSAR'], scienceClass:'MILLISECOND PULSAR', status:'pulsar', spriteVariant:'pulsar_j2124_3358', collectible:true, allowRotation:false, allowFlip:false },
 
   // Stellar-mass black holes. Sprite identity comes from accretion/jet/companion context.
   { id:'blackHole_cygnusX1', name:'CYGNUS X-1', gameplayTiers:['BLACK HOLE'], scienceClass:'STELLAR-MASS BLACK HOLE', status:'black-hole', spriteVariant:'blackHole_cygnusX1', collectible:true, allowRotation:false, allowFlip:false },
