@@ -1,5 +1,5 @@
 // Phase opening tutorial cards for Phases 1-3.
-// Phase 3 now explicitly teaches trajectory/angular momentum and pre-action orbital assist.
+// Phase 3 explicitly teaches trajectory/angular momentum and pre-action orbital assist.
 (() => {
   const proto = GameScene.prototype;
   const baseStartNewRun = proto.startNewRun;
@@ -51,8 +51,8 @@
 
   function actionLine(scene, y, label, color, explanation) {
     scene.addText(46,scene.Y(y),`• ${label}`,10,color,{bold:true});
-    const x=label==='ABSORB'?132:label==='DEFLECT'?137:120;
-    scene.addText(x,scene.Y(y),explanation,8.55,C.white,{bold:true,width:248,lineSpacing:2});
+    // Keep all instructional copy on one clean left edge regardless of action-label length.
+    scene.addText(145,scene.Y(y),explanation,8.35,C.white,{bold:true,width:225,lineSpacing:2});
   }
 
   function phase3Teaching(scene) {
@@ -73,15 +73,12 @@
     scene.addText(48,scene.Y(522),'TANGENTIAL',8.2,C.orange,{bold:true});
     scene.addText(143,scene.Y(522),'higher angular momentum • favours SLING / ESCAPE',7.15,C.muted,{bold:true,width:228});
 
-    const line=scene.add.graphics();
-    line.lineStyle(1,C.cyan,.28).lineBetween(48,scene.Y(552),372,scene.Y(552));
-    scene.ui.add(line);
+    // No divider here: keeping this open makes the tutorial feel less boxed-in.
+    scene.addText(48,scene.Y(560),'ORBITAL ASSIST',8.8,C.cyan,{bold:true});
+    scene.addText(48,scene.Y(584),'Use  − / +  to choose how many orbitals to sacrifice.',7.45,C.white,{bold:true,width:324});
+    scene.addText(48,scene.Y(607),'More sacrificed orbitals reduce capture risk.',7.25,C.muted,{bold:true,width:324});
 
-    scene.addText(48,scene.Y(574),'ORBITAL ASSIST',8.8,C.cyan,{bold:true});
-    scene.addText(48,scene.Y(598),'Use  − / +  to choose how many orbitals to sacrifice.',7.45,C.white,{bold:true,width:324});
-    scene.addText(48,scene.Y(621),'More sacrificed orbitals reduce capture risk.',7.25,C.muted,{bold:true,width:324});
-
-    scene.addText(W/2,scene.Y(651),'MERGE  •  SLING  •  ESCAPE',9.0,C.white,{ox:.5,bold:true});
+    scene.addText(W/2,scene.Y(642),'MERGE  •  SLING  •  ESCAPE',9.0,C.white,{ox:.5,bold:true});
   }
 
   proto.showPhaseStartCard = function(phase) {
@@ -110,7 +107,7 @@
     const visual=this.drawObject(W/2,this.Y(270),phase===1?47:phase===2?56:58,object,false,true);
     if(visual) this.tweens.add({targets:visual,y:'-=4',duration:1100,yoyo:true,repeat:-1,ease:'Sine.inOut'});
     this.addText(W/2,this.Y(350),cfg.objectLabel,8.7,phase===3?C.purple:C.green,{ox:.5,bold:true,width:340,align:'center'});
-    if(phase!==3) this.addText(W/2,this.Y(376),object.realName||object.name,7.8,C.muted,{ox:.5,bold:true,width:350,align:'center'});
+    // The object label already says ATOM / DWARF PLANET / PULSAR, so do not repeat the object name below it.
 
     if(phase===3){
       phase3Teaching(this);
