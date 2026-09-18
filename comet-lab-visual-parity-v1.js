@@ -10,12 +10,8 @@
   const baseResolve = proto.resolve;
   const baseShowDevLab = proto.showDevLab;
 
-  // These 64px sources have shown rainbow/rectangle corruption. Do not promote them until the PNGs
-  // themselves are re-exported. Generic DWARF PLANET and ROCKY PLANET both use rockyPlanet_01/02.
-  const BAD_64 = new Set([
-    'rockyPlanet_01', 'rockyPlanet_02', 'rockyPlanet_mystery_01',
-    'dwarf_ceres', 'dwarf_eris', 'planet_saturn', 'planet_neptune'
-  ]);
+  // The previously quarantined 64px planet sources have been re-exported.
+  const BAD_64 = new Set();
   const APPEARANCE_KEYS = [
     'cometVisualVariant', 'cometVisualRotation', 'cometVisualFlipX',
     'cometVisualTint', 'cometVisualAlpha'
@@ -73,8 +69,7 @@
     return container;
   };
 
-  // visual-renderer-v4 still has an old internal 32px safeguard. Run after it each frame so CLEAN
-  // large planets it downgrades are immediately restored to 64px; quarantined variants are ignored.
+  // Keep large planet sprites on their appropriate 64px source after late display-size changes.
   proto.update = function (time, delta) {
     if (typeof baseUpdate === 'function') baseUpdate.call(this, time, delta);
     for (const handle of this._cometVisualHandles || []) {
