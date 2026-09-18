@@ -4,7 +4,7 @@
 (() => {
   const proto = GameScene.prototype;
   const P4 = window.CometPhase4 || {};
-  const ROCKY = TIERS.findIndex(t => t.name === 'ROCKY PLANET');
+  const DWARF = TIERS.findIndex(t => t.name === 'DWARF PLANET');
   const PULSAR = TIERS.findIndex(t => t.name === 'PULSAR');
   const GALAXY = P4.galaxyTier ?? TIERS.findIndex(t => t.name === 'GALAXY');
   const CLUSTER = P4.clusterTier ?? TIERS.findIndex(t => t.name === 'GALAXY CLUSTER');
@@ -13,13 +13,13 @@
   const PHASE_REGIONS = Object.freeze({
     1: Object.freeze([
       {id:'zodiacal-cloud',name:'ZODIACAL CLOUD',short:'ZODIACAL CLOUD',science:'Interplanetary dust around the Sun',common:'atoms • dust • tiny debris',chance:.88,pool:[0,0,0,1,1,1,1,2,2,3],risk:'SAFER'},
-      {id:'main-asteroid-belt',name:'MAIN ASTEROID BELT',short:'MAIN ASTEROID BELT',science:'Rocky belt between Mars and Jupiter',common:'meteorites • asteroids • debris',chance:.88,pool:[1,2,2,3,3,3,6,6,6,7],risk:'RISKY'},
-      {id:'kuiper-belt',name:'KUIPER BELT',short:'KUIPER BELT',science:'Icy belt beyond Neptune',common:'comets • icy bodies • dwarf planets',chance:.90,pool:[4,4,4,5,5,5,6,7,7],risk:'HIGHER RISK'},
-      {id:'scattered-disc',name:'SCATTERED DISC',short:'SCATTERED DISC',science:'Dynamically scattered outer-system objects',common:'large comets • asteroids • dwarf planets',chance:.92,pool:[5,5,6,6,6,7,7,7,7],risk:'FASTEST / RISKIEST'}
+      {id:'main-asteroid-belt',name:'MAIN ASTEROID BELT',short:'MAIN ASTEROID BELT',science:'Rocky belt between Mars and Jupiter',common:'meteorites • asteroids • debris',chance:.88,pool:[1,2,2,3,3,3,6,6,6],risk:'RISKY'},
+      {id:'kuiper-belt',name:'KUIPER BELT',short:'KUIPER BELT',science:'Icy belt beyond Neptune',common:'comets • icy debris • asteroids',chance:.90,pool:[4,4,4,5,5,5,6,6],risk:'HIGHER RISK'},
+      {id:'scattered-disc',name:'SCATTERED DISC',short:'SCATTERED DISC',science:'Dynamically scattered outer-system objects',common:'large comets • asteroids • icy debris',chance:.92,pool:[5,5,5,6,6,6,6],risk:'FASTEST / RISKIEST'}
     ]),
     2: Object.freeze([
-      {id:'inner-solar-system',name:'INNER SOLAR SYSTEM',short:'INNER SOLAR SYSTEM',science:'Rocky worlds in the Sunward system',common:'rocky planets • the Sun',chance:.88,pool:[8,8,8,8,8,10,10],risk:'SAFER'},
-      {id:'outer-solar-system',name:'OUTER SOLAR SYSTEM',short:'OUTER SOLAR SYSTEM',science:'Realm of the giant planets',common:'gas planets • distant worlds • stars',chance:.88,pool:[8,9,9,9,9,9,10,10],risk:'STEADY'},
+      {id:'inner-solar-system',name:'INNER SOLAR SYSTEM',short:'INNER SOLAR SYSTEM',science:'Rocky worlds in the Sunward system',common:'dwarf planets • rocky planets • the Sun',chance:.88,pool:[7,7,7,8,8,8,8,10,10],risk:'SAFER'},
+      {id:'outer-solar-system',name:'OUTER SOLAR SYSTEM',short:'OUTER SOLAR SYSTEM',science:'Realm of giant and distant worlds',common:'dwarf planets • gas planets • distant worlds',chance:.88,pool:[7,7,7,8,9,9,9,9,10],risk:'STEADY'},
       {id:'solar-neighbourhood',name:'SOLAR NEIGHBOURHOOD',short:'SOLAR NEIGHBOURHOOD',science:'Nearby stars around the Milky Way',common:'yellow dwarfs • giant stars',chance:.90,pool:[9,10,10,10,10,11,11,12],risk:'HIGHER RISK'},
       {id:'orion-molecular-cloud',name:'ORION MOLECULAR CLOUD',short:'ORION MOLECULAR CLOUD',science:'Nearby massive star-forming complex',common:'young stars • giants • nebulae',chance:.92,pool:[10,11,11,11,12,12,13,13,13],risk:'FASTEST / RISKIEST'}
     ]),
@@ -50,7 +50,7 @@
 
   function phaseForTier(tierIndex) {
     const t = Number(tierIndex) || 0;
-    if (ROCKY >= 0 && t < ROCKY) return 1;
+    if (DWARF >= 0 && t < DWARF) return 1;
     if (PULSAR >= 0 && t < PULSAR) return 2;
     if (GALAXY >= 0 && t < GALAXY) return 3;
     return 4;
@@ -77,7 +77,7 @@
   }
 
   function localTier(scene, phase) {
-    const ranges = {1:[0,7],2:[8,13],3:[14,16]};
+    const ranges = {1:[0,6],2:[7,13],3:[14,16]};
     const [lo,hi] = ranges[phase];
     const p = clamp(Number(scene.tierIndex) || lo, lo, hi);
     const choices = [p,p,p,p,clamp(p-1,lo,hi),clamp(p+1,lo,hi),clamp(p+1,lo,hi)];
