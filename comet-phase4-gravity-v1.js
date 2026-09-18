@@ -6,7 +6,10 @@
   const MAX_T=.92,G=6.67430e-11,MIN_CORE_MEMBERS=1;
   const baseStart=proto.startEncounter,basePrompt=proto.drawPrompt,baseChoose=proto.choose,baseOutcome=proto.outcome,baseResult=proto.drawResult,baseBirth=proto.showPhase4SystemBirth,baseDrawHud=proto.drawHud;
 
-  function active(s){const t=Number(s?.tierIndex),lab=s?._labSandboxRun===true;return t>=GALAXY&&t<SUPERCLUSTER&&(!s._devModeActive||lab);}
+  function phase4Tier(s){const t=Number(s?.tierIndex);return t>=GALAXY&&t<SUPERCLUSTER;}
+  function labPhase4(s){return s?._labSandboxRun===true&&String(s?._labSandboxPhase||'').toUpperCase()==='PHS4';}
+  function devPhase4(s){return s?._devPhase4Test===true&&s?._devModeActive!==true;}
+  function active(s){return phase4Tier(s)&&(s?._p4GravityForce===true||labPhase4(s)||devPhase4(s)||!s?._devModeActive);}
   function traj(s){if(!Number.isFinite(Number(s._p4Trajectory)))s._p4Trajectory=0;return clamp(Number(s._p4Trajectory),-MAX_T,MAX_T);}
   function ang(t){return clamp((t+MAX_T)/(MAX_T*2),0,1);}
   function mLabel(a){return a<.34?'LOW':a<.67?'MEDIUM':'HIGH';}
@@ -56,7 +59,11 @@
     p.chance=chance;p.v7AvoidChance=chance;p.fatalChance=1-chance;p.transferInMembers=[];p.transferOutMembers=[...sac];p.success=Math.random()<chance;p.result=p.success?'clean':'stripped';if(!p.success)losses(s,p,x.r>3&&used===0?2:1,sac);
   }
 
-  proto.startEncounter=function(...args){if(active(this)||Number(this.tierIndex)===GALAXY){this._p4Trajectory=0;this._p4OrbitalSacrificeCount=0;}return baseStart.apply(this,args);};
+  proto.startEncounter=function(...args){
+    if(labPhase4(this)||devPhase4(this))this._p4GravityForce=true;
+    if(active(this)||Number(this.tierIndex)===GALAXY){this._p4Trajectory=0;this._p4OrbitalSacrificeCount=0;}
+    return baseStart.apply(this,args);
+  };
 
   function sacrificeUI(scene) {
     const available=maxSac(scene);
@@ -123,8 +130,14 @@
   proto.choose=function(choice){if(!active(this)||this.state!=='APPROACH')return baseChoose.call(this,choice);this.pending=this.outcome(choice);this.state='PHASE4_REVEAL';this.tweens.killAll();this.reveal(choice);};
   proto.drawResult=function(result){const r=this.pending;if(r?.p4GravityV1){result={...result};const n=Number(r.p4OrbitalSacrificeCount)||0,m=mLabel(Number(r.angularMomentum)||0),v=Number(r.p4VelocityRatio)||0;if(r.choice==='ABSORB'){if(r.success){result.title=r.p4MajorMerger?'MAJOR MERGER':'BOUND CAPTURE';result.reason=r.p4MajorMerger?'Low angular momentum and a sufficiently bound relative velocity let the comparable systems lose orbital energy and merge, with some material left in tidal debris.':'Low enough angular momentum and relative velocity let gravity bind material from the encounter into your system.';}else if(!r.v7FatalCapture){result.title='FAILED CAPTURE';result.reason='The encounter did not become gravitationally bound. The low-impact-parameter passage instead caused tidal stripping before separation.';}}else if(r.choice==='DEFLECT'){if(r.result==='steal'){result.title='TIDAL GAIN';result.reason='An intermediate-angular-momentum close passage produced strong tides without a full merger, leaving stripped material bound to your system.';}else if(r.result==='stripped'){result.title='TIDAL STRIPPING';result.reason='The close passage generated strong tides, but the mass balance and geometry favoured the other system and pulled bound members away.';}else{result.title='CLEAN GRAZE';result.reason='The systems distorted each other but separated without significant material transfer.';}}else if(r.success){result.title='SAFE FLYBY';result.reason='High angular momentum carried your system through without becoming bound. The course change still costs some speed.';}else{result.title='TIDAL FLYBY';result.reason='The escape trajectory was not tangential enough to keep the full system clear. The core escaped, but outer material was stripped.';}const tech='L: '+m+' • v/vesc '+v.toFixed(v>=2?1:2),sac=n?' • ORBITAL SACRIFICE '+n:'';result.detail=(result.detail||'')+(result.detail?' • ':'')+tech+sac;}return baseResult.call(this,result);};
 
+  const baseShowDevLab=proto.showDevLab;
+  if(typeof baseShowDevLab==='function')proto.showDevLab=function(...args){
+    this._p4GravityForce=false;
+    return baseShowDevLab.apply(this,args);
+  };
+
   function walk(node,fn){if(!node)return;fn(node);if(Array.isArray(node.list))node.list.forEach(x=>walk(x,fn));}
   if(typeof baseBirth==='function')proto.showPhase4SystemBirth=function(...args){const out=baseBirth.apply(this,args);walk(this.ui,ch=>{if(typeof ch?.text!=='string'||typeof ch.setText!=='function')return;const x=ch.text;if(x==='PHASE 4 ACTIONS')ch.setText('PHASE 4 GRAVITY');else if(x==='Pull members into your system.')ch.setText('Low angular momentum favours binding.');else if(x==='Pass close — you may gain or lose members.')ch.setText('Intermediate paths drive tidal exchange.');else if(x==='Keep your distance and protect your system.')ch.setText('High angular momentum favours a flyby.');else if(/CAPTURE CAN END THE RUN/.test(x)){ch.setText('SET TRAJECTORY • READ RELATIVE VELOCITY • SACRIFICE ORBITALS IF NEEDED');ch.setFontSize?.('6.2px');}});return out;};
 
-  window.CometPhase4GravityV1=Object.freeze({enabled:true,version:3,trajectoryEndpoints:['RADIAL','TANGENTIAL'],angularMomentum:true,relativeVelocityVsEscape:true,orbitalSacrifice:true,sacrificeUsesPersistentMembers:true,actions:['CAPTURE','GRAZE','AVOID'],tidalTransfer:true,partialMassLoss:true});
+  window.CometPhase4GravityV1=Object.freeze({enabled:true,version:4,trajectoryEndpoints:['RADIAL','TANGENTIAL'],angularMomentum:true,relativeVelocityVsEscape:true,orbitalSacrifice:true,sacrificeUsesPersistentMembers:true,actions:['CAPTURE','GRAZE','AVOID'],tidalTransfer:true,partialMassLoss:true});
 })();
