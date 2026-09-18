@@ -22,8 +22,8 @@
     2: {
       title:'PHASE 2 BEGINS',
       age:'THE AGE OF SYSTEMS',
-      subtitle:'WORLDS GATHER. STARS IGNITE. ORBITALS NOW MATTER.',
-      objectLabel:'YOUR SYSTEM CAN NOW BUILD ORBITALS',
+      subtitle:'A DWARF PLANET FORMS. MOONS AND ORBITALS NOW MATTER.',
+      objectLabel:'YOU ARE NOW A DWARF PLANET — ORBITALS UNLOCK',
       actions:[
         ['ABSORB', C.green, 'Keep growing through worlds, stars and nebulae.'],
         ['DEFLECT', C.orange, 'Build orbital protection for future dangerous encounters.'],
@@ -34,17 +34,17 @@
     3: {
       title:'PHASE 3 BEGINS',
       age:'THE AGE OF GRAVITY',
-      subtitle:'COMPACT OBJECTS CAN LOOK SMALL BUT CONTROL THE ENCOUNTER.',
-      objectLabel:'GRAVITY BECOMES THE DOMINANT FORCE'
+      subtitle:'THE NEBULA EXPANDS AROUND A DENSE COMPACT REMNANT.',
+      objectLabel:'YOU EMERGE AS A PULSAR — GRAVITY NOW DOMINATES'
     }
   };
 
   function phaseObject(scene, phase) {
     if (scene.player) return scene.player;
-    const names={1:'HYDROGEN ATOM',2:'ROCKY PLANET',3:'PULSAR'};
+    const names={1:'HYDROGEN ATOM',2:'DWARF PLANET',3:'PULSAR'};
     const wanted=names[phase];
     let index=TIERS.findIndex(t=>t.name===wanted);
-    if(index<0) index=phase===1?0:phase===2?Math.max(0,TIERS.findIndex(t=>t.name==='ROCKY PLANET')):Math.max(0,TIERS.findIndex(t=>t.name==='PULSAR'));
+    if(index<0) index=phase===1?0:phase===2?Math.max(0,TIERS.findIndex(t=>t.name==='DWARF PLANET')):Math.max(0,TIERS.findIndex(t=>t.name==='PULSAR'));
     const t=TIERS[index]||TIERS[0];
     return {name:t.name,realName:t.name,tier:index,radiusM:t.r,massKg:t.m,speedMS:t.v,kind:t.kind,color:t.color,solid:t.solid,hint:t.hint};
   }
