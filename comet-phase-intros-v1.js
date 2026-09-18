@@ -34,8 +34,8 @@
     3: {
       title:'PHASE 3 BEGINS',
       age:'THE AGE OF GRAVITY',
-      subtitle:'THE NEBULA EXPANDS AROUND A DENSE COMPACT REMNANT.',
-      objectLabel:'YOU EMERGE AS A PULSAR — GRAVITY NOW DOMINATES'
+      subtitle:'A COMPACT REMNANT FORMS.',
+      objectLabel:'YOU ARE NOW A PULSAR'
     }
   };
 
@@ -56,27 +56,30 @@
   }
 
   function phase3Teaching(scene) {
+    // Keep the opening card deliberately brief. The live Phase 3 HUD teaches the finer
+    // trajectory/angular-momentum details once the player begins.
+    const top=scene.Y(408),height=236;
     const panel=scene.add.graphics();
-    panel.fillStyle(C.panel,.96).fillRoundedRect(24,scene.Y(418),372,286,9);
-    panel.lineStyle(1.5,C.cyan,.62).strokeRoundedRect(24,scene.Y(418),372,286,9);
+    panel.fillStyle(C.panel,.96).fillRoundedRect(24,top,372,height,9);
+    panel.lineStyle(1.5,C.cyan,.62).strokeRoundedRect(24,top,372,height,9);
     scene.ui.add(panel);
 
-    scene.addText(W/2,scene.Y(437),'SET YOUR APPROACH BEFORE YOU ACT',9.4,C.white,{ox:.5,bold:true});
+    scene.addText(W/2,scene.Y(432),'GRAVITY CHANGES THE RULES',9.6,C.white,{ox:.5,bold:true});
 
-    scene.addText(43,scene.Y(468),'TRAJECTORY',8.7,C.cyan,{bold:true});
-    scene.addText(43,scene.Y(489),'RADIAL',8.2,C.orange,{bold:true});
-    scene.addText(105,scene.Y(489),'LOWER ANGULAR MOMENTUM',7.45,C.white,{bold:true});
-    scene.addText(43,scene.Y(510),'TANGENTIAL',8.2,C.green,{bold:true});
-    scene.addText(129,scene.Y(510),'HIGHER ANGULAR MOMENTUM',7.45,C.white,{bold:true});
-    scene.addText(43,scene.Y(535),'Radial approaches favour MERGE but increase capture risk.',7.25,C.muted,{bold:true,width:332});
-    scene.addText(43,scene.Y(554),'Tangential approaches improve SLING and ESCAPE.',7.25,C.muted,{bold:true,width:332});
+    scene.addText(48,scene.Y(474),'RADIAL',8.7,C.green,{bold:true});
+    scene.addText(132,scene.Y(474),'FAVOURS MERGE',8.0,C.white,{bold:true});
 
-    scene.addText(43,scene.Y(585),'ORBITAL ASSIST',8.7,C.orange,{bold:true});
-    scene.addText(43,scene.Y(606),'Use  − / +  to choose how many orbitals to sacrifice.',7.35,C.white,{bold:true,width:330});
-    scene.addText(43,scene.Y(626),'More orbitals reduce capture risk, with diminishing returns.',7.15,C.muted,{bold:true,width:330});
+    scene.addText(48,scene.Y(510),'TANGENTIAL',8.7,C.orange,{bold:true});
+    scene.addText(151,scene.Y(510),'FAVOURS SLING + ESCAPE',8.0,C.white,{bold:true});
 
-    scene.addText(W/2,scene.Y(659),'MERGE  •  SLING  •  ESCAPE',9.2,C.white,{ox:.5,bold:true});
-    scene.addText(W/2,scene.Y(681),'YOUR SETTINGS LOCK WHEN YOU CHOOSE AN ACTION.',7.1,C.cyan,{ox:.5,bold:true,width:345,align:'center'});
+    const line=scene.add.graphics();
+    line.lineStyle(1,C.cyan,.28).lineBetween(48,scene.Y(544),372,scene.Y(544));
+    scene.ui.add(line);
+
+    scene.addText(48,scene.Y(568),'ORBITAL ASSIST',8.7,C.cyan,{bold:true});
+    scene.addText(48,scene.Y(592),'Sacrifice orbitals to reduce capture risk.',7.7,C.muted,{bold:true,width:324});
+
+    scene.addText(W/2,scene.Y(624),'MERGE  •  SLING  •  ESCAPE',9.1,C.white,{ox:.5,bold:true});
   }
 
   proto.showPhaseStartCard = function(phase) {
@@ -104,12 +107,12 @@
     const object=phaseObject(this,phase);
     const visual=this.drawObject(W/2,this.Y(270),phase===1?47:phase===2?56:58,object,false,true);
     if(visual) this.tweens.add({targets:visual,y:'-=4',duration:1100,yoyo:true,repeat:-1,ease:'Sine.inOut'});
-    this.addText(W/2,this.Y(350),cfg.objectLabel,8.7,phase===3?C.purple:C.green,{ox:.5,bold:true,width:360,align:'center'});
-    this.addText(W/2,this.Y(376),object.realName||object.name,7.8,C.muted,{ox:.5,bold:true,width:350,align:'center'});
+    this.addText(W/2,this.Y(350),cfg.objectLabel,8.7,phase===3?C.purple:C.green,{ox:.5,bold:true,width:340,align:'center'});
+    if(phase!==3) this.addText(W/2,this.Y(376),object.realName||object.name,7.8,C.muted,{ox:.5,bold:true,width:350,align:'center'});
 
     if(phase===3){
       phase3Teaching(this);
-      this.wideButton(W/2,this.Y(752),320,54,'BEGIN PHASE 3',C.cyan,()=>{
+      this.wideButton(W/2,this.Y(698),320,54,'BEGIN PHASE 3',C.cyan,()=>{
         if(this.state!=='PHASE_START_CARD')return;
         this._activePhaseStart=null;
         this.state='PHASE_START_EXIT';
