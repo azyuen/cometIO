@@ -49,10 +49,16 @@
     ensureState(scene);
     const list=scene._finalJoinedSuperclusters,count=Math.min(5,list.length),root=scene.add.container(x,y),g=scene.add.graphics();
     if(glow)g.fillStyle(C.cyan,.025).fillCircle(0,0,radius*1.14);
-    const slots=layouts[count]||layouts[5],componentR=count===1?radius*.92:radius*(count===2?.55:.48);
+    const slots=layouts[count]||layouts[5],componentR=count===1?radius*.96:radius*(count===2?.59:.52);
     if(count>1){
-      for(let i=1;i<count;i++){g.lineStyle(Math.max(1,radius*.018),i%2?C.cyan:C.purple,.24).lineBetween(slots[0][0]*radius,slots[0][1]*radius,slots[i][0]*radius,slots[i][1]*radius);}
-      if(count===5){g.lineStyle(1,C.cyan,.12).strokeEllipse(0,0,radius*1.12,radius*.48);g.lineStyle(1,C.purple,.11).strokeEllipse(0,0,radius*.52,radius*1.14);}
+      for(let i=1;i<count;i++){
+        const color=i%2?C.cyan:0x2f8cff;
+        g.lineStyle(Math.max(2,radius*.026),color,.30).lineBetween(slots[0][0]*radius,slots[0][1]*radius,slots[i][0]*radius,slots[i][1]*radius);
+      }
+      if(count===5){
+        g.lineStyle(Math.max(1.8,radius*.014),C.cyan,.19).strokeEllipse(0,0,radius*1.22,radius*.54);
+        g.lineStyle(Math.max(1.6,radius*.012),0x2f8cff,.17).strokeEllipse(0,0,radius*.58,radius*1.24);
+      }
     }
     root.add(g);
     list.slice(0,count).forEach((d,i)=>{
@@ -79,9 +85,9 @@
     this.addText(W-14,this.Y(20),`${connected} / 5 CONNECTED`,9,C.cyan,{bold:true,ox:1});
 
     const d=this.add.graphics();d.lineStyle(8,C.cyan,.07).lineBetween(0,this.Y(610),W,this.Y(226));d.lineStyle(3,C.cyan,.9).lineBetween(0,this.Y(610),W,this.Y(226));this.ui.add(d);
-    this._finalPlayerVisual=drawJoined(this,128,this.Y(330),58,true);
+    this._finalPlayerVisual=drawJoined(this,128,this.Y(330),66,true);
     this._finalIncoming=descriptor(this,connected,false);
-    this._finalIncomingVisual=drawDynamic(this,303,this.Y(480),56,this._finalIncoming,true);
+    this._finalIncomingVisual=drawDynamic(this,303,this.Y(480),64,this._finalIncoming,true);
     this.addText(14,this.Y(170),'YOU',10,C.green,{bold:true});
     this.addText(W-14,this.Y(603),'SUPERCLUSTER',10,C.orange,{bold:true,ox:1});
     this.tweens.add({targets:this._finalPlayerVisual,x:'+=4',y:'-=2',duration:650,yoyo:true,repeat:-1,ease:'Sine.inOut'});
@@ -113,7 +119,7 @@
     this.tweens.killAll();this.clearUI();this.state='FINAL_PHASE_JOINED';ensureState(this);
     const count=this._finalJoinedSuperclusters.length;
     this.addText(W/2,this.Y(85),`SUPERCLUSTERS CONNECTED: ${count} / 5`,15,count>=5?C.green:C.cyan,{ox:.5,bold:true});
-    const v=drawJoined(this,W/2,this.Y(405),116,true);v.setScale(.72);this.tweens.add({targets:v,scale:.82,duration:500,ease:'Back.out'});
+    const v=drawJoined(this,W/2,this.Y(405),130,true);v.setScale(.74);this.tweens.add({targets:v,scale:.90,duration:520,ease:'Back.out'});
     this.addText(W/2,this.Y(580),count>=5?'THE CONNECTED STRUCTURE IS COMPLETE.':'THIS CONNECTED STRUCTURE IS NOW YOUR OBJECT.',8.5,C.white,{ox:.5,bold:true});
     this.time.delayedCall(count>=5?1800:900,()=>{if(count>=5)this.completeUniverseAssembly();else this.startUniverseFinale();});
   };
@@ -125,7 +131,7 @@
     this.tweens.killAll();this.clearUI();this.state='FINAL_PHASE_COMPLETE';ensureState(this);
     this.addText(W/2,this.Y(64),'FIVE SUPERCLUSTERS CONNECTED',19,C.green,{ox:.5,bold:true});
     this.addText(W/2,this.Y(98),'THE LARGE-SCALE COSMIC WEB IS COMPLETE',8.5,C.muted,{ox:.5,bold:true});
-    const v=drawJoined(this,W/2,this.Y(405),132,true);v.setScale(.72);this.tweens.add({targets:v,scale:.90,duration:900,ease:'Sine.inOut'});
+    const v=drawJoined(this,W/2,this.Y(405),148,true);v.setScale(.74);this.tweens.add({targets:v,scale:.92,duration:900,ease:'Sine.inOut'});
     this.addText(W/2,this.Y(607),'PAUSE. THE FIVE STRUCTURES NOW DEFINE YOUR OBSERVABLE COSMOS.',8,C.cyan,{ox:.5,bold:true,width:380,align:'center'});
 
     this.time.delayedCall(1550,()=>{

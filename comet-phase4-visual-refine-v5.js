@@ -286,8 +286,49 @@
   }
 
   function drawDoubleLine(glow,core,a,b,color,r,alpha=.24){
-    glow.lineStyle(Math.max(2.2,r*.020),color,alpha*.34).lineBetween(a.x,a.y,b.x,b.y);
-    core.lineStyle(Math.max(.9,r*.0065),color,alpha).lineBetween(a.x,a.y,b.x,b.y);
+    glow.lineStyle(Math.max(3.1,r*.031),color,alpha*.40).lineBetween(a.x,a.y,b.x,b.y);
+    core.lineStyle(Math.max(1.15,r*.010),color,Math.min(.42,alpha*1.08)).lineBetween(a.x,a.y,b.x,b.y);
+  }
+
+  function addSuperclusterOrbitals(scene,visual,r){
+    const orbitLayer=scene.add.container(0,0);
+    const specs=[
+      {w:1.96,h:.74,angle:-12,color:0x35dfff,duration:11800,dir:1},
+      {w:1.66,h:1.05,angle:43,color:0x2f8cff,duration:14600,dir:-1},
+      {w:1.10,h:1.88,angle:7,color:0x79f6ff,duration:17200,dir:1}
+    ];
+
+    specs.forEach((spec,i)=>{
+      const g=scene.add.graphics();
+      const glowW=Math.max(4.0,r*.038),coreW=Math.max(1.8,r*.016);
+      g.lineStyle(glowW,spec.color,.075).strokeEllipse(0,0,r*spec.w,r*spec.h);
+      g.lineStyle(coreW,spec.color,.34-i*.035).strokeEllipse(0,0,r*spec.w,r*spec.h);
+      g.setAngle(spec.angle);
+      if(typeof g.setBlendMode==='function'&&Phaser.BlendModes)g.setBlendMode(Phaser.BlendModes.ADD);
+      orbitLayer.add(g);
+      const tw=scene.tweens.add({
+        targets:g,
+        angle:spec.angle+(360*spec.dir),
+        duration:spec.duration,
+        repeat:-1,
+        ease:'Linear'
+      });
+      stopOnDestroy(visual,tw);
+    });
+
+    orbitLayer.setAlpha(.90);
+    visual.addAt(orbitLayer,0);
+    const pulseTw=scene.tweens.add({
+      targets:orbitLayer,
+      scaleX:{from:.985,to:1.025},
+      scaleY:{from:1.018,to:.988},
+      alpha:{from:.78,to:1},
+      duration:3100,
+      yoyo:true,
+      repeat:-1,
+      ease:'Sine.inOut'
+    });
+    stopOnDestroy(visual,pulseTw);
   }
 
   function addClusterFilaments(scene,visual,object,r){
@@ -407,6 +448,7 @@
 
     if(typeof glow.setBlendMode==='function'&&Phaser.BlendModes)glow.setBlendMode(Phaser.BlendModes.ADD);
     visual.addAt(glow,0);visual.addAt(core,Math.min(1,visual.list?.length||0));
+    addSuperclusterOrbitals(scene,visual,r);
 
     const tw1=scene.tweens.add({targets:glow,alpha:{from:.62,to:1},duration:4200,yoyo:true,repeat:-1,ease:'Sine.inOut'});
     const tw2=scene.tweens.add({targets:core,alpha:{from:.82,to:1},duration:5200,yoyo:true,repeat:-1,ease:'Sine.inOut'});
@@ -451,6 +493,8 @@
     colouredAccretionGlow:true,
     clearerClusterFilaments:true,
     clearerSuperclusterWeb:true,
+    thickerSuperclusterLines:true,
+    animatedSuperclusterOrbitals:true,
     preservesCompressedPhysicalScale:true
   });
 })();

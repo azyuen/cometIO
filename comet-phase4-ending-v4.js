@@ -49,16 +49,20 @@
   }
 
   function drawPhase4Progression(scene){
-    const items=[
-      {o:tierObject(GALAXY),x:82,y:scene.Y(402),r:24,label:'GALAXY'},
-      {o:tierObject(CLUSTER),x:210,y:scene.Y(425),r:34,label:'GALAXY\nCLUSTER'},
-      {o:tierObject(SUPERCLUSTER),x:338,y:scene.Y(448),r:45,label:'SUPERCLUSTER'}
-    ];
-    const path=scene.add.graphics();path.lineStyle(2,C.cyan,.18).lineBetween(items[0].x,items[0].y,items[1].x,items[1].y).lineBetween(items[1].x,items[1].y,items[2].x,items[2].y);scene.ui.add(path);
-    items.forEach((item,i)=>{
-      scene.drawObject(item.x,item.y,item.r,item.o,false,i===2);
-      scene.addText(item.x,item.y+item.r+18,item.label,7.1,C.white,{ox:.5,bold:true,align:'center',width:112,lineSpacing:1});
+    const supercluster=tierObject(SUPERCLUSTER);
+    const visual=scene.drawObject(W/2,scene.Y(421),82,supercluster,false,true);
+    scene.tweens.add({
+      targets:visual,
+      y:{from:scene.Y(426),to:scene.Y(416)},
+      angle:{from:-1.2,to:1.2},
+      duration:2600,
+      yoyo:true,
+      repeat:-1,
+      ease:'Sine.inOut'
     });
+    scene.addText(W/2,scene.Y(530),'SUPERCLUSTER',10.5,C.white,{ox:.5,bold:true});
+    scene.addText(W/2,scene.Y(553),'THE LARGE-SCALE COSMIC WEB',7.5,C.cyan,{ox:.5,bold:true});
+    return visual;
   }
 
   function showPhase4Complete(scene){
