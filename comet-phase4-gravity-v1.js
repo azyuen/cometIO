@@ -58,36 +58,54 @@
 
   proto.startEncounter=function(...args){if(active(this)||Number(this.tierIndex)===GALAXY){this._p4Trajectory=0;this._p4OrbitalSacrificeCount=0;}return baseStart.apply(this,args);};
 
-  function sacrificeUI(s){const available=maxSac(s),selected=sacCount(s),cx=101,cy=s.Y(617),w=178,h=32;const c=s.add.container(cx,cy),g=s.add.graphics();g.fillStyle(C.panel,.96).fillRoundedRect(-w/2,-h/2,w,h,5);g.lineStyle(1.15,selected?C.orange:C.cyan,.78).strokeRoundedRect(-w/2,-h/2,w,h,5);const label=s.add.text(-48,-7,'ORBITAL SACRIFICE',{fontFamily:FONT,fontSize:'5.8px',fontStyle:'bold',color:'#8db7ca'}).setOrigin(.5);const count=s.add.text(0,7,`${selected} / ${available}`,{fontFamily:FONT,fontSize:'8.8px',fontStyle:'bold',color:selected?'#ff9d3d':'#f7fbff'}).setOrigin(.5);const minusBg=s.add.rectangle(-69,6,28,24,0xffffff,.001).setInteractive({useHandCursor:true});const plusBg=s.add.rectangle(69,6,28,24,0xffffff,.001).setInteractive({useHandCursor:true});const minus=s.add.text(-69,6,'−',{fontFamily:FONT,fontSize:'16px',fontStyle:'bold',color:selected?'#20d9ff':'#526f7b'}).setOrigin(.5);const plus=s.add.text(69,6,'+',{fontFamily:FONT,fontSize:'16px',fontStyle:'bold',color:selected<available?'#20d9ff':'#526f7b'}).setOrigin(.5);minusBg.on('pointerdown',()=>{if(sacCount(s)<=0)return;s._p4OrbitalSacrificeCount=Math.max(0,sacCount(s)-1);s.drawEncounter();});plusBg.on('pointerdown',()=>{if(sacCount(s)>=maxSac(s))return;s._p4OrbitalSacrificeCount=Math.min(maxSac(s),sacCount(s)+1);s.drawEncounter();});[label,count,minus,plus].forEach(t=>t.setResolution&&t.setResolution(Math.min(window.devicePixelRatio||1,3)));c.add([g,label,count,minusBg,plusBg,minus,plus]);s.ui.add(c);}
-  function trajectoryUI(s) {
-    const panelTop=s.Y(646),panelHeight=60;
-    const pg=s.add.graphics();
+  function sacrificeUI(scene) {
+    const available=maxSac(scene);
+    const selected=sacCount(scene);
+    const cx=101,cy=scene.Y(617),w=178,h=32;
+    const c=scene.add.container(cx,cy),g=scene.add.graphics();
+    g.fillStyle(C.panel,.96).fillRoundedRect(-w/2,-h/2,w,h,5);
+    g.lineStyle(1.15,selected?C.orange:C.cyan,.78).strokeRoundedRect(-w/2,-h/2,w,h,5);
+    const label=scene.add.text(-48,-7,'ORBITAL SACRIFICE',{fontFamily:FONT,fontSize:'6.2px',fontStyle:'bold',color:'#8db7ca'}).setOrigin(.5);
+    const count=scene.add.text(0,7,`${selected} / ${available}`,{fontFamily:FONT,fontSize:'8.8px',fontStyle:'bold',color:selected?'#ff9d3d':'#f7fbff'}).setOrigin(.5);
+    const minusBg=scene.add.rectangle(-69,6,28,24,0xffffff,.001).setInteractive({useHandCursor:true});
+    const plusBg=scene.add.rectangle(69,6,28,24,0xffffff,.001).setInteractive({useHandCursor:true});
+    const minus=scene.add.text(-69,6,'−',{fontFamily:FONT,fontSize:'16px',fontStyle:'bold',color:selected?'#20d9ff':'#526f7b'}).setOrigin(.5);
+    const plus=scene.add.text(69,6,'+',{fontFamily:FONT,fontSize:'16px',fontStyle:'bold',color:selected<available?'#20d9ff':'#526f7b'}).setOrigin(.5);
+    minusBg.on('pointerdown',()=>{if(sacCount(scene)<=0)return;scene._p4OrbitalSacrificeCount=Math.max(0,sacCount(scene)-1);scene.drawEncounter();});
+    plusBg.on('pointerdown',()=>{if(sacCount(scene)>=maxSac(scene))return;scene._p4OrbitalSacrificeCount=Math.min(maxSac(scene),sacCount(scene)+1);scene.drawEncounter();});
+    c.add([g,label,count,minusBg,plusBg,minus,plus]);scene.ui.add(c);
+  }
+
+  function trajectoryUI(scene) {
+    const panelTop=scene.Y(646),panelHeight=60;
+    const pg=scene.add.graphics();
     pg.fillStyle(C.panel,.97).fillRoundedRect(15,panelTop,390,panelHeight,7);
-    pg.lineStyle(1.5,C.cyan,.82).strokeRoundedRect(15,panelTop,390,panelHeight,7);s.ui.add(pg);
+    pg.lineStyle(1.5,C.cyan,.82).strokeRoundedRect(15,panelTop,390,panelHeight,7);scene.ui.add(pg);
 
-    const y=s.Y(677),x0=74,x1=346,width=x1-x0;
-    let t=traj(s),a=ang(t);
-    s.addText(W/2,s.Y(651),'TRAJECTORY',7.6,C.cyan,{ox:.5,bold:true});
-    s.addText(x0,s.Y(663),'RADIAL',7.1,C.orange,{ox:.5,bold:true});
-    s.addText(x1,s.Y(663),'TANGENTIAL',7.1,C.green,{ox:.5,bold:true});
+    const y=scene.Y(677),x0=74,x1=346,width=x1-x0;
+    let t=traj(scene),a=ang(t);
+    scene.addText(W/2,scene.Y(651),'TRAJECTORY',7.6,C.cyan,{ox:.5,bold:true});
+    scene.addText(x0,scene.Y(663),'RADIAL',7.1,C.orange,{ox:.5,bold:true});
+    scene.addText(x1,scene.Y(663),'TANGENTIAL',7.1,C.green,{ox:.5,bold:true});
 
-    const track=s.add.graphics();track.lineStyle(6,0x183248,1).lineBetween(x0,y,x1,y);track.lineStyle(2.5,C.cyan,.7).lineBetween(x0,y,x1,y);s.ui.add(track);
-    const thumb=s.add.circle(x0+a*width,y,8,C.white,1).setStrokeStyle(2,C.cyan,1);s.ui.add(thumb);
-    const momentumText=s.addText(W/2,s.Y(693),'',6.6,C.white,{ox:.5,bold:true});
+    const track=scene.add.graphics();track.lineStyle(6,0x183248,1).lineBetween(x0,y,x1,y);track.lineStyle(2.5,C.cyan,.7).lineBetween(x0,y,x1,y);scene.ui.add(track);
+    const thumb=scene.add.circle(x0+a*width,y,8,C.white,1).setStrokeStyle(2,C.cyan,1);scene.ui.add(thumb);
+    const momentumText=scene.addText(W/2,scene.Y(693),'',6.6,C.white,{ox:.5,bold:true});
 
     function paint(value){
-      s._p4Trajectory=clamp(value,-MAX_T,MAX_T);t=traj(s);a=ang(t);thumb.x=x0+a*width;
-      momentumText.setText(`ANGULAR MOMENTUM: ${mLabel(a)}`);
+      scene._p4Trajectory=clamp(value,-MAX_T,MAX_T);t=traj(scene);a=ang(t);thumb.x=x0+a*width;
+      const momentum=a<.34?'LOW':a<.67?'MEDIUM':'HIGH';momentumText.setText(`ANGULAR MOMENTUM: ${momentum}`);
       momentumText.setColor?.(a>.66?'#25f29a':a<.34?'#ff9d3d':'#f7fbff');
     }
     paint(t);
-    const hit=s.add.rectangle(W/2,y,width+34,34,0xffffff,.001).setInteractive({useHandCursor:true});s.ui.add(hit);
+    const hit=scene.add.rectangle(W/2,y,width+34,34,0xffffff,.001).setInteractive({useHandCursor:true});scene.ui.add(hit);
     let dragging=false;const fromPointer=p=>((clamp(p.x,x0,x1)-x0)/width*2-1)*MAX_T;
     hit.on('pointerdown',p=>{dragging=true;paint(fromPointer(p));});
     hit.on('pointermove',p=>{if(dragging&&p.isDown)paint(fromPointer(p));});
-    const finish=p=>{if(!dragging)return;dragging=false;if(p)paint(fromPointer(p));s.drawEncounter();};
+    const finish=p=>{if(!dragging)return;dragging=false;if(p)paint(fromPointer(p));scene.drawEncounter();};
     hit.on('pointerup',finish);hit.on('pointerout',p=>{if(dragging&&!p.isDown)finish(p);});
   }
+
   function button(s,x,label,color,canonical,key){const y=s.Y(786),w=122,h=96,c=s.add.container(x,y),g=s.add.graphics();g.fillStyle(color,.17).fillRoundedRect(-w/2,-h/2,w,h,7);g.lineStyle(3,color,.95).strokeRoundedRect(-w/2,-h/2,w,h,7);let icon;if(s.textures?.exists(key))icon=s.add.image(0,-16,key).setDisplaySize(54,54);else{icon=s.add.graphics();icon.fillStyle(color,.9).fillCircle(0,-16,14);}const txt=s.add.text(0,27,label,{fontFamily:FONT,fontSize:'16px',fontStyle:'bold',color:'#fff'}).setOrigin(.5);if(txt.setResolution)txt.setResolution(Math.min(window.devicePixelRatio||1,3));const hit=s.add.rectangle(0,0,w,h,0xffffff,.001).setInteractive({useHandCursor:true});hit.on('pointerdown',()=>s.choose(canonical));c.add([g,icon,txt,hit]);s.ui.add(c);}
 
   proto.drawHud=function(controls=false){
@@ -108,5 +126,5 @@
   function walk(node,fn){if(!node)return;fn(node);if(Array.isArray(node.list))node.list.forEach(x=>walk(x,fn));}
   if(typeof baseBirth==='function')proto.showPhase4SystemBirth=function(...args){const out=baseBirth.apply(this,args);walk(this.ui,ch=>{if(typeof ch?.text!=='string'||typeof ch.setText!=='function')return;const x=ch.text;if(x==='PHASE 4 ACTIONS')ch.setText('PHASE 4 GRAVITY');else if(x==='Pull members into your system.')ch.setText('Low angular momentum favours binding.');else if(x==='Pass close — you may gain or lose members.')ch.setText('Intermediate paths drive tidal exchange.');else if(x==='Keep your distance and protect your system.')ch.setText('High angular momentum favours a flyby.');else if(/CAPTURE CAN END THE RUN/.test(x)){ch.setText('SET TRAJECTORY • READ RELATIVE VELOCITY • SACRIFICE ORBITALS IF NEEDED');ch.setFontSize?.('6.2px');}});return out;};
 
-  window.CometPhase4GravityV1=Object.freeze({enabled:true,version:2,trajectoryEndpoints:['RADIAL','TANGENTIAL'],angularMomentum:true,relativeVelocityVsEscape:true,orbitalSacrifice:true,sacrificeUsesPersistentMembers:true,actions:['CAPTURE','GRAZE','AVOID'],tidalTransfer:true,partialMassLoss:true});
+  window.CometPhase4GravityV1=Object.freeze({enabled:true,version:3,trajectoryEndpoints:['RADIAL','TANGENTIAL'],angularMomentum:true,relativeVelocityVsEscape:true,orbitalSacrifice:true,sacrificeUsesPersistentMembers:true,actions:['CAPTURE','GRAZE','AVOID'],tidalTransfer:true,partialMassLoss:true});
 })();
