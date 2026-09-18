@@ -4,12 +4,16 @@ const science=fs.readFileSync(path.join(root,'comet-science-learning-v1.js'),'ut
 const theory=fs.readFileSync(path.join(root,'comet-science-phase-theory-v1.js'),'utf8');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 
-assert(index.includes('comet-science-learning-v1.js?v=3'),'science learning v3 cache bust must load');
+assert(index.includes('comet-science-learning-v1.js?v=5'),'science learning v5 cache bust must load');
 assert(index.includes('comet-science-phase-theory-v1.js?v=1'),'phase theory must load');
 assert(science.includes("dwarf_pluto:['PLUTO'"),'named objects must have science facts');
 assert(science.includes("nebula_ring:['RING NEBULA'"),'Ring Nebula must have a unique science fact');
 assert(science.includes("nebula_horsehead:['HORSEHEAD NEBULA'"),'Horsehead Nebula must have a unique science fact');
 assert(science.includes("nebula_tarantula:['TARANTULA NEBULA'"),'Tarantula Nebula must have a unique science fact');
+assert(science.includes("pulsar_b1257_12:['PSR B1257+12'"),'PSR B1257+12 must have a unique planetary-system fact');
+assert(science.includes("pulsar_j1748_2446ad:['PSR J1748−2446ad'"),'PSR J1748−2446ad must have a unique spin-rate fact');
+assert(science.includes("pulsar_j1023_0038:['PSR J1023+0038'"),'PSR J1023+0038 must have a unique transitional-pulsar fact');
+assert(science.includes("pulsar_b1919_21:['PSR B1919+21'"),'PSR B1919+21 must have a unique discovery fact');
 assert(science.includes("smbh_sagittariusA:['SAGITTARIUS A*'"),'SMBH science must connect to galaxy phase');
 assert(science.includes("pending?.choice !== 'ABSORB'"),'fact acquisition must require ABSORB');
 assert(science.includes("result !== 'absorb' && result !== 'merge'"),'fact acquisition must require successful absorb/merge');
