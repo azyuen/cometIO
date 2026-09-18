@@ -164,15 +164,32 @@
 
   function orbitalAllowed(object) { return Number(object?.tier) >= ORBITAL_UNLOCK_TIER; }
 
-  function drawOrbitals(scene, x, y, count, color = C.cyan, radius = 16) {
+  function halfEllipse(g, x, y, rx, ry, front) {
+    const start = front ? 0 : Math.PI;
+    const end = front ? Math.PI : Math.PI * 2;
+    g.beginPath();
+    for (let step = 0; step <= 28; step++) {
+      const a = start + (end - start) * (step / 28);
+      const px = x + Math.cos(a) * rx, py = y + Math.sin(a) * ry;
+      if (!step) g.moveTo(px, py); else g.lineTo(px, py);
+    }
+    g.strokePath();
+  }
+
+  function drawOrbitals(scene, x, y, count, color = C.cyan, radius = 16, front = false) {
     count = clamp(whole(count), 0, MAX_LAB_ORBITALS);
     if (!count) return null;
     const g = scene.add.graphics();
     for (let i = 0; i < count; i++) {
       const rx = radius * (1.65 + i * .20), ry = radius * (.62 + i * .075);
-      g.lineStyle(1, color, .13).strokeEllipse(x, y, rx * 2, ry * 2);
+      g.lineStyle(1, color, .13);
+      halfEllipse(g, x, y, rx, ry, front);
       const a = (Math.PI * 2 * i / count) + .42;
-      g.fillStyle(i % 2 ? color : 0xffe8ac, .92).fillCircle(x + Math.cos(a) * rx, y + Math.sin(a) * ry, Math.max(2.1, radius * .15));
+      const onFront = Math.sin(a) >= 0;
+      if (onFront === front) {
+        g.fillStyle(i % 2 ? color : 0xffe8ac, .92)
+          .fillCircle(x + Math.cos(a) * rx, y + Math.sin(a) * ry, Math.max(2.1, radius * .15));
+      }
     }
     scene.ui.add(g); return g;
   }
@@ -251,10 +268,12 @@
     const refreshPreview=()=>{
       destroyPreview(this);
       const a=this._devObjectA,b=this._devObjectB, ay=this.Y(327),by=this.Y(327);
-      if(orbitalAllowed(a)) track(this,drawOrbitals(this,105,ay,this._labOrbitalsA,C.green,DEV_APPROACH_RADIUS));
-      if(orbitalAllowed(b)) track(this,drawOrbitals(this,315,by,this._labOrbitalsB,C.orange,DEV_APPROACH_RADIUS));
+      if(orbitalAllowed(a)) track(this,drawOrbitals(this,105,ay,this._labOrbitalsA,C.green,DEV_APPROACH_RADIUS,false));
+      if(orbitalAllowed(b)) track(this,drawOrbitals(this,315,by,this._labOrbitalsB,C.orange,DEV_APPROACH_RADIUS,false));
       track(this,this.drawObject(105,ay,DEV_APPROACH_RADIUS,a,false,false));
       track(this,this.drawObject(315,by,DEV_APPROACH_RADIUS,b,false,false));
+      if(orbitalAllowed(a)) track(this,drawOrbitals(this,105,ay,this._labOrbitalsA,C.green,DEV_APPROACH_RADIUS,true));
+      if(orbitalAllowed(b)) track(this,drawOrbitals(this,315,by,this._labOrbitalsB,C.orange,DEV_APPROACH_RADIUS,true));
       track(this,this.addText(105,this.Y(389),a.realName,8.1,C.green,{ox:.5,bold:true,width:175,align:'center'}));
       track(this,this.addText(315,this.Y(389),b.realName,8.1,C.orange,{ox:.5,bold:true,width:175,align:'center'}));
       track(this,this.addText(105,this.Y(420),`PHYSICAL Ø ${this.sizeText(a.radiusM)}`,6.9,C.muted,{ox:.5,bold:true,width:178,align:'center'}));
@@ -325,9 +344,11 @@
 
     const preview=()=>{
       destroyPreview(this);const a=experimentObject(this,'A'),b=experimentObject(this,'B');this._expObjectA=a;this._expObjectB=b;
-      if(this._expOrbitalsA)track(this,drawOrbitals(this,105,this.Y(256),this._expOrbitalsA,C.green,DEV_APPROACH_RADIUS));
-      if(this._expOrbitalsB)track(this,drawOrbitals(this,315,this.Y(256),this._expOrbitalsB,C.orange,DEV_APPROACH_RADIUS));
+      if(this._expOrbitalsA)track(this,drawOrbitals(this,105,this.Y(256),this._expOrbitalsA,C.green,DEV_APPROACH_RADIUS,false));
+      if(this._expOrbitalsB)track(this,drawOrbitals(this,315,this.Y(256),this._expOrbitalsB,C.orange,DEV_APPROACH_RADIUS,false));
       track(this,this.drawObject(105,this.Y(256),DEV_APPROACH_RADIUS,a,false,false));track(this,this.drawObject(315,this.Y(256),DEV_APPROACH_RADIUS,b,false,false));
+      if(this._expOrbitalsA)track(this,drawOrbitals(this,105,this.Y(256),this._expOrbitalsA,C.green,DEV_APPROACH_RADIUS,true));
+      if(this._expOrbitalsB)track(this,drawOrbitals(this,315,this.Y(256),this._expOrbitalsB,C.orange,DEV_APPROACH_RADIUS,true));
       track(this,this.addText(105,this.Y(309),TIERS[a.tier].name,7.6,C.green,{ox:.5,bold:true,width:178,align:'center'}));track(this,this.addText(315,this.Y(309),TIERS[b.tier].name,7.6,C.orange,{ox:.5,bold:true,width:178,align:'center'}));
       track(this,this.addText(105,this.Y(337),this.massText(a.massKg),7.2,C.white,{ox:.5,bold:true}));track(this,this.addText(315,this.Y(337),this.massText(b.massKg),7.2,C.white,{ox:.5,bold:true}));
       track(this,this.addText(105,this.Y(359),this.speedText(a.speedMS),7.2,C.white,{ox:.5,bold:true}));track(this,this.addText(315,this.Y(359),this.speedText(b.speedMS),7.2,C.white,{ox:.5,bold:true}));
