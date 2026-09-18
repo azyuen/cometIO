@@ -6,6 +6,7 @@
   const baseFinishUniverse = proto.finishUniverse;
 
   const tierIndex = name => TIERS.findIndex(t => t.name === name);
+  const DWARF_PLANET = tierIndex('DWARF PLANET');
   const ROCKY_PLANET = tierIndex('ROCKY PLANET');
   const PULSAR = tierIndex('PULSAR');
   const SMBH = tierIndex('SUPER MASSIVE BLACK HOLE');
@@ -58,30 +59,32 @@
     if (phase === 1) return {
       phase: 1,
       title: 'THE AGE OF ACCRETION',
-      tagline: 'Grow through collisions.',
-      range: 'FROM ATOM TO DWARF PLANET.',
+      tagline: 'Matter gathers into larger bodies.',
+      range: 'FROM ATOM TO ASTEROID.',
+      transition: 'A DWARF PLANET FORMS — A SYSTEM CAN NOW BEGIN.',
       next: 2,
       button: 'TAP TO CONTINUE TO PHASE 2',
       items: [
         { object: tierObject(0), radius: 7 },
         { object: tierObject(1), radius: 10 },
         { object: tierObject(3), radius: 14 },
-        { object: tierObject(6), radius: 23 },
-        { object: tierObject(7), radius: 34 }
+        { object: tierObject(5), radius: 20 },
+        { object: tierObject(6), radius: 30 }
       ]
     };
     if (phase === 2) return {
       phase: 2,
       title: 'THE AGE OF SYSTEMS',
-      tagline: 'Worlds gather. Stars ignite.',
-      range: 'FROM ROCKY PLANET TO NEBULA.',
+      tagline: 'Moons form. Worlds gather. Stars ignite — and die.',
+      range: 'FROM DWARF PLANET TO NEBULA.',
+      transition: 'THE NEBULA EXPANDS. A COMPACT REMNANT SURVIVES AT ITS CORE.',
       next: 3,
-      button: 'TAP TO CONTINUE TO PHASE 3',
+      button: 'TAP TO REVEAL THE COMPACT REMNANT',
       items: [
-        { object: tierObject(tierIndex('ROCKY PLANET')), radius: 15 },
-        { object: tierObject(tierIndex('GAS PLANET')), radius: 19 },
-        { object: tierObject(tierIndex('YELLOW DWARF STAR')), radius: 22 },
-        { object: tierObject(tierIndex('RED HYPERGIANT STAR')), radius: 28 },
+        { object: tierObject(tierIndex('DWARF PLANET')), radius: 14 },
+        { object: tierObject(tierIndex('ROCKY PLANET')), radius: 17 },
+        { object: tierObject(tierIndex('YELLOW DWARF STAR')), radius: 21 },
+        { object: tierObject(tierIndex('RED HYPERGIANT STAR')), radius: 27 },
         { object: tierObject(tierIndex('NEBULA')), radius: 34 }
       ]
     };
@@ -250,6 +253,11 @@
     this.addText(W / 2, dividerY - 6, config.range, config.range.length > 42 ? 7.1 : 7.8, C.muted, {
       ox: .5, bold: true, width: 270, align: 'center'
     });
+    if (config.transition) {
+      this.addText(W / 2, this.Y(686), config.transition, 7.25, C.cyan, {
+        ox: .5, bold: true, width: 350, align: 'center', lineSpacing: 2
+      });
+    }
 
     addContinueButton(this, config);
     this.cameras.main.fadeIn(260, 0, 0, 0);
@@ -274,7 +282,7 @@
 
   function crossedCards(beforeTier, afterTier) {
     const cards = [];
-    if (ROCKY_PLANET >= 0 && beforeTier < ROCKY_PLANET && afterTier >= ROCKY_PLANET) cards.push(1);
+    if (DWARF_PLANET >= 0 && beforeTier < DWARF_PLANET && afterTier >= DWARF_PLANET) cards.push(1);
     if (PULSAR >= 0 && beforeTier < PULSAR && afterTier >= PULSAR) cards.push(2);
     if (SMBH >= 0 && beforeTier < SMBH && afterTier >= SMBH) cards.push(3);
     return cards;
@@ -313,6 +321,6 @@
       'THE AGE OF GRAVITY',
       'THE COSMIC AGE'
     ],
-    boundaries: { rockyPlanet: ROCKY_PLANET, pulsar: PULSAR, supermassiveBlackHole: SMBH }
+    boundaries: { dwarfPlanet: DWARF_PLANET, rockyPlanet: ROCKY_PLANET, pulsar: PULSAR, supermassiveBlackHole: SMBH }
   });
 })();
