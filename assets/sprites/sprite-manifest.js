@@ -35,34 +35,34 @@ const COMET_SPRITE_ASSETS = {
   comet_wild2:          { family: 'comet',       lods: [] },
 
   // Generic rocky-planet art for the player/non-identity path plus anonymous mystery art.
-  rockyPlanet_01:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  rockyPlanet_02:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  rockyPlanet_mystery_01:{ family: 'rockyPlanet',lods: [32, 64], version: 1 },
+  rockyPlanet_01:       { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  rockyPlanet_02:       { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  rockyPlanet_mystery_01:{ family: 'rockyPlanet',lods: [32, 64], version: 2 },
 
   // Named dwarf-planet reveal art — collectible phase begins here.
-  dwarf_ceres:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  dwarf_pluto:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  dwarf_eris:           { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  dwarf_haumea:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  dwarf_makemake:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  dwarf_gonggong:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  dwarf_quaoar:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  dwarf_sedna:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  dwarf_ceres:          { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  dwarf_pluto:          { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  dwarf_eris:           { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  dwarf_haumea:         { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  dwarf_makemake:       { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  dwarf_gonggong:       { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  dwarf_quaoar:         { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  dwarf_sedna:          { family: 'rockyPlanet', lods: [32, 64], version: 2 },
 
   // Named terrestrial planet reveal art.
-  planet_mercury:       { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  planet_venus:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  planet_earth:         { family: 'rockyPlanet', lods: [32, 64], version: 1 },
-  planet_mars:          { family: 'rockyPlanet', lods: [32, 64], version: 1 },
+  planet_mercury:       { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  planet_venus:         { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  planet_earth:         { family: 'rockyPlanet', lods: [32, 64], version: 2 },
+  planet_mars:          { family: 'rockyPlanet', lods: [32, 64], version: 2 },
 
   // Gas/ice giant generic + mystery art and all four named planets are already active.
-  gasPlanet_01:         { family: 'gasPlanet',   lods: [32, 64], version: 1 },
-  gasPlanet_02:         { family: 'gasPlanet',   lods: [32, 64], version: 1 },
-  gasPlanet_mystery_01: { family: 'gasPlanet',   lods: [32, 64], version: 1 },
-  planet_jupiter:       { family: 'gasPlanet',   lods: [32, 64], version: 1 },
-  planet_saturn:        { family: 'gasPlanet',   lods: [32, 64], version: 1 },
-  planet_uranus:        { family: 'gasPlanet',   lods: [32, 64], version: 1 },
-  planet_neptune:       { family: 'gasPlanet',   lods: [32, 64], version: 1 },
+  gasPlanet_01:         { family: 'gasPlanet',   lods: [32, 64], version: 2 },
+  gasPlanet_02:         { family: 'gasPlanet',   lods: [32, 64], version: 2 },
+  gasPlanet_mystery_01: { family: 'gasPlanet',   lods: [32, 64], version: 2 },
+  planet_jupiter:       { family: 'gasPlanet',   lods: [32, 64], version: 2 },
+  planet_saturn:        { family: 'gasPlanet',   lods: [32, 64], version: 2 },
+  planet_uranus:        { family: 'gasPlanet',   lods: [32, 64], version: 2 },
+  planet_neptune:       { family: 'gasPlanet',   lods: [32, 64], version: 2 },
 
   // Legacy shared star placeholders remain reserved, but gameplay now points at tier-specific pools.
   star_01:              { family: 'star',        lods: [] },
