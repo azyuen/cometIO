@@ -164,7 +164,7 @@
     // Match the Phase 1-3 opening-card hierarchy.
     this.addText(W/2,this.Y(36),'PHASE 4 BEGINS',20,C.white,{ox:.5,bold:true});
     this.addText(W/2,this.Y(70),'THE COSMIC AGE',11,C.cyan,{ox:.5,bold:true});
-    this.addText(W/2,this.Y(100),'YOUR SUPERMASSIVE BLACK HOLE IS NOW THE CORE OF AN EARLY GALAXY',7.8,C.muted,{ox:.5,bold:true,width:380,align:'center'});
+    // No grey explanatory subtitle here; match the cleaner Phase 1-3 header.
 
     this.drawObject(W/2,this.Y(270),76,this.player,false,true);
     this.addText(W/2,this.Y(350),'YOUR GALAXY',8.9,C.green,{ox:.5,bold:true,width:340,align:'center'});
