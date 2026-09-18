@@ -23,10 +23,10 @@
   COMET_SPRITE_ASSETS.universe_final = {
     family: 'universe',
     lods: [32, 64],
-    version: 2,
+    version: 3,
     files: {
-      32: 'assets/sprites/universe/universe_final_32.png?v=2',
-      64: 'assets/sprites/universe/universe_final_64.png?v=2'
+      32: 'assets/sprites/universe/universe_final_32.png?v=3',
+      64: 'assets/sprites/universe/universe_final_64.png?v=3'
     }
   };
 
