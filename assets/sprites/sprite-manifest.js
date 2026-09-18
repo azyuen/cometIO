@@ -5,9 +5,9 @@
 
 const COMET_SPRITE_ASSETS = {
   // v4 forces a fresh Atom image fetch after removing the iOS runtime CanvasTexture workaround.
-  atom_01:              { family: 'atomic',      lods: [32, 64], version: 4 },
-  atom_02:              { family: 'atomic',      lods: [32, 64], version: 4 },
-  atom_03:              { family: 'atomic',      lods: [32, 64], version: 4 },
+  atom_01:              { family: 'atomic',      lods: [32, 64], version: 5 },
+  atom_02:              { family: 'atomic',      lods: [32, 64], version: 5 },
+  atom_03:              { family: 'atomic',      lods: [32, 64], version: 5 },
 
   dust_01:              { family: 'dust',        lods: [32, 64], version: 1 },
   dust_02:              { family: 'dust',        lods: [32, 64], version: 1 },
@@ -70,13 +70,13 @@ const COMET_SPRITE_ASSETS = {
   star_mystery_01:      { family: 'star',        lods: [] },
 
   // YELLOW DWARF STAR — generic/mystery + four collectible named identities.
-  yellowDwarf_01:              { family: 'star', lods: [32, 64], version: 1 },
-  yellowDwarf_02:              { family: 'star', lods: [32, 64], version: 1 },
-  yellowDwarf_mystery_01:      { family: 'star', lods: [32, 64], version: 1 },
-  yellowDwarf_sun:             { family: 'star', lods: [32, 64], version: 1 },
-  yellowDwarf_alphaCentauriA:  { family: 'star', lods: [32, 64], version: 1 },
-  yellowDwarf_tauCeti:         { family: 'star', lods: [32, 64], version: 1 },
-  yellowDwarf_18Scorpii:       { family: 'star', lods: [32, 64], version: 1 },
+  yellowDwarf_01:              { family: 'star', lods: [32, 64], version: 2 },
+  yellowDwarf_02:              { family: 'star', lods: [32, 64], version: 2 },
+  yellowDwarf_mystery_01:      { family: 'star', lods: [32, 64], version: 2 },
+  yellowDwarf_sun:             { family: 'star', lods: [32, 64], version: 2 },
+  yellowDwarf_alphaCentauriA:  { family: 'star', lods: [32, 64], version: 2 },
+  yellowDwarf_tauCeti:         { family: 'star', lods: [32, 64], version: 2 },
+  yellowDwarf_18Scorpii:       { family: 'star', lods: [32, 64], version: 2 },
 
   // BLUE GIANT STAR.
   blueGiant_01:          { family: 'star', lods: [32, 64], version: 1 },
