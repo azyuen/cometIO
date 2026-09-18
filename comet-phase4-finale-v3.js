@@ -13,7 +13,10 @@
   function descriptor(scene,index,isPlayer=false){
     const t=TIERS[SUPERCLUSTER];
     return {
-      object:isPlayer?scene.player:{name:'SUPERCLUSTER',realName:`SUPERCLUSTER ${index+1}`,tier:SUPERCLUSTER,radiusM:t.r*(.90+Math.random()*.18),massKg:t.m*(.88+Math.random()*.24),speedMS:t.v*(.88+Math.random()*.20),kind:'cluster',color:index%2?C.purple:C.cyan,solid:false},
+      // Finale superclusters should use the same underlying geometry as the player's final
+      // SUPERCLUSTER. Previously these were created as kind:'cluster', which left a galaxy-cluster
+      // glyph underneath the later cosmic-web overlay and made them look subtly different.
+      object:isPlayer?scene.player:{name:'SUPERCLUSTER',realName:`SUPERCLUSTER ${index+1}`,tier:SUPERCLUSTER,radiusM:t.r*(.90+Math.random()*.18),massKg:t.m*(.88+Math.random()*.24),speedMS:t.v*(.88+Math.random()*.20),kind:'supercluster',color:index%2?C.purple:C.cyan,solid:false},
       members:isPlayer?(scene.phase4Members||[]):shuffledMembers(scene,index),
       player:isPlayer
     };
