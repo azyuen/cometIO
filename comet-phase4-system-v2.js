@@ -39,7 +39,7 @@
   const clamp01 = n => clamp(Number(n) || 0, 0, 1);
 
   function active(scene) {
-    return !scene._devModeActive && scene.tierIndex >= SMBH && scene.tierIndex <= SUPERCLUSTER;
+    return !scene._devModeActive && scene.tierIndex >= GALAXY && scene.tierIndex <= SUPERCLUSTER;
   }
 
   function playable(scene) {
@@ -530,11 +530,11 @@
   }
 
   proto.resetRun=function(){this.phase4Members=[];this.phase4MembersInitialized=false;this.phase4BirthShown=false;this.phase4SeedScore=0;this.phase4SeedInheritedOrbitals=0;return previousResetRun.call(this);};
-  proto.setPlayer=function(resetSpeed=false){const result=previousSetPlayer.call(this,resetSpeed);if(this.tierIndex>=SMBH&&this.tierIndex<SUPERCLUSTER){ensureMembers(this);syncPlayer(this);}return result;};
+  proto.setPlayer=function(resetSpeed=false){const result=previousSetPlayer.call(this,resetSpeed);if(this.tierIndex>=GALAXY&&this.tierIndex<SUPERCLUSTER){ensureMembers(this);syncPlayer(this);}return result;};
   proto.pickOpponent=function(){if(playable(this))return systemOpponent(this);return previousPickOpponent.call(this);};
 
   proto.startEncounter=function(){
-    if(playable(this)){ensureMembers(this);syncPlayer(this);if(this.tierIndex===SMBH&&!this.phase4BirthShown&&this.state!=='PHASE_COMPLETE_CARD'&&this.state!=='P4_SYSTEM_BIRTH')return this.showPhase4SystemBirth();}
+    if(playable(this)){ensureMembers(this);syncPlayer(this);if(this.tierIndex===GALAXY&&!this.phase4BirthShown&&this.state!=='PHASE_COMPLETE_CARD'&&this.state!=='P4_SYSTEM_BIRTH')return this.showPhase4SystemBirth();}
     return previousStartEncounter.call(this);
   };
 
