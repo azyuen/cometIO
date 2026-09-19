@@ -43,16 +43,28 @@
     return gravityStrength(dominant) / Math.max(gravityStrength(weaker), 1);
   }
 
-  function compactDominates(compact, other) {
-    return isCompact(compact) && gravityStrength(compact) > gravityStrength(other) * 1.15;
+  function compactDominates(compact, other, sameTierThreshold = 1.75) {
+    if (!isCompact(compact) || !other) return false;
+    const compactTier = Number(compact.tier);
+    const otherTier = Number(other.tier);
+
+    // Progression tier is the first-order signal once both bodies are compact.
+    // A lower compact tier cannot reverse-capture a higher one merely because randomised
+    // mass/radius rolls gave it a slightly larger escape velocity.
+    if (isCompact(other) && compactTier < otherTier) return false;
+    if (isCompact(other) && compactTier > otherTier) return true;
+
+    // Peer compact remnants need a substantial physical gravity mismatch before one is treated
+    // as truly dominant. The old 1.15 threshold made ordinary Pulsar-vs-Pulsar encounters lethal.
+    return gravityStrength(compact) > gravityStrength(other) * sameTierThreshold;
   }
 
   function targetCompactDominates(scene) {
-    return compactDominates(scene.other, scene.player);
+    return compactDominates(scene.other, scene.player, 1.75);
   }
 
   function playerCompactDominates(scene) {
-    return compactDominates(scene.player, scene.other);
+    return compactDominates(scene.player, scene.other, 1.35);
   }
 
   function isSuccessfulCapture(pending) {
@@ -332,16 +344,31 @@
 
     if (choice === 'ABSORB' && targetCompactDominates(this)) {
       const ratio = gravityRatio(this.other, this.player);
+      const tierGap = Number(this.other?.tier || 0) - Number(this.player?.tier || 0);
       let fatalChance;
-      if (isSupermassiveBlackHole(this.other)) fatalChance = .97;
-      else if (isBlackHole(this.other)) fatalChance = .88;
-      else fatalChance = .58;
 
-      // A very extreme gravity mismatch pushes the result further toward capture without ever
-      // eliminating the small fragmentation-survival possibility for ordinary pulsars/black holes.
-      fatalChance = clamp(fatalChance + Math.max(0, Math.log10(Math.max(1, ratio)) - 1) * .035,
-        isPulsar(this.other) ? .58 : .82,
-        isSupermassiveBlackHole(this.other) ? .995 : isBlackHole(this.other) ? .95 : .78);
+      if (tierGap <= 0) {
+        // A genuinely stronger same-tier compact remnant can still hurt you, but peer encounters
+        // should not begin at 58-88% fatality.
+        fatalChance = isBlackHole(this.other) ? .34 : .28;
+        fatalChance = clamp(fatalChance + Math.max(0, ratio - 1.75) * .08, .24, .48);
+      } else if (isSupermassiveBlackHole(this.other)) {
+        fatalChance = tierGap >= 2 ? .90 : .76;
+      } else if (isBlackHole(this.other)) {
+        fatalChance = tierGap >= 2 ? .82 : .64;
+      } else {
+        fatalChance = .50;
+      }
+
+      // Large gravity mismatches still matter, but tier advantage now dominates small random
+      // mass/radius variation rather than the other way around.
+      if (tierGap > 0) {
+        fatalChance = clamp(
+          fatalChance + Math.max(0, Math.log10(Math.max(1, ratio)) - 1) * .025,
+          isPulsar(this.other) ? .42 : .55,
+          isSupermassiveBlackHole(this.other) ? .96 : isBlackHole(this.other) ? .90 : .72
+        );
+      }
 
       const fragmentChance = 1 - fatalChance;
       const result = Math.random() < fatalChance ? 'catastrophic' : 'fragment';
