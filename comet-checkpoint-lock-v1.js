@@ -119,6 +119,12 @@
     scene._labExperimentRunning = false;
     scene._labExperimentResult = false;
     scene._activePhaseCard = null;
+    scene._activePhaseStart = null;
+    scene._pendingPhaseStartIntro = 0;
+    scene._phaseCardQueue = [];
+    scene._p3Trajectory = 0;
+    scene._p3OrbitalAssistCount = 0;
+    scene._p3OrbitalAssist = false;
   }
 
   function restore(scene, data) {
@@ -155,7 +161,13 @@
 
     if (!scene.player) scene.setPlayer(true);
     scene.craters = scene.orbitalCount;
-    if (scene.player && scene.tierIndex >= (window.CometPhase4?.firstTier ?? Infinity)) {
+
+    // A checkpoint is only written during APPROACH. If it is already at Galaxy scale, the Phase 4
+    // intro necessarily happened before the save; earlier tiers must not inherit a later run's flag.
+    const galaxyTier = Number(window.CometPhase4?.galaxyTier ?? Infinity);
+    scene.phase4BirthShown = Number.isFinite(galaxyTier) && scene.tierIndex >= galaxyTier;
+
+    if (scene.player && scene.tierIndex >= galaxyTier) {
       scene.player.phase4CaptureCount = whole(scene.systemCaptures);
     }
   }
