@@ -32,7 +32,7 @@
   const clamp01 = n => clamp(Number(n) || 0, 0, 1);
 
   function active(scene) {
-    return !scene._devModeActive && scene.tierIndex >= SMBH && scene.tierIndex <= SUPERCLUSTER;
+    return !scene._devModeActive && scene.tierIndex >= GALAXY && scene.tierIndex <= SUPERCLUSTER;
   }
   function playable(scene) { return active(scene) && scene.tierIndex < SUPERCLUSTER; }
 
@@ -490,7 +490,7 @@
 
   proto.resetRun=function(){this.phase4V3Seeded=false;return baseResetRun.call(this);};
 
-  proto.setPlayer=function(resetSpeed=false){const result=baseSetPlayer.call(this,resetSpeed);if(this.tierIndex>=SMBH&&this.tierIndex<SUPERCLUSTER)sync(this);return result;};
+  proto.setPlayer=function(resetSpeed=false){const result=baseSetPlayer.call(this,resetSpeed);if(this.tierIndex>=GALAXY&&this.tierIndex<SUPERCLUSTER)sync(this);return result;};
 
   proto.pickOpponent=function(){
     const o=basePickOpponent.call(this);
