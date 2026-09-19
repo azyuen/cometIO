@@ -24,10 +24,12 @@
     const state = blank();
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       for (const id of Object.keys(state)) state[id] = value[id] === true;
-    } else {
-      for (const id of Array.isArray(legacyIds) ? legacyIds : []) {
-        if (Object.prototype.hasOwnProperty.call(state, id)) state[id] = true;
-      }
+    }
+    // Union the legacy ID list even when the explicit map already exists. Older collection layers
+    // still run inside the resolver and may append a newly absorbed identity there first; treating
+    // the map as exclusive used to erase that pickup on the very next encounter.
+    for (const id of Array.isArray(legacyIds) ? legacyIds : []) {
+      if (Object.prototype.hasOwnProperty.call(state, id)) state[id] = true;
     }
     return state;
   }
