@@ -74,9 +74,12 @@
 
   function shouldCollect(scene) {
     const p = scene.pending;
-    if (!p || p.choice !== 'ABSORB' || p.compactGravityReverse) return false;
+    if (!p || p.choice !== 'ABSORB' || p.success === false || p.compactGravityReverse) return false;
     const result = String(p.result || '').toLowerCase();
-    return result === 'absorb' || result === 'merge';
+    // Phase 1/2 successful ABSORB is often represented internally as "clean".
+    // Treat every non-fatal successful absorb-family result as a real collection pickup so the
+    // final collection authority cannot discard the identity recorded by older resolver layers.
+    return !result || result === 'clean' || result === 'absorb' || result === 'merge';
   }
 
   function register(scene) {
