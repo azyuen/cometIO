@@ -246,14 +246,61 @@
     return ()=>{h+=0x6D2B79F5;let t=h;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};
   }
 
-  // Atlas intentionally caps at 64px assets for now. Higher-detail LODs can be added later.
+  // Atlas intentionally caps at 64px assets for now. Resolve through the CURRENT identity /
+  // manifest rather than an atlas-specific sprite table, so newly uploaded object sprites appear
+  // here automatically as soon as their identity/manifest entry is updated.
+  function spriteVariantFor(item){
+    if(!item)return null;
+    if(item.spriteVariant)return item.spriteVariant;
+    if(item.namedSpriteBase)return item.namedSpriteBase;
+    const canonical=item.id ? (COMET_COLLECTIBLE_BY_ID?.[item.id]||COMET_IDENTITY_BY_ID?.[item.id]) : null;
+    if(canonical?.spriteVariant)return canonical.spriteVariant;
+    if(canonical?.namedSpriteBase)return canonical.namedSpriteBase;
+    return null;
+  }
   function textureFor(scene,item,diameter){
-    if(!item?.spriteVariant||typeof cometSpriteTextureKey!=='function')return null;
+    const variant=spriteVariantFor(item);
+    if(!variant||typeof cometSpriteTextureKey!=='function')return null;
+    const entry=typeof COMET_SPRITE_ASSETS!=='undefined'?COMET_SPRITE_ASSETS[variant]:null;
+    const available=Array.isArray(entry?.lods)?entry.lods:[32,64];
     for(const lod of (diameter>26?[64,32]:[32,64])){
-      const key=cometSpriteTextureKey(item.spriteVariant,lod);
+      if(available.length&&!available.includes(lod))continue;
+      const key=cometSpriteTextureKey(variant,lod);
       if(scene.textures.exists(key))return key;
     }
     return null;
+  }
+
+  function atlasObject(item){
+    const tierName=item?.gameplayTiers?.[0];
+    const tierIndex=TIERS.findIndex(t=>t.name===tierName);
+    const t=TIERS[tierIndex>=0?tierIndex:0]||TIERS[0];
+    return {
+      name:t.name,realName:item?.name||t.name,tier:tierIndex>=0?tierIndex:0,
+      radiusM:t.r,massKg:t.m,speedMS:t.v,kind:t.kind,color:t.color,solid:t.solid,hint:t.hint,
+      identityId:item?.id||null,namedSpriteBase:spriteVariantFor(item),
+      scienceClass:item?.scienceClass,identityStatus:item?.status,
+      atlasObject:true
+    };
+  }
+
+  function reparentLiveVisual(scene,parent,visual){
+    if(!visual)return null;
+    try{
+      if(visual.parentContainer===scene.ui)scene.ui.remove(visual,false);
+      else if(visual.parentContainer)visual.parentContainer.remove(visual,false);
+    }catch(_){}
+    visual.setPosition?.(0,0);
+    parent.add(visual);
+    return visual;
+  }
+
+  function liveIdentityVisual(scene,parent,item,diameter){
+    if(!item||typeof scene.drawObject!=='function')return null;
+    try{
+      const visual=scene.drawObject(0,0,Math.max(.5,diameter/2),atlasObject(item),false,false);
+      return reparentLiveVisual(scene,parent,visual);
+    }catch(_){return null;}
   }
 
   function tierColor(item){
@@ -304,15 +351,25 @@
     if(!item)return null;
     if(!discovered&&!anchor)return addUnknown(scene,world,x,y,Math.max(3.5,diameter*.32));
     const group=scene.add.container(x,y);world.add(group);
-    const key=textureFor(scene,item,diameter);
-    if(key){
-      const image=scene.add.image(0,0,key),tex=scene.textures.get?.(key);
-      if(tex?.setFilter&&Phaser?.Textures?.FilterMode)tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
-      const w=Math.max(image.width||1,1),h=Math.max(image.height||w,1);
-      image.setDisplaySize(diameter,diameter*h/w);group.add(image);group._atlasImage=image;
+
+    // Prefer the game's live renderer. This means the Atlas automatically inherits replacement
+    // sprites, named-object art and LOD choices used by the actual game.
+    const live=liveIdentityVisual(scene,group,item,diameter);
+    if(live){
+      group._atlasImage=live.cometVisual?.image||live;
+      group._atlasLiveVisual=live;
     }else{
-      const g=scene.add.graphics();g.fillStyle(tierColor(item),.82).fillCircle(0,0,diameter/2);g.lineStyle(1,C.white,.25).strokeCircle(0,0,diameter/2);group.add(g);
+      const key=textureFor(scene,item,diameter);
+      if(key){
+        const image=scene.add.image(0,0,key),tex=scene.textures.get?.(key);
+        if(tex?.setFilter&&Phaser?.Textures?.FilterMode)tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+        const w=Math.max(image.width||1,1),h=Math.max(image.height||w,1);
+        image.setDisplaySize(diameter,diameter*h/w);group.add(image);group._atlasImage=image;
+      }else{
+        const g=scene.add.graphics();g.fillStyle(tierColor(item),.82).fillCircle(0,0,diameter/2);g.lineStyle(1,C.white,.25).strokeCircle(0,0,diameter/2);group.add(g);
+      }
     }
+
     const hit=scene.add.circle(0,0,Math.max(12,diameter*.62),0xffffff,.001).setInteractive({useHandCursor:true});
     hit.on('pointerdown',p=>{scene._atlasTapStart={x:p.x,y:p.y,id:item.id};});
     hit.on('pointerup',p=>{
@@ -519,18 +576,43 @@
     text(scene,world,0,216,'GALAXY VIEW • PINCH AND PAN WITHOUT LEAVING THIS MAP',5.5,C.muted,{ox:.5,bold:true});
   }
 
+  function phase4AtlasGalaxy(scene,parent,spec,w,h){
+    const key=spec.id||spec.key;
+    const view=GALAXY_VIEWS[key]||spec;
+    const profile=view.profile||spec.profile;
+    if(!profile||typeof scene.drawObject!=='function')return null;
+    const GALAXY=Number(window.CometPhase4?.galaxyTier ?? TIERS.findIndex(t=>t.name==='GALAXY'));
+    const t=TIERS[GALAXY]||TIERS[TIERS.length-1];
+    const object={
+      name:'GALAXY',realName:spec.name,tier:GALAXY,radiusM:t.r,massKg:t.m,speedMS:t.v,
+      kind:'galaxy',color:spec.color||view.color||C.cyan,solid:false,hint:t.hint,
+      phase4NamedId:key,phase4NamedType:'galaxy',phase4NamedProfile:profile,atlasObject:true
+    };
+    try{
+      const radius=Math.max(12,Math.min(30,Math.max(w,h)*.32));
+      return reparentLiveVisual(scene,parent,scene.drawObject(0,0,radius,object,false,false));
+    }catch(_){return null;}
+  }
+
   function addDeepGalaxy(scene,world,spec,x,y,w,h,discovered,clickable){
     const c=scene.add.container(x,y),g=scene.add.graphics(),color=spec.color||C.cyan;
-    if(discovered){
-      g.lineStyle(7,color,.12).strokeEllipse(0,0,w,h);
-      g.lineStyle(1.6,color,.55).strokeEllipse(0,0,w,h);g.fillStyle(C.white,.25).fillCircle(0,0,2.2);
-    }else{
-      g.lineStyle(1.2,C.muted,.22).strokeEllipse(0,0,w,h);g.fillStyle(C.muted,.12).fillCircle(0,0,1.5);
+    world.add(c);
+    let live=null;
+    if(discovered)live=phase4AtlasGalaxy(scene,c,spec,w,h);
+
+    if(!live){
+      if(discovered){
+        g.lineStyle(7,color,.12).strokeEllipse(0,0,w,h);
+        g.lineStyle(1.6,color,.55).strokeEllipse(0,0,w,h);g.fillStyle(C.white,.25).fillCircle(0,0,2.2);
+      }else{
+        g.lineStyle(1.2,C.muted,.22).strokeEllipse(0,0,w,h);g.fillStyle(C.muted,.12).fillCircle(0,0,1.5);
+      }
+      c.addAt(g,0);
     }
-    c.add(g);world.add(c);
+
     if(discovered){
-      text(scene,c,0,h*.58+4,spec.name,5.3,C.white,{ox:.5,bold:true,width:90,align:'center'});
-      addMotion(scene,{targets:c,angle:360,duration:85000+seeded(spec.id||spec.key)()*45000,repeat:-1,ease:'Linear'});
+      text(scene,c,0,h*.58+7,spec.name,5.3,C.white,{ox:.5,bold:true,width:90,align:'center'});
+      if(!live)addMotion(scene,{targets:c,angle:360,duration:85000+seeded(spec.id||spec.key)()*45000,repeat:-1,ease:'Linear'});
     }
     if(discovered&&clickable){
       const hit=scene.add.ellipse(0,0,Math.max(46,w),Math.max(30,h),0xffffff,.001).setInteractive({useHandCursor:true});
@@ -554,12 +636,12 @@
     const net=scene.add.graphics(),nodes=[[-142,-150],[92,-166],[-96,-28],[128,8],[-142,156],[92,168],[0,38]];
     net.lineStyle(1,C.cyan,.07);[[0,2],[2,4],[2,6],[6,1],[6,3],[3,5],[1,3]].forEach(p=>net.lineBetween(nodes[p[0]][0],nodes[p[0]][1],nodes[p[1]][0],nodes[p[1]][1]));world.add(net);
 
-    addDeepGalaxy(scene,world,{key:'milky-way',name:'MILKY WAY',color:0xa8d8ff},-70,18,88,32,true,true);
+    addDeepGalaxy(scene,world,{key:'milky-way',name:'MILKY WAY',profile:'milkyway',color:0xa8d8ff},-70,18,88,32,true,true);
     const available=new Set(galaxyAvailable(scene));
     const lmcVisible=available.has('lmc');
-    addDeepGalaxy(scene,world,{key:'lmc',name:'LARGE MAGELLANIC CLOUD',color:0x9edfff},-126,57,44,24,lmcVisible,true);
+    addDeepGalaxy(scene,world,{key:'lmc',name:'LARGE MAGELLANIC CLOUD',profile:'irregular',color:0x9edfff},-126,57,44,24,lmcVisible,true);
     const m82Visible=available.has('m82');
-    addDeepGalaxy(scene,world,{key:'m82',name:'CIGAR GALAXY (M82)',color:0xff8f66},8,-188,58,24,m82Visible,true);
+    addDeepGalaxy(scene,world,{key:'m82',name:'CIGAR GALAXY (M82)',profile:'starburst',color:0xff8f66},8,-188,58,24,m82Visible,true);
 
     const positions={
       andromeda:[92,-166,70,28],whirlpool:[-142,-150,56,26],sombrero:[128,8,68,22],cartwheel:[-142,156,64,34],antennae:[92,168,72,30]
