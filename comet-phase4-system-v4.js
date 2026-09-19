@@ -25,7 +25,7 @@
   const whole = n => Math.max(0, Math.floor(Number(n) || 0));
 
   function playable(scene) {
-    return !scene._devModeActive && scene.tierIndex >= SMBH && scene.tierIndex < SUPERCLUSTER;
+    return !scene._devModeActive && scene.tierIndex >= GALAXY && scene.tierIndex < SUPERCLUSTER;
   }
 
   function isSystem(object) {
