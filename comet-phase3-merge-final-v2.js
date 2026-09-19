@@ -1,4 +1,4 @@
-// Final Phase 3 merge authority v2.
+// Final Phase 3 merge authority v3.
 // Every successful Phase 3 ABSORB/MERGE from Pulsar through SMBH uses one visual language:
 // converge -> expanding light ring -> both originals disappear -> one new resulting sprite.
 // Loaded last so older Pulsar-only / compact-gravity animation branches cannot leak through.
@@ -191,9 +191,84 @@
     scene.time.delayedCall(1280, () => scene.resolve());
   }
 
+  function impactBurst(scene, x, y, color = C.orange) {
+    const flash = scene.add.circle(x, y, 8, C.white, .98);
+    const ring = scene.add.circle(x, y, 13, color, .08);
+    ring.setStrokeStyle(2.5, color, .92);
+    scene.ui.add([ring, flash]);
+    scene.tweens.add({targets:flash,scale:3.0,alpha:0,duration:220,ease:'Quad.out',onComplete:()=>flash.destroy()});
+    scene.tweens.add({targets:ring,scale:4.2,alpha:0,duration:430,ease:'Cubic.out',onComplete:()=>ring.destroy()});
+
+    for (let i=0;i<14;i++) {
+      const a=Math.PI*2*i/14+Phaser.Math.FloatBetween(-.14,.14);
+      const d=Phaser.Math.Between(24,58);
+      const dot=scene.add.circle(x,y,Phaser.Math.FloatBetween(1,2.2),i%3?color:C.white,.9);
+      scene.ui.add(dot);
+      scene.tweens.add({
+        targets:dot,
+        x:x+Math.cos(a)*d,y:y+Math.sin(a)*d,
+        alpha:0,scale:.2,duration:Phaser.Math.Between(260,460),
+        ease:'Quad.out',onComplete:()=>dot.destroy()
+      });
+    }
+  }
+
+  function animateFailedMerge(scene, p, o) {
+    freezeComparison(scene, p, o);
+    const pending=scene.pending||{};
+    const x=W/2,y=scene.Y(375);
+    const survived=pending.success !== false && String(pending.result||'').toLowerCase() !== 'catastrophic';
+
+    scene.tweens.killTweensOf(p);
+    scene.tweens.killTweensOf(o);
+
+    // They may collide, but they are never left parked together. This explicitly replaces the
+    // original Phase-3/base ABSORB animation that stopped two sprites side-by-side before resolve.
+    scene.tweens.add({targets:p,x:x-7,y:y-2,angle:'+=24',duration:440,ease:'Cubic.in'});
+    scene.tweens.add({targets:o,x:x+7,y:y+2,angle:'-=18',duration:440,ease:'Cubic.in'});
+
+    scene.time.delayedCall(420,()=>impactBurst(scene,x,y,survived?C.orange:C.red));
+
+    if (survived) {
+      scene.time.delayedCall(455,()=>{
+        scene.tweens.add({
+          targets:p,x:x-118,y:y-66,angle:'-=70',alpha:.78,
+          duration:500,ease:'Cubic.out'
+        });
+        scene.tweens.add({
+          targets:o,x:x+105,y:y+54,angle:'+=42',
+          duration:500,ease:'Cubic.out'
+        });
+      });
+      scene.time.delayedCall(1050,()=>scene.resolve());
+    } else {
+      scene.time.delayedCall(455,()=>{
+        scene.tweens.add({
+          targets:p,x:x-18,y:y+118,angle:'+=210',alpha:0,
+          duration:520,ease:'Cubic.in'
+        });
+        scene.tweens.add({
+          targets:o,x:x+88,y:y-26,angle:'-=24',
+          duration:430,ease:'Cubic.out'
+        });
+      });
+      scene.time.delayedCall(1040,()=>scene.resolve());
+    }
+  }
+
   proto.animate = function(choice, p, o, pr, or) {
-    if (successfulMerge(this, choice)) {
-      return animateMerge(this, p, o, pr, or);
+    if (choice === 'ABSORB' && phase3(this)) {
+      if (successfulMerge(this, choice)) {
+        return animateMerge(this, p, o, pr, or);
+      }
+
+      // Preserve the bespoke gravity-reversal and high-tier-graze animations, which do not use the
+      // legacy sticking collision. Every other Phase-3 ABSORB is handled here and never delegates
+      // to the original side-by-side collision branch.
+      if (this.pending?.compactGravityReverse || this.pending?.highTierGlance) {
+        return baseAnimate.call(this, choice, p, o, pr, or);
+      }
+      return animateFailedMerge(this, p, o, pr, or);
     }
     return baseAnimate.call(this, choice, p, o, pr, or);
   };
@@ -205,6 +280,8 @@
     excludesFragmentAndCatastrophic:true,
     sequence:'CONVERGE_LIGHT_RING_SINGLE_NEW_SPRITE',
     spriteSafe:true,
-    loadedAsFinalAnimationAuthority:true
+    loadedAsFinalAnimationAuthority:true,
+    legacyPhase3AbsorbCollisionBlocked:true,
+    failedMergeAnimation:'IMPACT_RECOIL_OR_DESTRUCTION'
   });
 })();
