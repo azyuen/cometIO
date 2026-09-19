@@ -7,6 +7,7 @@
 
   const proto = GameScene.prototype;
   const baseDrawResult = proto.drawResult;
+  const baseResolve = proto.resolve;
 
   const ACTION_LABELS = new Set([
     'ENTER NAME','QUICK RESTART','RESTART','RECORD HIGH SCORE','RESTART WITHOUT RECORDING',
@@ -78,44 +79,49 @@
     return true;
   }
 
+  function restartWithoutRecording(scene) {
+    scene._highScoreDeclinedThisRun = true;
+    scene._highScoreWriteApproved = false;
+    scene.resetRun();
+  }
+
+  function recordHighScore(scene) {
+    if (typeof scene.qualifies !== 'function' || !scene.qualifies()) return false;
+    const recorded = scene.recordScore?.();
+    if (recorded === false) return false;
+    scene.showScores?.('gameover');
+    return true;
+  }
+
   function rebuildActions(scene) {
     removeGameOverButtons(scene);
 
-    const hasCheckpoint = !!window.CometCheckpoint?.exists?.();
     const topFive = typeof scene.qualifies === 'function' && scene.qualifies();
+    const hasCheckpoint = !!window.CometCheckpoint?.exists?.();
 
+    // One consistent loss menu in every phase. RECORD HIGH SCORE only exists when the run
+    // currently qualifies; the other two choices are always visible.
     if (topFive) {
-      scene.wideButton(W / 2, scene.Y(705), 330, 48, 'RECORD HIGH SCORE', C.orange, () => {
-        const recorded = scene.recordScore?.();
-        if (recorded !== false) scene.showScores?.('gameover');
-      });
-
-      if (hasCheckpoint) {
-        scene.wideButton(105, scene.Y(767), 180, 48, 'LOAD LAST SAVE', C.blue, () => loadLastSave(scene));
-        scene.wideButton(315, scene.Y(767), 180, 48, 'RESTART', C.cyan, () => {
-          scene._highScoreDeclinedThisRun = true;
-          scene.resetRun();
-        });
-      } else {
-        scene.wideButton(W / 2, scene.Y(767), 330, 48, 'RESTART WITHOUT RECORDING', C.cyan, () => {
-          scene._highScoreDeclinedThisRun = true;
-          scene.resetRun();
-        });
-      }
-      return;
-    }
-
-    if (hasCheckpoint) {
-      scene.wideButton(105, scene.Y(735), 180, 52, 'LOAD LAST SAVE', C.blue, () => loadLastSave(scene));
-      scene.wideButton(315, scene.Y(735), 180, 52, 'RESTART', C.red, () => scene.resetRun());
+      scene.wideButton(W / 2, scene.Y(684), 330, 44, 'RECORD HIGH SCORE', C.orange, () => recordHighScore(scene));
+      scene.wideButton(W / 2, scene.Y(738), 330, 44, 'RESTART WITHOUT RECORDING', C.red, () => restartWithoutRecording(scene));
+      scene.wideButton(W / 2, scene.Y(792), 330, 44, 'LOAD LAST SAVE', hasCheckpoint ? C.blue : C.muted, () => loadLastSave(scene));
     } else {
-      scene.wideButton(W / 2, scene.Y(735), 330, 52, 'RESTART', C.red, () => scene.resetRun());
+      scene.wideButton(W / 2, scene.Y(716), 330, 48, 'RESTART WITHOUT RECORDING', C.red, () => restartWithoutRecording(scene));
+      scene.wideButton(W / 2, scene.Y(776), 330, 48, 'LOAD LAST SAVE', hasCheckpoint ? C.blue : C.muted, () => loadLastSave(scene));
     }
   }
 
   proto.drawResult = function(res) {
     const out = baseDrawResult.call(this, res);
-    if (res?.survived === false) rebuildActions(this);
+    if (res?.survived === false && !this._labSandboxRun) rebuildActions(this);
+    return out;
+  };
+
+  // Phase 4 fatal CAPTURE has a bespoke screen and does not call drawResult(). Catch that route
+  // after its resolver returns so it receives the exact same loss actions as Phases 1–3.
+  proto.resolve = function(...args) {
+    const out = baseResolve.apply(this, args);
+    if (this.state === 'P4_GAME_OVER' && !this._labSandboxRun) rebuildActions(this);
     return out;
   };
 
@@ -124,6 +130,9 @@
     protectedCheckpointOnly:true,
     directProtectedRestore:true,
     topFiveCompatible:true,
+    universalLossMenu:true,
+    catchesPhase4CustomGameOver:true,
+    actions:['RECORD HIGH SCORE','RESTART WITHOUT RECORDING','LOAD LAST SAVE'],
     restoresCollectionState:true,
     clearsTransientDeathState:true
   });
