@@ -37,6 +37,7 @@
   const GALAXY_VIEWS = Object.freeze({
     'milky-way': { key:'milky-way', name:'MILKY WAY', profile:'milkyway', color:0xa8d8ff },
     'lmc': { key:'lmc', name:'LARGE MAGELLANIC CLOUD', profile:'irregular', color:0x9edfff },
+    'm82': { key:'m82', name:'CIGAR GALAXY (M82)', profile:'starburst', color:0xff8f66 },
     andromeda: GALAXY_BY_ID.andromeda,
     whirlpool: GALAXY_BY_ID.whirlpool,
     sombrero: GALAXY_BY_ID.sombrero,
@@ -153,7 +154,14 @@
     pulsar_m51_ulx7:[98,-42,12],
     smbh_m51:[0,0,28],
     smbh_m104:[0,0,30],
-    blackHole_cartwheelN10:[104,2,21]
+    blackHole_cartwheelN10:[104,2,21],
+    nebula_n49:[-128,-18,31],
+    nebula_n132d:[118,-78,30],
+    pulsar_b0540_69:[18,112,12],
+    blackHole_lmcX3:[-38,132,20],
+    pulsar_m82_x2:[72,-38,12],
+    blackHole_m82X1:[-70,42,22],
+    blackHole_antennaeX11:[0,-72,20]
   });
 
   function cleanRunGalaxies(ids){
@@ -426,6 +434,17 @@
       g.lineStyle(10,color,.10).strokeEllipse(-36,8,r*.95,r*.58);
       g.lineStyle(10,C.cyan,.08).strokeEllipse(38,-5,r*.95,r*.58);
       g.lineStyle(2,color,.16).lineBetween(-65,20,-150,95);g.lineStyle(2,C.cyan,.14).lineBetween(68,-15,158,-84);
+    }else if(profile==='starburst'){
+      g.fillStyle(color,.07).fillEllipse(0,0,r*1.95,r*.58);
+      g.fillStyle(0x090611,.82).fillEllipse(0,0,r*1.72,r*.20);
+      g.lineStyle(4,color,.22).strokeEllipse(0,0,r*1.88,r*.44);
+      g.fillStyle(0xffd28b,.17).fillEllipse(0,0,r*.72,r*.28);
+      g.lineStyle(7,0xff6f91,.10).lineBetween(-r*.11,-r*.18,-r*.26,-r*.82);
+      g.lineStyle(7,C.cyan,.09).lineBetween(r*.10,r*.18,r*.25,r*.82);
+      for(let i=0;i<18;i++){
+        const t=(i-8.5)/8.5;
+        g.fillStyle(i%3===0?0xffd089:color,.28+(i%4)*.06).fillCircle(t*r*.82,Math.sin(i*1.7)*r*.08,1.2+(i%3)*.7);
+      }
     }else if(profile==='irregular'){
       g.fillStyle(color,.08).fillEllipse(-25,-8,r*1.45,r*.72).fillEllipse(39,20,r*.88,r*.58).fillCircle(-62,33,r*.22);
       g.lineStyle(2,color,.18).strokeEllipse(-5,4,r*1.8,r*.88);
@@ -539,6 +558,8 @@
     const available=new Set(galaxyAvailable(scene));
     const lmcVisible=available.has('lmc');
     addDeepGalaxy(scene,world,{key:'lmc',name:'LARGE MAGELLANIC CLOUD',color:0x9edfff},-126,57,44,24,lmcVisible,true);
+    const m82Visible=available.has('m82');
+    addDeepGalaxy(scene,world,{key:'m82',name:'CIGAR GALAXY (M82)',color:0xff8f66},8,-188,58,24,m82Visible,true);
 
     const positions={
       andromeda:[92,-166,70,28],whirlpool:[-142,-150,56,26],sombrero:[128,8,68,22],cartwheel:[-142,156,64,34],antennae:[92,168,72,30]
