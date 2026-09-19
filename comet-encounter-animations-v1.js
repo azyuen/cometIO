@@ -114,6 +114,75 @@
     scene.tweens.add({ targets: label, alpha: 1, duration: 210, delay: 90 });
   }
 
+  function spriteBacked(container) {
+    return !!container?.cometVisual?.image && typeof container.setVisualDisplayDiameter === 'function';
+  }
+
+  function visualDiameter(container, fallbackRadius = 16) {
+    return Math.max(1,
+      Number(container?.cometVisual?.baseDisplayDiameterPx) ||
+      Number(container?.cometVisual?.image?.displayWidth) ||
+      Math.max(1, Number(fallbackRadius) * 2)
+    );
+  }
+
+  function animateSpriteSafeGrowth(scene, container, finalDiameter, startFraction, startAlpha, duration) {
+    container.setAlpha?.(startAlpha);
+    if (!spriteBacked(container)) {
+      container.setScale(startFraction);
+      scene.tweens.add({targets:container,scale:1,alpha:1,duration,ease:'Back.out'});
+      return;
+    }
+
+    // Safari/iOS can corrupt a transparent PNG texture quad when the Phaser container itself is
+    // scaled during an encounter. Keep the container 1:1 and animate its authored display diameter.
+    container.setScale?.(1);
+    const startDiameter = Math.max(2, finalDiameter * startFraction);
+    container.setVisualDisplayDiameter(startDiameter);
+    scene.tweens.addCounter({
+      from:startDiameter,to:finalDiameter,duration,ease:'Back.out',
+      onUpdate:tween=>{
+        if(container?.active) container.setVisualDisplayDiameter(tween.getValue());
+      }
+    });
+    scene.tweens.add({targets:container,alpha:1,duration,ease:'Cubic.out'});
+  }
+
+  function pulseSpriteSafe(scene, container, fallbackRadius) {
+    if (!spriteBacked(container)) {
+      const originalScaleX=container.scaleX||1,originalScaleY=container.scaleY||1;
+      scene.tweens.add({
+        targets:container,
+        scaleX:originalScaleX*1.09,
+        scaleY:originalScaleY*1.09,
+        duration:150,yoyo:true,ease:'Sine.out'
+      });
+      return;
+    }
+
+    const base=visualDiameter(container,fallbackRadius);
+    scene.tweens.addCounter({
+      from:base,to:base*1.09,duration:150,yoyo:true,ease:'Sine.out',
+      onUpdate:tween=>{
+        if(container?.active) container.setVisualDisplayDiameter(tween.getValue());
+      },
+      onComplete:()=>{
+        if(container?.active) container.setVisualDisplayDiameter(base);
+      }
+    });
+  }
+
+  function shrinkSpriteSafe(container, scale, fallbackRadius) {
+    if (!spriteBacked(container)) {
+      container.setScale(scale);
+      return;
+    }
+    container.setScale?.(1);
+    const base = container._cometAbsorbBaseDiameter ||
+      (container._cometAbsorbBaseDiameter = visualDiameter(container, fallbackRadius));
+    container.setVisualDisplayDiameter(Math.max(2, base * scale));
+  }
+
   function animateAbsorbMerge(scene, p, o, pr) {
     const x = W / 2;
     const y = scene.Y(375);
@@ -134,9 +203,7 @@
 
     scene.time.delayedCall(710, () => {
       const result = scene.drawObject(x, y, resultRadius, preview.object, false, true);
-      result.setScale(.48);
-      result.setAlpha(.08);
-      scene.tweens.add({targets: result, scale: 1, alpha: 1, duration: 330, ease: 'Back.out'});
+      animateSpriteSafeGrowth(scene, result, resultRadius * 2, .48, .08, 330);
       if (preview.evolved) addTierUpLabel(scene, x, y + resultRadius + 26, preview.object);
     });
 
@@ -151,9 +218,6 @@
       x: (start.x + end.x) / 2 + 12,
       y: (start.y + end.y) / 2 - 34
     };
-    const originalScaleX = p.scaleX || 1;
-    const originalScaleY = p.scaleY || 1;
-
     scene.tweens.killTweensOf(p);
     scene.tweens.killTweensOf(o);
 
@@ -169,7 +233,7 @@
         o.x = u * u * start.x + 2 * u * t * control.x + t * t * end.x;
         o.y = u * u * start.y + 2 * u * t * control.y + t * t * end.y;
         const shrink = Math.max(.06, 1 - .94 * t);
-        o.setScale(shrink);
+        shrinkSpriteSafe(o, shrink, or);
         o.setAlpha?.(Math.max(0, 1 - .95 * t));
       }
     });
@@ -195,14 +259,7 @@
       pulse.setStrokeStyle(2, C.white, .35);
       scene.tweens.add({targets: pulse, scale: 1.8, alpha: 0, duration: 320, ease: 'Quad.out', onComplete: () => pulse.destroy()});
 
-      scene.tweens.add({
-        targets: p,
-        scaleX: originalScaleX * 1.09,
-        scaleY: originalScaleY * 1.09,
-        duration: 150,
-        yoyo: true,
-        ease: 'Sine.out'
-      });
+      pulseSpriteSafe(scene, p, pr);
     });
 
     if (preview.evolved) {
@@ -210,9 +267,7 @@
         p.setAlpha?.(0);
         const resultRadius = Math.min(68, Math.max(pr * 1.18, pr + 7));
         const result = scene.drawObject(end.x, end.y, resultRadius, preview.object, false, true);
-        result.setScale(.72);
-        result.setAlpha(.15);
-        scene.tweens.add({targets: result, scale: 1, alpha: 1, duration: 300, ease: 'Back.out'});
+        animateSpriteSafeGrowth(scene, result, resultRadius * 2, .72, .15, 300);
         addTierUpLabel(scene, end.x, end.y + resultRadius + 24, preview.object);
       });
     }
