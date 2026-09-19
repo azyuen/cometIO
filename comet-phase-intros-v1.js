@@ -71,14 +71,14 @@
     scene.addText(48,scene.Y(499),'RADIAL',8.2,C.green,{bold:true});
     scene.addText(150,scene.Y(499),'lower angular momentum • favours MERGE',7.15,C.muted,{bold:true,width:220});
     scene.addText(48,scene.Y(522),'TANGENTIAL',8.2,C.orange,{bold:true});
-    scene.addText(150,scene.Y(522),'higher angular momentum • favours SLING / ESCAPE',7.15,C.muted,{bold:true,width:220});
+    scene.addText(150,scene.Y(522),'higher angular momentum • favours SLING / AVOID',7.15,C.muted,{bold:true,width:220});
 
     // No divider here: keeping this open makes the tutorial feel less boxed-in.
     scene.addText(48,scene.Y(560),'ORBITAL ASSIST',8.8,C.cyan,{bold:true});
     scene.addText(48,scene.Y(584),'Use  − / +  to choose how many orbitals to sacrifice.',7.45,C.white,{bold:true,width:324});
     scene.addText(48,scene.Y(607),'More sacrificed orbitals reduce capture risk.',7.25,C.muted,{bold:true,width:324});
 
-    scene.addText(W/2,scene.Y(642),'MERGE  •  SLING  •  ESCAPE',9.0,C.white,{ox:.5,bold:true});
+    scene.addText(W/2,scene.Y(642),'MERGE  •  SLING  •  AVOID',9.0,C.white,{ox:.5,bold:true});
   }
 
   proto.showPhaseStartCard = function(phase) {
@@ -167,7 +167,7 @@
     phase1Lesson:'APPARENT SIZE',
     phase2Lesson:'ORBITALS',
     phase3Lesson:'TRAJECTORY + ANGULAR MOMENTUM + ORBITAL ASSIST',
-    phase3Actions:['MERGE','SLING','ESCAPE'],
+    phase3Actions:['MERGE','SLING','AVOID'],
     phase3TrajectoryEndpoints:['RADIAL','TANGENTIAL'],
     phase3TeachesOrbitalAssist:true,
     phase4UsesGalaxyIntro:true
