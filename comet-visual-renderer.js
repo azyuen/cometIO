@@ -47,8 +47,9 @@
   }
 
   function forceClean32ForKnownCorruptPack(variant, lods) {
-    // No active 64px quarantines. All current sprite packs should follow displayed-size LOD.
-    // Keep this hook so a genuinely broken source can be isolated later without changing policy.
+    // Yellow Dwarf 64px textures corrupt into an opaque/black square on the iOS enlargement path.
+    // Keep the clean 32px authored sprite and upscale it until the 64px pack is replaced.
+    if (/^yellowDwarf_/.test(String(variant || '')) && lods.includes(32)) return 32;
     return null;
   }
 
