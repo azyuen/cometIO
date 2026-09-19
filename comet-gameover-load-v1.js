@@ -102,12 +102,12 @@
     // One consistent loss menu in every phase. RECORD HIGH SCORE only exists when the run
     // currently qualifies; the other two choices are always visible.
     if (topFive) {
-      scene.wideButton(W / 2, scene.Y(684), 330, 44, 'RECORD HIGH SCORE', C.orange, () => recordHighScore(scene));
-      scene.wideButton(W / 2, scene.Y(738), 330, 44, 'RESTART WITHOUT RECORDING', C.red, () => restartWithoutRecording(scene));
-      scene.wideButton(W / 2, scene.Y(792), 330, 44, 'LOAD LAST SAVE', hasCheckpoint ? C.blue : C.muted, () => loadLastSave(scene));
+      scene.wideButton(W / 2, scene.Y(710), 330, 40, 'RECORD HIGH SCORE', C.orange, () => recordHighScore(scene));
+      scene.wideButton(W / 2, scene.Y(762), 330, 40, 'RESTART WITHOUT RECORDING', C.red, () => restartWithoutRecording(scene));
+      scene.wideButton(W / 2, scene.Y(814), 330, 40, 'LOAD LAST SAVE', hasCheckpoint ? C.blue : C.muted, () => loadLastSave(scene));
     } else {
-      scene.wideButton(W / 2, scene.Y(716), 330, 48, 'RESTART WITHOUT RECORDING', C.red, () => restartWithoutRecording(scene));
-      scene.wideButton(W / 2, scene.Y(776), 330, 48, 'LOAD LAST SAVE', hasCheckpoint ? C.blue : C.muted, () => loadLastSave(scene));
+      scene.wideButton(W / 2, scene.Y(750), 330, 44, 'RESTART WITHOUT RECORDING', C.red, () => restartWithoutRecording(scene));
+      scene.wideButton(W / 2, scene.Y(808), 330, 44, 'LOAD LAST SAVE', hasCheckpoint ? C.blue : C.muted, () => loadLastSave(scene));
     }
   }
 
@@ -131,6 +131,7 @@
     directProtectedRestore:true,
     topFiveCompatible:true,
     universalLossMenu:true,
+    lossButtonsShiftedBelowResultPanel:true,
     catchesPhase4CustomGameOver:true,
     actions:['RECORD HIGH SCORE','RESTART WITHOUT RECORDING','LOAD LAST SAVE'],
     restoresCollectionState:true,
