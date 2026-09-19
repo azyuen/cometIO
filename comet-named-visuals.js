@@ -8,7 +8,9 @@
     const lods = Array.isArray(entry?.lods) ? [...entry.lods] : [];
     if (!lods.length) return [];
 
-    // All current named sprite packs use normal displayed-size LOD selection.
+    // Yellow Dwarf 64px textures are temporarily quarantined because enlarging into that LOD
+    // produces an opaque black square on iOS/WebGL. Named stars must obey the same quarantine.
+    if (/^yellowDwarf_/.test(String(variant || '')) && lods.includes(32)) return [32];
 
     const threshold = COMET_VISUAL_SETTINGS?.lodThresholds?.smallMaxPx ?? 48;
     const preferred = diameterPx <= threshold ? 32 : 64;
