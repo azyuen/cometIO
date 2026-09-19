@@ -42,17 +42,21 @@
 
   function predictedSurvival(scene, choice, a) {
     const gap = Math.max(0, Number(scene?.other?.tier||0)-Number(scene?.tierIndex||0));
-    const high = curve(a);
+    const high = curve(a, 1.45);
     const speed = speedAdjustment(scene);
-    if (choice === 'AVOID') return clamp(.16 + high*.76 - gap*.025 + speed, .08, .94);
-    if (choice === 'DEFLECT') return clamp(.12 + high*.70 - gap*.035 + speed, .06, .88);
-    return clamp(.06 + high*.60 - gap*.045 + speed*.5, .025, .72);
+
+    // Trajectory is intentionally a strong Phase-3 control:
+    // low angular momentum helps MERGE, high angular momentum helps SLING / AVOID.
+    if (choice === 'AVOID') return clamp(.13 + high*.78 - gap*.045 + speed, .06, .91);
+    if (choice === 'DEFLECT') return clamp(.11 + high*.70 - gap*.050 + speed, .055, .84);
+    return clamp(.66 - high*.43 - gap*.055 + speed*.35, .08, .72);
   }
 
   function assistRiskMultiplier(count, choice) {
     const n = Math.max(0, Number(count)||0);
     if (!n) return 1;
-    const coefficient = choice === 'ABSORB' ? .48 : .80;
+    // Orbitals are a safety net, not a substitute for choosing the right trajectory.
+    const coefficient = choice === 'ABSORB' ? .26 : .36;
     return Math.exp(-coefficient * Math.pow(n, .72));
   }
 
@@ -103,7 +107,7 @@
   };
 
   // Phase 3 now teaches risk through the trajectory/orbital controls themselves. The tiny text under
-  // MERGE/SLING/ESCAPE was visually noisy and is intentionally removed.
+  // MERGE/SLING/AVOID was visually noisy and is intentionally removed.
   proto.choice=function(x,y,label,color,risk){
     if(active(this)) risk='';
     return baseChoice.call(this,x,y,label,color,risk);
@@ -179,25 +183,31 @@
 
     if(choice==='ABSORB'){
       const baseSafe=clamp(Number(pending.chance)||(pending.success ? .6 : .2),.01,.99);
-      let safe=clamp(baseSafe*(1.20-.55*a),.015,.985);
+      const trajectorySafe=predictedSurvival(scene,'ABSORB',a);
+      // Preserve encounter difficulty, but let radial/tangential placement strongly modify it.
+      // A good radial MERGE helps; a tangential MERGE can no longer coast on a generous base roll.
+      let safe=clamp(baseSafe*.58 + trajectorySafe*.42, .025, .86);
       if(pending.compactGravityReverse){
-        safe=clamp(Math.max(1-fatalChance(pending),predictedSurvival(scene,'ABSORB',a)),.015,.92);
+        safe=clamp(baseSafe*.35 + trajectorySafe*.65,.02,.78);
         pending.fatalChance=1-safe;pending.fragmentChance=safe;
       }
-      pending.chance=safe;pending.success=Math.random()<safe;
+      pending.chance=safe;pending.fatalChance=1-safe;pending.success=Math.random()<safe;
       if(pending.compactGravityReverse)pending.result=pending.success?'fragment':'catastrophic';
-      else if(!pending.success)pending.result=pending.result||'catastrophic';
+      else if(!pending.success)pending.result='catastrophic';
     }else if(choice==='DEFLECT'){
-      const survival=Math.max(1-fatalChance(pending),predictedSurvival(scene,'DEFLECT',a));
-      const fatal=clamp(1-survival,.002,.94);
-      const cleanBase=clamp(Number(pending.cleanChance)||.35,0,1-fatal);
-      const cleanFloor=survival*clamp(.24+high*.58,.18,.78);
-      const clean=clamp(Math.max(cleanBase,cleanFloor),.03,1-fatal);
-      const roll=Math.random();pending.fatalChance=fatal;pending.cleanChance=clean;pending.chance=1-fatal;
+      const baseSurvival=clamp(1-fatalChance(pending),.01,.99);
+      const trajectorySurvival=predictedSurvival(scene,'DEFLECT',a);
+      const survival=clamp(baseSurvival*.32 + trajectorySurvival*.68,.035,.88);
+      const fatal=1-survival;
+      const cleanBase=clamp(Number(pending.cleanChance)||.25,0,1-fatal);
+      const cleanTarget=survival*clamp(.16+high*.68,.12,.78);
+      const clean=clamp(cleanBase*.28+cleanTarget*.72,.02,1-fatal);
+      const roll=Math.random();pending.fatalChance=fatal;pending.cleanChance=clean;pending.chance=survival;
       pending.result=roll<fatal?'catastrophic':roll<fatal+clean?'clean':'rough';pending.success=pending.result!=='catastrophic';
     }else{
       const legacy=clamp(Number(pending.chance)||.08,.01,.995);
-      const chance=clamp(Math.max(legacy,predictedSurvival(scene,'AVOID',a)),.08,.995);
+      const trajectoryChance=predictedSurvival(scene,'AVOID',a);
+      const chance=clamp(legacy*.28 + trajectoryChance*.72,.05,.93);
       pending.chance=chance;pending.fatalChance=1-chance;pending.success=Math.random()<chance;
     }
 
@@ -233,7 +243,7 @@
   };
 
   window.CometPhase3Trajectory=Object.freeze({
-    enabled:true,version:5,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
+    enabled:true,version:6,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
     preActionDecision:true,orbitalAssist:'multi-select-always-visible',orbitalAssistHardCap:null,
     orbitalAssistDiminishingReturns:true,oldHighRiskPopupBypassed:true,compactTrajectoryPanel:true,
     actionRiskCaptions:false
