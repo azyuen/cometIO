@@ -191,7 +191,7 @@
   proto.reveal = function(choice) {
     const result = baseReveal.call(this, choice);
     if (phase3Player(this)) {
-      const label = choice === 'ABSORB' ? 'MERGE' : choice === 'DEFLECT' ? 'SLING' : choice === 'AVOID' ? 'ESCAPE' : choice;
+      const label = choice === 'ABSORB' ? 'MERGE' : choice === 'DEFLECT' ? 'SLING' : choice === 'AVOID' ? 'AVOID' : choice;
       walk(this.ui, node => {
         if (typeof node?.text === 'string' && node.text === `${choice} LOCKED IN`) node.setText(`${label} LOCKED IN`);
       });
@@ -373,7 +373,7 @@
       icons:{ABSORB:'action-absorb', DEFLECT:'action-deflect', AVOID:'action-avoid'}
     },
     phase3: {
-      labels:{ABSORB:'MERGE', DEFLECT:'SLING', AVOID:'ESCAPE'},
+      labels:{ABSORB:'MERGE', DEFLECT:'SLING', AVOID:'AVOID'},
       icons:{ABSORB:'phase3-icon-merge-final', DEFLECT:'phase3-icon-sling-final', AVOID:'phase3-icon-escape-final'}
     },
     phase4: {
