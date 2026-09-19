@@ -115,6 +115,8 @@ const COMET_SPRITE_ASSETS = {
   // Extragalactic nebulae / remnants — manual sprite pack 2026-09.
   nebula_sn1987a:       { family: 'nebula', lods: [32, 64], version: 1 },
   nebula_n157b:         { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_n49:           { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_n132d:         { family: 'nebula', lods: [32, 64], version: 1 },
 
   // PULSAR. v2 is the completed sprite pack: two generic, one mystery and four real named collectibles.
   pulsar_01:            { family: 'pulsar', lods: [32, 64], version: 2 },
@@ -135,6 +137,8 @@ const COMET_SPRITE_ASSETS = {
   // Extragalactic pulsars.
   pulsar_j0537_6910:    { family: 'pulsar', lods: [32, 64], version: 1 },
   pulsar_m51_ulx7:      { family: 'pulsar', lods: [32, 64], version: 1 },
+  pulsar_b0540_69:      { family: 'pulsar', lods: [32, 64], version: 1 },
+  pulsar_m82_x2:        { family: 'pulsar', lods: [32, 64], version: 1 },
 
   // Stellar-mass BLACK HOLE.
   blackHole_01:             { family: 'blackHole', lods: [32, 64], version: 1 },
@@ -148,6 +152,9 @@ const COMET_SPRITE_ASSETS = {
   blackHole_lmcX1:          { family: 'blackHole', lods: [32, 64], version: 1 },
   blackHole_m31_2014_ds1:   { family: 'blackHole', lods: [32, 64], version: 1 },
   blackHole_cartwheelN10:   { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_lmcX3:          { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_m82X1:          { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_antennaeX11:    { family: 'blackHole', lods: [32, 64], version: 1 },
 
   // SUPER MASSIVE BLACK HOLE generic/mystery + named endgame identities.
   smbh_01:             { family: 'blackHole', lods: [32, 64], version: 1 },
