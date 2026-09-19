@@ -10,6 +10,7 @@
   const ROCKY_PLANET = tierIndex('ROCKY PLANET');
   const PULSAR = tierIndex('PULSAR');
   const SMBH = tierIndex('SUPER MASSIVE BLACK HOLE');
+  const GALAXY = tierIndex('GALAXY');
 
   function tierObject(index) {
     const t = TIERS[index];
@@ -284,7 +285,7 @@
     const cards = [];
     if (DWARF_PLANET >= 0 && beforeTier < DWARF_PLANET && afterTier >= DWARF_PLANET) cards.push(1);
     if (PULSAR >= 0 && beforeTier < PULSAR && afterTier >= PULSAR) cards.push(2);
-    if (SMBH >= 0 && beforeTier < SMBH && afterTier >= SMBH) cards.push(3);
+    if (GALAXY >= 0 && beforeTier < GALAXY && afterTier >= GALAXY) cards.push(3);
     return cards;
   }
 
@@ -321,6 +322,6 @@
       'THE AGE OF GRAVITY',
       'THE COSMIC AGE'
     ],
-    boundaries: { dwarfPlanet: DWARF_PLANET, rockyPlanet: ROCKY_PLANET, pulsar: PULSAR, supermassiveBlackHole: SMBH }
+    boundaries: { dwarfPlanet: DWARF_PLANET, rockyPlanet: ROCKY_PLANET, pulsar: PULSAR, supermassiveBlackHole: SMBH, phase4Galaxy: GALAXY }
   });
 })();
