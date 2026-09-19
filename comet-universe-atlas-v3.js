@@ -133,6 +133,28 @@
   function totalDiscoverables(){ return (Array.isArray(COMET_COLLECTIBLE_IDENTITIES)?COMET_COLLECTIBLE_IDENTITIES.length:60)+GALAXY_COLLECTIBLES.length; }
   function totalDiscovered(scene){ return objectDiscoverySet(scene).size+galaxyDiscoverySet(scene).size; }
   function identity(id){ return COMET_COLLECTIBLE_BY_ID?.[id]||COMET_IDENTITY_BY_ID?.[id]||null; }
+  function hostGalaxyFor(item){
+    if(!item)return null;
+    if(item.hostGalaxy && GALAXY_VIEWS[item.hostGalaxy])return item.hostGalaxy;
+    if(item.id==='nebula_tarantula')return 'lmc';
+    if(item.id==='smbh_sagittariusA')return 'milky-way';
+    if(item.gameplayTiers?.[0]==='SUPER MASSIVE BLACK HOLE')return null;
+    return 'milky-way';
+  }
+
+  const GALAXY_OBJECT_POS = Object.freeze({
+    nebula_tarantula:[20,-18,52],
+    nebula_n157b:[62,12,29],
+    pulsar_j0537_6910:[69,18,11],
+    nebula_sn1987a:[-72,-104,33],
+    blackHole_lmcX1:[-105,78,20],
+    blackHole_m31_2014_ds1:[96,42,20],
+    smbh_m31:[0,0,28],
+    pulsar_m51_ulx7:[98,-42,12],
+    smbh_m51:[0,0,28],
+    smbh_m104:[0,0,30],
+    blackHole_cartwheelN10:[104,2,21]
+  });
 
   function cleanRunGalaxies(ids){
     const seen=new Set(),out=[];
@@ -421,10 +443,13 @@
   }
 
   function galaxyAvailable(scene){
-    const objects=objectDiscoverySet(scene),galaxies=galaxyDiscoverySet(scene),out=['milky-way'];
-    if(objects.has('nebula_tarantula'))out.push('lmc');
-    GALAXY_COLLECTIBLES.forEach(g=>{if(galaxies.has(g.id))out.push(g.id);});
-    return out;
+    const objects=objectDiscoverySet(scene),galaxies=galaxyDiscoverySet(scene),out=new Set(['milky-way']);
+    for(const id of objects){
+      const host=hostGalaxyFor(identity(id));
+      if(host && GALAXY_VIEWS[host])out.add(host);
+    }
+    GALAXY_COLLECTIBLES.forEach(g=>{if(galaxies.has(g.id))out.add(g.id);});
+    return [...out];
   }
 
   function selectedGalaxy(scene){
@@ -437,30 +462,36 @@
     const view=selectedGalaxy(scene);
     galaxyShape(scene,world,view.profile,view.color||C.cyan,1);
 
-    const placeMilky=item=>{
-      const rng=seeded(item.id),a=rng()*Math.PI*2,r=40+rng()*130,x=Math.cos(a)*r,y=Math.sin(a)*r*.72;
-      const tier=item.gameplayTiers?.[0],d=tier==='NEBULA'?34:(tier==='PULSAR'?11:18);
-      const node=addIdentity(scene,world,item,x,y,d,found.has(item.id),{});
-      if(node&&found.has(item.id)){
-        if(tier==='PULSAR')addMotion(scene,{targets:node,alpha:{from:.48,to:1},duration:380+rng()*520,yoyo:true,repeat:-1,ease:'Sine.InOut'});
-        else if(tier==='BLACK HOLE')addMotion(scene,{targets:node,angle:360,duration:18000+rng()*9000,repeat:-1,ease:'Linear'});
-        else if(tier==='NEBULA')addMotion(scene,{targets:node,scaleX:{from:.99,to:1.018},scaleY:{from:.99,to:1.018},duration:9000+rng()*6000,yoyo:true,repeat:-1,ease:'Sine.InOut'});
-      }
+    const eligible=COMET_COLLECTIBLE_IDENTITIES.filter(item=>{
+      const tier=item.gameplayTiers?.[0];
+      return hostGalaxyFor(item)===view.key && ['NEBULA','PULSAR','BLACK HOLE','SUPER MASSIVE BLACK HOLE'].includes(tier);
+    });
+
+    const positionFor=item=>{
+      const fixed=GALAXY_OBJECT_POS[item.id];
+      if(fixed)return fixed;
+      const rng=seeded(view.key+'-'+item.id),a=rng()*Math.PI*2,r=62+rng()*102;
+      const tier=item.gameplayTiers?.[0],d=tier==='NEBULA'?32:(tier==='PULSAR'?11:(tier==='BLACK HOLE'?18:27));
+      return [Math.cos(a)*r,Math.sin(a)*r*.72,d];
     };
 
-    if(view.key==='milky-way'){
-      COMET_COLLECTIBLE_IDENTITIES.filter(item=>{
-        const tier=item.gameplayTiers?.[0];
-        return item.id!=='nebula_tarantula'&&['NEBULA','PULSAR','BLACK HOLE'].includes(tier);
-      }).forEach(placeMilky);
-      const sag=identity('smbh_sagittariusA');
-      const core=addIdentity(scene,world,sag,0,0,27,found.has('smbh_sagittariusA'),{label:found.has('smbh_sagittariusA'),labelSize:5.4,labelWidth:92});
-      if(core&&found.has('smbh_sagittariusA'))addMotion(scene,{targets:core,angle:360,duration:24000,repeat:-1,ease:'Linear'});
-    }else if(view.key==='lmc'){
-      const tar=identity('nebula_tarantula');
-      const node=addIdentity(scene,world,tar,32,-18,54,found.has('nebula_tarantula'),{label:found.has('nebula_tarantula'),labelSize:6.2,labelWidth:118});
-      if(node)addMotion(scene,{targets:node,scaleX:{from:.99,to:1.025},scaleY:{from:.99,to:1.025},duration:10500,yoyo:true,repeat:-1,ease:'Sine.InOut'});
-    }else{
+    for(const item of eligible){
+      const tier=item.gameplayTiers?.[0],p=positionFor(item),isCentral=tier==='SUPER MASSIVE BLACK HOLE';
+      const discovered=found.has(item.id);
+      const node=addIdentity(scene,world,item,p[0],p[1],p[2],discovered,{
+        label:discovered && (view.key!=='milky-way'||isCentral),
+        labelSize:isCentral?5.4:5.0,
+        labelWidth:isCentral?100:94
+      });
+      if(!node||!discovered)continue;
+      const target=node._atlasImage||node;
+      const rng=seeded(item.id+'-motion');
+      if(tier==='PULSAR')addMotion(scene,{targets:target,alpha:{from:.55,to:1},duration:360+rng()*520,yoyo:true,repeat:-1,ease:'Sine.InOut'});
+      else if(tier==='BLACK HOLE')addMotion(scene,{targets:target,angle:360,duration:18000+rng()*9000,repeat:-1,ease:'Linear'});
+      else if(tier==='NEBULA')addMotion(scene,{targets:target,scaleX:{from:.99,to:1.018},scaleY:{from:.99,to:1.018},duration:9000+rng()*6000,yoyo:true,repeat:-1,ease:'Sine.InOut'});
+    }
+
+    if(!eligible.length){
       text(scene,world,0,160,'NO CURRENT NAMED SUB-OBJECTS ARE ASSIGNED TO THIS GALAXY YET',5.8,C.muted,{ox:.5,bold:true,width:300,align:'center'});
     }
     text(scene,world,0,216,'GALAXY VIEW • PINCH AND PAN WITHOUT LEAVING THIS MAP',5.5,C.muted,{ox:.5,bold:true});
@@ -502,14 +533,17 @@
     net.lineStyle(1,C.cyan,.07);[[0,2],[2,4],[2,6],[6,1],[6,3],[3,5],[1,3]].forEach(p=>net.lineBetween(nodes[p[0]][0],nodes[p[0]][1],nodes[p[1]][0],nodes[p[1]][1]));world.add(net);
 
     addDeepGalaxy(scene,world,{key:'milky-way',name:'MILKY WAY',color:0xa8d8ff},-70,18,88,32,true,true);
-    const lmcVisible=found.has('nebula_tarantula');
+    const available=new Set(galaxyAvailable(scene));
+    const lmcVisible=available.has('lmc');
     addDeepGalaxy(scene,world,{key:'lmc',name:'LARGE MAGELLANIC CLOUD',color:0x9edfff},-126,57,44,24,lmcVisible,true);
 
     const positions={
       andromeda:[92,-166,70,28],whirlpool:[-142,-150,56,26],sombrero:[128,8,68,22],cartwheel:[-142,156,64,34],antennae:[92,168,72,30]
     };
     GALAXY_COLLECTIBLES.forEach(spec=>{
-      const p=positions[spec.id];addDeepGalaxy(scene,world,spec,p[0],p[1],p[2],p[3],galaxies.has(spec.id),true);
+      const p=positions[spec.id];
+      const visible=galaxies.has(spec.id)||available.has(spec.id);
+      addDeepGalaxy(scene,world,spec,p[0],p[1],p[2],p[3],visible,true);
     });
 
     // These host galaxies are context nodes for the already-collectible supermassive black holes.
