@@ -44,9 +44,9 @@
     scene._labExperimentRunning = false;
     scene._labExperimentResult = false;
 
-    // comet-checkpoint-lock-v1.js is loaded immediately before this file and is therefore the
-    // authoritative GameScene.prototype.load implementation.
-    return GameScene.prototype.load.call(scene);
+    // Use the same direct protected-checkpoint restore API as the game-over recovery button.
+    // This avoids later gameplay/Phase-4 load wrappers changing the restore behaviour.
+    return window.CometCheckpoint?.loadInto?.(scene) === true;
   }
 
   function drawLoadButton(scene, x, y, width = 326, height = 58) {
