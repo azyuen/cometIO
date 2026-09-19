@@ -112,6 +112,9 @@ const COMET_SPRITE_ASSETS = {
   nebula_rosette:       { family: 'nebula', lods: [32, 64], version: 1 },
   nebula_tarantula:     { family: 'nebula', lods: [32, 64], version: 1 },
   nebula_horsehead:     { family: 'nebula', lods: [32, 64], version: 1 },
+  // Extragalactic nebulae / remnants — manual sprite pack 2026-09.
+  nebula_sn1987a:       { family: 'nebula', lods: [32, 64], version: 1 },
+  nebula_n157b:         { family: 'nebula', lods: [32, 64], version: 1 },
 
   // PULSAR. v2 is the completed sprite pack: two generic, one mystery and four real named collectibles.
   pulsar_01:            { family: 'pulsar', lods: [32, 64], version: 2 },
@@ -129,6 +132,9 @@ const COMET_SPRITE_ASSETS = {
   pulsar_j1023_0038:    { family: 'pulsar', lods: [32, 64], version: 1 },
   pulsar_b1919_21:      { family: 'pulsar', lods: [32, 64], version: 1 },
   pulsar_j2124_3358:    { family: 'pulsar', lods: [32, 64], version: 1 },
+  // Extragalactic pulsars.
+  pulsar_j0537_6910:    { family: 'pulsar', lods: [32, 64], version: 1 },
+  pulsar_m51_ulx7:      { family: 'pulsar', lods: [32, 64], version: 1 },
 
   // Stellar-mass BLACK HOLE.
   blackHole_01:             { family: 'blackHole', lods: [32, 64], version: 1 },
@@ -138,6 +144,10 @@ const COMET_SPRITE_ASSETS = {
   blackHole_v404Cygni:      { family: 'blackHole', lods: [32, 64], version: 1 },
   blackHole_gaiaBH1:        { family: 'blackHole', lods: [32, 64], version: 1 },
   blackHole_maxiJ1820_070:  { family: 'blackHole', lods: [32, 64], version: 1 },
+  // Extragalactic stellar/intermediate black-hole systems.
+  blackHole_lmcX1:          { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_m31_2014_ds1:   { family: 'blackHole', lods: [32, 64], version: 1 },
+  blackHole_cartwheelN10:   { family: 'blackHole', lods: [32, 64], version: 1 },
 
   // SUPER MASSIVE BLACK HOLE generic/mystery + named endgame identities.
   smbh_01:             { family: 'blackHole', lods: [32, 64], version: 1 },
@@ -147,6 +157,10 @@ const COMET_SPRITE_ASSETS = {
   smbh_m87:            { family: 'blackHole', lods: [32, 64], version: 1 },
   smbh_ton618:         { family: 'blackHole', lods: [32, 64], version: 1 },
   smbh_ngc4889:        { family: 'blackHole', lods: [32, 64], version: 1 },
+  // Central black holes for explorable external galaxies.
+  smbh_m31:            { family: 'blackHole', lods: [32, 64], version: 1 },
+  smbh_m51:            { family: 'blackHole', lods: [32, 64], version: 1 },
+  smbh_m104:           { family: 'blackHole', lods: [32, 64], version: 1 },
 };
 
 function cometSpriteTextureKey(variant, lod) {
