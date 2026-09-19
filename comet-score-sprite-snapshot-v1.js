@@ -28,6 +28,18 @@
     return out;
   }
 
+  function cleanGalaxyCollection(scene) {
+    const valid = new Set(['andromeda','whirlpool','sombrero','cartwheel','antennae']);
+    const out = [];
+    const seen = new Set();
+    for (const id of Array.isArray(scene.phase4GalaxyCollection) ? scene.phase4GalaxyCollection : []) {
+      if (!valid.has(id) || seen.has(id)) continue;
+      seen.add(id);
+      out.push(id);
+    }
+    return out;
+  }
+
   function finalPlayerSnapshot(scene) {
     const idx = Math.max(0, Math.min(TIERS.length - 1, Number(scene.tierIndex) || 0));
     const tier = TIERS[idx];
@@ -57,6 +69,7 @@
     const deflects = history.filter(x => x === 'DEFLECT').length;
     const avoids = history.filter(x => x === 'AVOID').length;
     const collection = cleanCollection(this);
+    const galaxyCollection = cleanGalaxyCollection(this);
 
     scores.push({
       name: String(name || 'PLAYER').trim().slice(0, 12).toUpperCase() || 'PLAYER',
@@ -72,6 +85,8 @@
       collection,
       collectedIdentityIds: [...collection],
       collectionBonusScore: collection.length * 200,
+      galaxyCollection,
+      phase4GalaxyCollection: [...galaxyCollection],
       playerSprite: finalPlayerSnapshot(this),
       playerSpriteVersion: 1,
       date: Date.now()
