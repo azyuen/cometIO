@@ -36,6 +36,7 @@
   });
 
   const PHASE4_FIRST = SMBH_INDEX;
+  const PHASE4_ACTIVE_FIRST = GALAXY_INDEX;
   const MANUAL_SLOT_KEY = 'cometio-manual-checkpoint-v1';
   const OBSERVABLE_UNIVERSE_MASS = 1.0e53;
   const UNIVERSE_BONUS = 5000;
@@ -63,7 +64,7 @@
   const whole = n => Math.max(0, Math.floor(Number(n) || 0));
 
   function inPhase4(scene) {
-    return !scene._devModeActive && scene.tierIndex >= PHASE4_FIRST && scene.tierIndex <= SUPERCLUSTER_INDEX;
+    return !scene._devModeActive && scene.tierIndex >= PHASE4_ACTIVE_FIRST && scene.tierIndex <= SUPERCLUSTER_INDEX;
   }
 
   function inPlayablePhase4(scene) {
@@ -663,7 +664,7 @@
 
   GameScene.prototype.setPlayer = function (resetSpeed = false) {
     const result = baseSetPlayer.call(this, resetSpeed);
-    if (this.player && this.tierIndex >= PHASE4_FIRST) {
+    if (this.player && this.tierIndex >= PHASE4_ACTIVE_FIRST) {
       this.player.phase4System = true;
       this.player.phase4CaptureCount = whole(this.systemCaptures);
     }
@@ -677,8 +678,9 @@
 
   GameScene.prototype.pickOpponent = function () {
     if (inPlayablePhase4(this)) return phase4Opponent(this);
-    if (this.tierIndex < PHASE4_FIRST) {
-      // Extending TIERS must not leak galaxy-scale targets into the earlier compact-object phase.
+    if (this.tierIndex < PHASE4_ACTIVE_FIRST) {
+      // Extending TIERS must not leak galaxy-scale targets into the earlier compact-object phase,
+      // including the SMBH growth stage that now remains part of Phase 3.
       for (let i = 0; i < 7; i++) {
         const other = basePickOpponent.call(this);
         if (other.tier <= SMBH_INDEX) return other;
@@ -724,7 +726,7 @@
 
   GameScene.prototype.drawObject = function (x, y, radius, object, mystery = false, glow = false) {
     const isPhase4Kind = ['starcluster','galaxy','cluster','supercluster','universe'].includes(object?.kind);
-    const isPhase4Player = object === this.player && this.tierIndex >= PHASE4_FIRST;
+    const isPhase4Player = object === this.player && this.tierIndex >= PHASE4_ACTIVE_FIRST;
     if (isPhase4Kind || isPhase4Player) return proceduralSystemObject(this, x, y, radius, object, mystery, glow);
     return baseDrawObject.call(this, x, y, radius, object, mystery, glow);
   };
@@ -913,12 +915,13 @@
       this.finaleMergeCount = p4.finaleMergeCount;
     }
     const result = baseLoad.call(this);
-    if (this.player && this.tierIndex >= PHASE4_FIRST) this.player.phase4CaptureCount = whole(this.systemCaptures);
+    if (this.player && this.tierIndex >= PHASE4_ACTIVE_FIRST) this.player.phase4CaptureCount = whole(this.systemCaptures);
     return result;
   };
 
   window.CometPhase4 = Object.freeze({
     firstTier: PHASE4_FIRST,
+    activeFirstTier: PHASE4_ACTIVE_FIRST,
     galaxyTier: GALAXY_INDEX,
     clusterTier: CLUSTER_INDEX,
     superclusterTier: SUPERCLUSTER_INDEX,
