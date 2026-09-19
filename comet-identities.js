@@ -68,6 +68,8 @@ const COMET_NAMED_IDENTITIES = [
   { id:'nebula_horsehead', name:'HORSEHEAD NEBULA', designation:'BARNARD 33', gameplayTiers:['NEBULA'], scienceClass:'DARK NEBULA', status:'nebula', spriteVariant:'nebula_horsehead', collectible:true, allowRotation:false, allowFlip:false },
   { id:'nebula_sn1987a', name:'SN 1987A', designation:'SUPERNOVA 1987A', gameplayTiers:['NEBULA'], scienceClass:'SUPERNOVA REMNANT', status:'nebula', spriteVariant:'nebula_sn1987a', collectible:true, hostGalaxy:'lmc', allowRotation:false, allowFlip:false },
   { id:'nebula_n157b', name:'N157B', designation:'SNR N157B', gameplayTiers:['NEBULA'], scienceClass:'SUPERNOVA REMNANT / PULSAR-WIND NEBULA', status:'nebula', spriteVariant:'nebula_n157b', collectible:true, hostGalaxy:'lmc', allowRotation:false, allowFlip:false },
+  { id:'nebula_n49', name:'N49', designation:'DEM L 190', gameplayTiers:['NEBULA'], scienceClass:'SUPERNOVA REMNANT', status:'nebula', spriteVariant:'nebula_n49', collectible:true, hostGalaxy:'lmc', allowRotation:false, allowFlip:false },
+  { id:'nebula_n132d', name:'N132D', designation:'SNR J052501−693842', gameplayTiers:['NEBULA'], scienceClass:'OXYGEN-RICH SUPERNOVA REMNANT', status:'nebula', spriteVariant:'nebula_n132d', collectible:true, hostGalaxy:'lmc', allowRotation:false, allowFlip:false },
 
   // Pulsars are visually identified through their beam/wind-nebula treatment in the sprite art.
   // The expanded set deliberately mixes isolated pulsars, planetary systems, companions, accretion
@@ -86,6 +88,8 @@ const COMET_NAMED_IDENTITIES = [
   { id:'pulsar_j2124_3358', name:'PSR J2124−3358', designation:'PSR J2124−3358', gameplayTiers:['PULSAR'], scienceClass:'MILLISECOND PULSAR', status:'pulsar', spriteVariant:'pulsar_j2124_3358', collectible:true, allowRotation:false, allowFlip:false },
   { id:'pulsar_j0537_6910', name:'PSR J0537−6910', designation:'PSR J0537−6910', gameplayTiers:['PULSAR'], scienceClass:'YOUNG X-RAY PULSAR', status:'pulsar', spriteVariant:'pulsar_j0537_6910', collectible:true, hostGalaxy:'lmc', allowRotation:false, allowFlip:false },
   { id:'pulsar_m51_ulx7', name:'M51 ULX-7', designation:'M51 ULX-7', gameplayTiers:['PULSAR'], scienceClass:'ULTRALUMINOUS X-RAY PULSAR', status:'pulsar', spriteVariant:'pulsar_m51_ulx7', collectible:true, hostGalaxy:'whirlpool', allowRotation:false, allowFlip:false },
+  { id:'pulsar_b0540_69', name:'PSR B0540−69', designation:'PSR B0540−69', gameplayTiers:['PULSAR'], scienceClass:'YOUNG PULSAR / PULSAR-WIND NEBULA', status:'pulsar', spriteVariant:'pulsar_b0540_69', collectible:true, hostGalaxy:'lmc', allowRotation:false, allowFlip:false },
+  { id:'pulsar_m82_x2', name:'M82 X-2', designation:'NuSTAR J095551+6940.8', gameplayTiers:['PULSAR'], scienceClass:'ULTRALUMINOUS X-RAY PULSAR', status:'pulsar', spriteVariant:'pulsar_m82_x2', collectible:true, hostGalaxy:'m82', allowRotation:false, allowFlip:false },
 
   // Stellar-mass black holes. Sprite identity comes from accretion/jet/companion context.
   { id:'blackHole_cygnusX1', name:'CYGNUS X-1', gameplayTiers:['BLACK HOLE'], scienceClass:'STELLAR-MASS BLACK HOLE', status:'black-hole', spriteVariant:'blackHole_cygnusX1', collectible:true, allowRotation:false, allowFlip:false },
@@ -95,6 +99,9 @@ const COMET_NAMED_IDENTITIES = [
   { id:'blackHole_lmcX1', name:'LMC X-1', designation:'LMC X-1', gameplayTiers:['BLACK HOLE'], scienceClass:'STELLAR-MASS BLACK-HOLE BINARY', status:'black-hole', spriteVariant:'blackHole_lmcX1', collectible:true, hostGalaxy:'lmc', allowRotation:false, allowFlip:false },
   { id:'blackHole_m31_2014_ds1', name:'M31-2014-DS1', designation:'M31-2014-DS1', gameplayTiers:['BLACK HOLE'], scienceClass:'DIRECT-COLLAPSE / FAILED-SUPERNOVA BLACK-HOLE CANDIDATE', status:'black-hole', spriteVariant:'blackHole_m31_2014_ds1', collectible:true, hostGalaxy:'andromeda', allowRotation:false, allowFlip:false },
   { id:'blackHole_cartwheelN10', name:'CARTWHEEL N.10', designation:'N.10', gameplayTiers:['BLACK HOLE'], scienceClass:'ULTRALUMINOUS X-RAY SOURCE / BLACK-HOLE CANDIDATE', status:'black-hole', spriteVariant:'blackHole_cartwheelN10', collectible:true, hostGalaxy:'cartwheel', allowRotation:false, allowFlip:false },
+  { id:'blackHole_lmcX3', name:'LMC X-3', designation:'LMC X-3', gameplayTiers:['BLACK HOLE'], scienceClass:'STELLAR-MASS BLACK-HOLE BINARY', status:'black-hole', spriteVariant:'blackHole_lmcX3', collectible:true, hostGalaxy:'lmc', allowRotation:false, allowFlip:false },
+  { id:'blackHole_m82X1', name:'M82 X-1', designation:'M82 X-1', gameplayTiers:['BLACK HOLE'], scienceClass:'INTERMEDIATE-MASS BLACK-HOLE CANDIDATE / ULX', status:'black-hole', spriteVariant:'blackHole_m82X1', collectible:true, hostGalaxy:'m82', allowRotation:false, allowFlip:false },
+  { id:'blackHole_antennaeX11', name:'ANTENNAE X-11', designation:'X-11', gameplayTiers:['BLACK HOLE'], scienceClass:'ULTRALUMINOUS X-RAY SOURCE / BLACK-HOLE CANDIDATE', status:'black-hole', spriteVariant:'blackHole_antennaeX11', collectible:true, hostGalaxy:'antennae', allowRotation:false, allowFlip:false },
 
   // Supermassive black holes / active nuclei for the final gameplay tier.
   { id:'smbh_sagittariusA', name:'SAGITTARIUS A*', gameplayTiers:['SUPER MASSIVE BLACK HOLE'], scienceClass:'SUPERMASSIVE BLACK HOLE', status:'supermassive-black-hole', spriteVariant:'smbh_sagittariusA', collectible:true, allowRotation:false, allowFlip:false },
