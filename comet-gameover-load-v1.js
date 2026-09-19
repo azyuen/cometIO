@@ -61,12 +61,20 @@
     scene.tweens?.killAll?.();
     clearRecoveryTransientState(scene);
 
-    // Call the final load wrapper dynamically. At this point it includes both protected-checkpoint
-    // restore and collection-state restore, so rollback returns the whole saved run consistently.
-    const ok = scene.load?.();
-    if (ok === false) return false;
+    // Game-over recovery deliberately bypasses the long generic load-wrapper chain. The protected
+    // checkpoint owns the saved timeline and now restores collection / Phase-4 state directly.
+    const info = window.CometCheckpoint?.describe?.();
+    const ok = window.CometCheckpoint?.loadInto?.(scene);
+    if (ok !== true) return false;
 
     scene.runActive = true;
+
+    // Fail loudly rather than leaving the death screen looking inert if a future wrapper regresses
+    // recovery. The direct loader should always land on the saved tier in a live encounter state.
+    if (info && Number(scene.tierIndex) !== Number(info.tierIndex)) {
+      scene.toast?.('LOAD VERIFY FAILED', C.red);
+      return false;
+    }
     return true;
   }
 
@@ -114,6 +122,7 @@
   window.CometGameOverLoadV1 = Object.freeze({
     enabled:true,
     protectedCheckpointOnly:true,
+    directProtectedRestore:true,
     topFiveCompatible:true,
     restoresCollectionState:true,
     clearsTransientDeathState:true
