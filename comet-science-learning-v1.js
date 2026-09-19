@@ -75,7 +75,18 @@
     smbh_sagittariusA:['SAGITTARIUS A*','The supermassive black hole at the centre of the Milky Way.','The central black hole is one component of a vastly larger galactic system.'],
     smbh_m87:['M87*','A supermassive black hole famous for the first Event Horizon Telescope black-hole image.','Its host galaxy is vastly larger than the black hole itself.'],
     smbh_ton618:['TON 618','An extremely luminous quasar powered by a very massive black hole.','Bright quasars reveal matter heating as it falls toward an active galactic nucleus.'],
-    smbh_ngc4889:['NGC 4889','A giant elliptical galaxy containing an extremely massive central black hole.','Galaxies and their central black holes grow on very different physical scales.']
+    smbh_ngc4889:['NGC 4889','A giant elliptical galaxy containing an extremely massive central black hole.','Galaxies and their central black holes grow on very different physical scales.'],
+
+    nebula_sn1987a:['SN 1987A','A supernova remnant in the Large Magellanic Cloud whose explosion was first seen from Earth in February 1987.','Its famous three-ring system formed before the explosion; the expanding blast is now interacting with the dense inner ring.'],
+    nebula_n157b:['N157B','A young supernova remnant and pulsar-wind nebula in the Tarantula region of the Large Magellanic Cloud.','It contains PSR J0537−6910, whose energetic particle wind helps power the glowing remnant.'],
+    pulsar_j0537_6910:['PSR J0537−6910','A young X-ray pulsar in N157B that spins about 62 times each second.','It is famous for frequent sudden spin-up glitches, making it a valuable probe of neutron-star interiors.'],
+    blackHole_lmcX1:['LMC X-1','A stellar-mass black hole in an X-ray binary in the Large Magellanic Cloud.','Gas from its massive companion feeds a hot accretion flow that shines strongly in X-rays.'],
+    blackHole_m31_2014_ds1:['M31-2014-DS1','A massive star in Andromeda that faded dramatically instead of producing a normal bright supernova.','Archival observations support a failed-supernova or direct-collapse event that formed a black hole inside expelled gas and dust.'],
+    smbh_m31:['M31 CENTRAL BLACK HOLE','The supermassive black hole at Andromeda’s centre has a mass of about 140 million Suns.','A compact disk of young blue stars is trapped within the black hole’s gravitational field.'],
+    pulsar_m51_ulx7:['M51 ULX-7','An ultraluminous X-ray pulsar in the Whirlpool Galaxy with a spin period of about 2.8 seconds.','It is an accreting neutron star in a roughly two-day high-mass X-ray binary.'],
+    smbh_m51:['M51 CENTRAL BLACK HOLE','The nucleus of the Whirlpool Galaxy is thought to hide a massive black hole behind complex dusty structure.','Hubble resolved a dark X-shaped structure across the nucleus, showing how dust can obscure an active galactic centre.'],
+    smbh_m104:['M104 CENTRAL BLACK HOLE','The Sombrero Galaxy hosts an enormous central supermassive black hole estimated at roughly 9 billion solar masses.','Despite its huge mass, the nucleus is relatively quiet compared with a luminous quasar.'],
+    blackHole_cartwheelN10:['CARTWHEEL N.10','N.10 is an exceptionally luminous compact X-ray source in the Cartwheel Galaxy’s outer ring.','Models can explain it as an accreting binary containing a roughly 100-solar-mass black hole, but its exact nature is not definitively settled.']
   };
 
   const TIER_FALLBACK = {
