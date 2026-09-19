@@ -186,7 +186,7 @@
       const trajectorySafe=predictedSurvival(scene,'ABSORB',a);
       // Preserve encounter difficulty, but let radial/tangential placement strongly modify it.
       // A good radial MERGE helps; a tangential MERGE can no longer coast on a generous base roll.
-      let safe=clamp(baseSafe*.58 + trajectorySafe*.42, .025, .86);
+      let safe=clamp(baseSafe*.44 + trajectorySafe*.56, .025, .84);
       if(pending.compactGravityReverse){
         safe=clamp(baseSafe*.35 + trajectorySafe*.65,.02,.78);
         pending.fatalChance=1-safe;pending.fragmentChance=safe;
