@@ -82,13 +82,23 @@
       manualLoads: whole(scene.manualLoads),
       scorePenalty: whole(scene.scorePenalty),
       collectedIdentityIds: collection,
+      collectionState: scene.uniqueCollectionState && typeof scene.uniqueCollectionState === 'object'
+        ? { ...scene.uniqueCollectionState } : null,
+      uniqueCollectionState: scene.uniqueCollectionState && typeof scene.uniqueCollectionState === 'object'
+        ? { ...scene.uniqueCollectionState } : null,
       collectionBonusScore: collection.length * UNIQUE_COLLECTION_BONUS,
       orbitalCount: whole(scene.orbitalCount),
       orbitalProgress: whole(scene.orbitalProgress),
       orbitalsUnlocked: scene.orbitalsUnlocked === true,
       universeCount: whole(scene.universeCount),
       systemCaptures: whole(scene.systemCaptures),
-      finaleMergeCount: whole(scene.finaleMergeCount)
+      finaleMergeCount: whole(scene.finaleMergeCount),
+      phase4Members: Array.isArray(scene.phase4Members) ? scene.phase4Members.map(member => ({ ...member })) : null,
+      phase4MembersInitialized: scene.phase4MembersInitialized === true,
+      phase4BirthShown: scene.phase4BirthShown === true,
+      phase4V3Seeded: scene.phase4V3Seeded === true,
+      phase4SeedScore: n(scene.phase4SeedScore),
+      phase4SeedInheritedOrbitals: whole(scene.phase4SeedInheritedOrbitals)
     };
   }
 
@@ -132,6 +142,11 @@
     clearTemporaryModes(scene);
 
     const collection = validCollection(data.collectedIdentityIds);
+    const collectionState = {};
+    for (const identity of (typeof COMET_COLLECTIBLE_IDENTITIES !== 'undefined' ? COMET_COLLECTIBLE_IDENTITIES : [])) {
+      const explicit = data.collectionState?.[identity.id] === true || data.uniqueCollectionState?.[identity.id] === true;
+      collectionState[identity.id] = explicit || collection.includes(identity.id);
+    }
     Object.assign(scene, {
       tierIndex: data.tierIndex,
       growth: n(data.growth),
@@ -148,6 +163,7 @@
       manualLoads: whole(data.manualLoads),
       scorePenalty: whole(data.scorePenalty),
       collectedIdentityIds: collection,
+      uniqueCollectionState: collectionState,
       collectionBonusScore: collection.length * UNIQUE_COLLECTION_BONUS,
       orbitalCount: whole(data.orbitalCount),
       orbitalProgress: whole(data.orbitalProgress) % 3,
@@ -155,6 +171,12 @@
       universeCount: whole(data.universeCount),
       systemCaptures: whole(data.systemCaptures),
       finaleMergeCount: whole(data.finaleMergeCount),
+      phase4Members: Array.isArray(data.phase4Members) ? data.phase4Members.map(member => ({ ...member })) : [],
+      phase4MembersInitialized: data.phase4MembersInitialized === true,
+      phase4BirthShown: data.phase4BirthShown === true,
+      phase4V3Seeded: data.phase4V3Seeded === true,
+      phase4SeedScore: n(data.phase4SeedScore),
+      phase4SeedInheritedOrbitals: whole(data.phase4SeedInheritedOrbitals),
       pending: null,
       runActive: true
     });
@@ -196,9 +218,12 @@
       }
 
       scene.tweens?.killAll?.();
+      scene.clearUI?.();
       restore(scene, data);
 
-      if (data.resumeEncounter && data.other) {
+      const galaxyTier = Number(window.CometPhase4?.galaxyTier ?? Infinity);
+      const oldPhase4Checkpoint = scene.tierIndex >= galaxyTier && !Array.isArray(data.phase4Members);
+      if (data.resumeEncounter && data.other && !oldPhase4Checkpoint) {
         scene.other = { ...data.other };
         scene.state = 'APPROACH';
         scene.drawEncounter();
@@ -280,6 +305,7 @@
     backupKey: PROTECTED_BACKUP_KEY,
     saveCost: SAVE_COST,
     exists() { return !!readProtected(); },
+    loadInto(scene) { return loadProtected(scene); },
     describe() {
       const d = readProtected();
       return d ? { tierIndex: d.tierIndex, encounters: d.encounters, savedAt: d.savedAt, target: d.other?.realName || d.other?.name || null } : null;
