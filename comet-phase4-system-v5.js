@@ -145,11 +145,9 @@
   };
 
   proto.startEncounter = function() {
-    if (!this._devModeActive && this.tierIndex === SMBH) {
-      if (this.phase4BirthShown) {
-        promotePhase4ToGalaxy(this, false);
-        return baseStartEncounter.call(this);
-      }
+    // SMBH remains the final Phase 3 growth stage. Only a completed SMBH growth bar promotes
+    // the player through the normal tier resolver to GALAXY; Phase 4 begins from that point.
+    if (!this._devModeActive && this.tierIndex === GALAXY && !this.phase4BirthShown && this.state !== 'P4_SYSTEM_BIRTH') {
       return this.showPhase4SystemBirth();
     }
     return baseStartEncounter.call(this);
@@ -157,7 +155,7 @@
 
   proto.showPhase4SystemBirth = function() {
     if (!Array.isArray(this.phase4Members)) this.phase4Members=[];
-    promotePhase4ToGalaxy(this, true);
+    promotePhase4ToGalaxy(this, false);
     this.phase4BirthShown=false;
     this.clearUI();this.state='P4_SYSTEM_BIRTH';
 
@@ -241,7 +239,7 @@
   }
 
   window.CometPhase4SystemV5=Object.freeze({
-    enabled:true,version:V5,phase4StartsAt:'GALAXY',actionSubtitles:false,
+    enabled:true,version:V5,phase4StartsAt:'GALAXY_AFTER_SMBH_GROWTH',actionSubtitles:false,
     tutorialActions:true,standaloneSMBHSprites:true,labOrbitalSpacing:true,
     noSMBHTierRegression:true
   });
