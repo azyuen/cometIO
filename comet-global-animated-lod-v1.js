@@ -14,7 +14,10 @@
   function availableLods(handle) {
     const variant = handle?.variant;
     const entry = variant && typeof COMET_SPRITE_ASSETS !== 'undefined' ? COMET_SPRITE_ASSETS[variant] : null;
-    return Array.isArray(entry?.lods) ? entry.lods.filter(Number.isFinite) : [];
+    const lods = Array.isArray(entry?.lods) ? entry.lods.filter(Number.isFinite) : [];
+    // This watcher runs late and can otherwise undo the renderer quarantine during an animation.
+    if (/^yellowDwarf_/.test(String(variant || '')) && lods.includes(32)) return [32];
+    return lods;
   }
 
   function textureReady(scene, variant, lod) {
@@ -111,7 +114,7 @@
 
   window.CometGlobalAnimatedLodV1 = Object.freeze({
     enabled: true,
-    version: 1,
+    version: 2,
     followsEffectiveDisplaySize: true,
     coversScaleTweens: true
   });
