@@ -10,7 +10,7 @@
     DEFLECT: 'phase3-icon-sling-final',
     AVOID: 'phase3-icon-escape-final'
   });
-  const LABELS = Object.freeze({ ABSORB:'MERGE', DEFLECT:'SLING', AVOID:'ESCAPE' });
+  const LABELS = Object.freeze({ ABSORB:'MERGE', DEFLECT:'SLING', AVOID:'AVOID' });
 
   proto.preload = function () {
     if (basePreload) basePreload.call(this);
