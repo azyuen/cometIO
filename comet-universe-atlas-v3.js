@@ -487,12 +487,15 @@
       const target=node._atlasImage||node;
       const rng=seeded(item.id+'-motion');
       if(tier==='PULSAR')addMotion(scene,{targets:target,alpha:{from:.55,to:1},duration:360+rng()*520,yoyo:true,repeat:-1,ease:'Sine.InOut'});
-      else if(tier==='BLACK HOLE')addMotion(scene,{targets:target,angle:360,duration:18000+rng()*9000,repeat:-1,ease:'Linear'});
+      else if(tier==='BLACK HOLE'||tier==='SUPER MASSIVE BLACK HOLE')addMotion(scene,{targets:target,angle:360,duration:18000+rng()*9000,repeat:-1,ease:'Linear'});
       else if(tier==='NEBULA')addMotion(scene,{targets:target,scaleX:{from:.99,to:1.018},scaleY:{from:.99,to:1.018},duration:9000+rng()*6000,yoyo:true,repeat:-1,ease:'Sine.InOut'});
     }
 
     if(!eligible.length){
       text(scene,world,0,160,'NO CURRENT NAMED SUB-OBJECTS ARE ASSIGNED TO THIS GALAXY YET',5.8,C.muted,{ox:.5,bold:true,width:300,align:'center'});
+    }else{
+      const revealed=eligible.filter(item=>found.has(item.id)).length;
+      text(scene,world,0,194,String(revealed)+' / '+String(eligible.length)+' INTERNAL OBJECTS REVEALED',5.4,C.green,{ox:.5,bold:true});
     }
     text(scene,world,0,216,'GALAXY VIEW • PINCH AND PAN WITHOUT LEAVING THIS MAP',5.5,C.muted,{ox:.5,bold:true});
   }
