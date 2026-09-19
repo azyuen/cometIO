@@ -41,15 +41,51 @@
   }
 
   function predictedSurvival(scene, choice, a) {
-    const gap = Math.max(0, Number(scene?.other?.tier||0)-Number(scene?.tierIndex||0));
+    const playerTier = Number(scene?.tierIndex ?? scene?.player?.tier ?? 0);
+    const otherTier = Number(scene?.other?.tier ?? 0);
+    const advantage = playerTier - otherTier;
     const high = curve(a, 1.45);
     const speed = speedAdjustment(scene);
 
-    // Trajectory is intentionally a strong Phase-3 control:
-    // low angular momentum helps MERGE, high angular momentum helps SLING / AVOID.
-    if (choice === 'AVOID') return clamp(.13 + high*.78 - gap*.045 + speed, .06, .91);
-    if (choice === 'DEFLECT') return clamp(.11 + high*.70 - gap*.050 + speed, .055, .84);
-    return clamp(.66 - high*.43 - gap*.055 + speed*.35, .08, .72);
+    // Tier/gravity relationship establishes the baseline; trajectory modifies it.
+    // Peers remain tactical, lower-tier compact targets are not arbitrary death traps,
+    // and a higher-tier compact target remains genuinely dangerous.
+    if (choice === 'AVOID') return clamp(.64 + high*.27 + advantage*.12 + speed, .18, .975);
+    if (choice === 'DEFLECT') return clamp(.50 + high*.32 + advantage*.12 + speed, .15, .95);
+    return clamp(.80 - high*.28 + advantage*.14 + speed*.35, .16, .96);
+  }
+
+  function survivalFloor(scene, choice) {
+    const playerTier = Number(scene?.tierIndex ?? scene?.player?.tier ?? 0);
+    const otherTier = Number(scene?.other?.tier ?? 0);
+    const advantage = playerTier - otherTier;
+    const compact = playerTier >= PULSAR && otherTier >= PULSAR;
+
+    // A higher compact tier should dominate a lower one. Bad geometry can make the interaction
+    // inefficient, but a Black Hole should not routinely be killed by a Pulsar.
+    if (compact && advantage >= 1) {
+      if (choice === 'AVOID') return .995;
+      if (choice === 'DEFLECT') return .985;
+      return .97;
+    }
+
+    // Same-tier compact encounters are dangerous but not coin-flip death traps.
+    if (compact && advantage === 0) {
+      if (choice === 'AVOID') return .68;
+      if (choice === 'DEFLECT') return .60;
+      return .62;
+    }
+
+    if (advantage >= 1) {
+      if (choice === 'AVOID') return .97;
+      if (choice === 'DEFLECT') return .94;
+      return .90;
+    }
+    return 0;
+  }
+
+  function protectTierAdvantage(scene, choice, chance) {
+    return clamp(Math.max(chance, survivalFloor(scene, choice)), .01, .995);
   }
 
   function assistRiskMultiplier(count, choice) {
@@ -186,9 +222,9 @@
       const trajectorySafe=predictedSurvival(scene,'ABSORB',a);
       // Preserve encounter difficulty, but let radial/tangential placement strongly modify it.
       // A good radial MERGE helps; a tangential MERGE can no longer coast on a generous base roll.
-      let safe=clamp(baseSafe*.44 + trajectorySafe*.56, .025, .84);
+      let safe=protectTierAdvantage(scene,'ABSORB',clamp(baseSafe*.46 + trajectorySafe*.54, .025, .90));
       if(pending.compactGravityReverse){
-        safe=clamp(baseSafe*.35 + trajectorySafe*.65,.02,.78);
+        safe=protectTierAdvantage(scene,'ABSORB',clamp(baseSafe*.40 + trajectorySafe*.60,.02,.86));
         pending.fatalChance=1-safe;pending.fragmentChance=safe;
       }
       pending.chance=safe;pending.fatalChance=1-safe;pending.success=Math.random()<safe;
@@ -197,7 +233,7 @@
     }else if(choice==='DEFLECT'){
       const baseSurvival=clamp(1-fatalChance(pending),.01,.99);
       const trajectorySurvival=predictedSurvival(scene,'DEFLECT',a);
-      const survival=clamp(baseSurvival*.32 + trajectorySurvival*.68,.035,.88);
+      const survival=protectTierAdvantage(scene,'DEFLECT',clamp(baseSurvival*.38 + trajectorySurvival*.62,.035,.94));
       const fatal=1-survival;
       const cleanBase=clamp(Number(pending.cleanChance)||.25,0,1-fatal);
       const cleanTarget=survival*clamp(.16+high*.68,.12,.78);
@@ -207,7 +243,7 @@
     }else{
       const legacy=clamp(Number(pending.chance)||.08,.01,.995);
       const trajectoryChance=predictedSurvival(scene,'AVOID',a);
-      const chance=clamp(legacy*.28 + trajectoryChance*.72,.05,.93);
+      const chance=protectTierAdvantage(scene,'AVOID',clamp(legacy*.34 + trajectoryChance*.66,.05,.975));
       pending.chance=chance;pending.fatalChance=1-chance;pending.success=Math.random()<chance;
     }
 
@@ -243,7 +279,7 @@
   };
 
   window.CometPhase3Trajectory=Object.freeze({
-    enabled:true,version:6,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
+    enabled:true,version:7,endpoints:['RADIAL','TANGENTIAL'],teachesAngularMomentum:true,
     preActionDecision:true,orbitalAssist:'multi-select-always-visible',orbitalAssistHardCap:null,
     orbitalAssistDiminishingReturns:true,oldHighRiskPopupBypassed:true,compactTrajectoryPanel:true,
     actionRiskCaptions:false
