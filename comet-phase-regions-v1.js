@@ -85,6 +85,30 @@
     return weightedIndex(choices);
   }
 
+  function currentCollectionState(scene) {
+    if (window.CometCollectionState?.current) {
+      try { return window.CometCollectionState.current(scene); } catch (e) {}
+    }
+    const state = scene?.uniqueCollectionState && typeof scene.uniqueCollectionState === 'object'
+      ? scene.uniqueCollectionState : {};
+    const ids = new Set(Array.isArray(scene?.collectedIdentityIds) ? scene.collectedIdentityIds : []);
+    return new Proxy(state, {
+      get(target, prop) { return target?.[prop] === true || ids.has(prop); }
+    });
+  }
+
+  function uncollectedIdentityForTier(scene, tierName) {
+    const pool = typeof cometCollectiblePoolForTier === 'function'
+      ? cometCollectiblePoolForTier(tierName)
+      : (typeof cometIdentityPoolForTier === 'function' ? cometIdentityPoolForTier(tierName) : []);
+    if (!pool.length) return { identity:null, managed:false };
+
+    const state = currentCollectionState(scene);
+    const available = pool.filter(identity => state?.[identity.id] !== true);
+    if (!available.length) return { identity:null, managed:true };
+    return { identity:available[Math.floor(Math.random()*available.length)], managed:true };
+  }
+
   function objectForTier(scene, index, region) {
     const t = TIERS[index];
     const o = {
@@ -98,9 +122,23 @@
       gap:index-scene.tierIndex,
       originRegionId:region.id
     };
-    if (typeof pickCometNamedIdentity === 'function') {
-      const identity = pickCometNamedIdentity(o.name);
-      if (identity) {
+
+    const picked = uncollectedIdentityForTier(scene, o.name);
+    if (picked.identity) {
+      const identity=picked.identity;
+      o.identityId=identity.id;
+      o.realName=identity.name;
+      o.namedSpriteBase=identity.spriteVariant;
+      o.scienceClass=identity.scienceClass;
+      o.identityStatus=identity.status;
+    } else if (picked.managed) {
+      // Once the named collectible pool for a tier is exhausted, keep encounters generic.
+      // Do not call exampleName() here: that can relabel a generic ROCKY PLANET as MARS/EARTH
+      // and make an already-collected identity appear to have returned.
+      o.realName=o.name;
+    } else if (typeof pickCometNamedIdentity === 'function') {
+      const identity=pickCometNamedIdentity(o.name);
+      if(identity){
         o.identityId=identity.id;
         o.realName=identity.name;
         o.namedSpriteBase=identity.spriteVariant;
@@ -251,7 +289,7 @@
   }
 
   window.CometPhaseRegions = Object.freeze({
-    version:2,
+    version:3,
     phaseForTier,
     regionsForPhase:phase=>PHASE_REGIONS[phase]||[],
     allRegions:ALL_REGIONS.map(r=>r.id)
