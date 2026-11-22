@@ -1,5 +1,5 @@
 // Universe Atlas v3
-// High-score atlas: map switching is separate from local pinch/pan exploration.
+// Persistent discovery atlas: map switching is separate from local pinch/pan exploration.
 // Adds five Phase-4 galaxy discoveries without changing gameplay score/balance.
 (() => {
   'use strict';
@@ -114,23 +114,96 @@
     if(Array.isArray(node.list))node.list.forEach(child=>walk(child,fn));
   }
 
+  // Persistent atlas history, intentionally independent of per-run collections and top-five scores.
+  const DISCOVERY_KEY = 'cometio-universe-discoveries-v1';
+  const permanentObjects = new Set();
+  const permanentGalaxies = new Set();
+
   function scores(scene){
-    try{return Array.isArray(scene.getScores?.())?scene.getScores():[];}catch(_){return [];}
+    try {
+      const current=scene?.getScores?.();
+      if(Array.isArray(current))return current;
+    }catch(_){}
+    try {
+      const stored=JSON.parse(localStorage.getItem(SCORES_KEY)||'[]');
+      return Array.isArray(stored)?stored:[];
+    }catch(_){return [];}
   }
-  function scoreObjectIds(score){
-    const raw=Array.isArray(score?.collection)?score.collection:(Array.isArray(score?.collectedIdentityIds)?score.collectedIdentityIds:[]);
-    return raw.filter(id=>!!COMET_COLLECTIBLE_BY_ID?.[id]);
+
+  function scoreObjectIds(record){
+    const all=[
+      ...(Array.isArray(record?.collection)?record.collection:[]),
+      ...(Array.isArray(record?.collectedIdentityIds)?record.collectedIdentityIds:[])
+    ];
+    for(const state of [record?.collectionState,record?.uniqueCollectionState]){
+      if(state && typeof state==='object' && !Array.isArray(state)){
+        for(const [id,owned] of Object.entries(state))if(owned===true)all.push(id);
+      }
+    }
+    return [...new Set(all.filter(id=>!!COMET_COLLECTIBLE_BY_ID?.[id]))];
   }
-  function scoreGalaxyIds(score){
-    const raw=Array.isArray(score?.galaxyCollection)?score.galaxyCollection:(Array.isArray(score?.phase4GalaxyCollection)?score.phase4GalaxyCollection:[]);
-    const seen=new Set(); return raw.filter(id=>GALAXY_IDS.has(id)&&!seen.has(id)&&seen.add(id));
+
+  function scoreGalaxyIds(record){
+    const all=[
+      ...(Array.isArray(record?.galaxyCollection)?record.galaxyCollection:[]),
+      ...(Array.isArray(record?.phase4GalaxyCollection)?record.phase4GalaxyCollection:[])
+    ];
+    return [...new Set(all.filter(id=>GALAXY_IDS.has(id)))];
   }
-  function objectDiscoverySet(scene){
-    const out=new Set(); scores(scene).forEach(s=>scoreObjectIds(s).forEach(id=>out.add(id))); return out;
+
+  function readPermanentLedger(){
+    try {
+      const saved=JSON.parse(localStorage.getItem(DISCOVERY_KEY)||'null');
+      for(const id of Array.isArray(saved?.objects)?saved.objects:[]){
+        if(COMET_COLLECTIBLE_BY_ID?.[id])permanentObjects.add(id);
+      }
+      for(const id of Array.isArray(saved?.galaxies)?saved.galaxies:[]){
+        if(GALAXY_IDS.has(id))permanentGalaxies.add(id);
+      }
+    }catch(_){}
   }
-  function galaxyDiscoverySet(scene){
-    const out=new Set(); scores(scene).forEach(s=>scoreGalaxyIds(s).forEach(id=>out.add(id))); return out;
+
+  function rememberDiscoveries(objects=[],galaxies=[]){
+    // Merge the most recent stored copy before writing (also protects other open tabs).
+    readPermanentLedger();
+    const oldObjects=permanentObjects.size,oldGalaxies=permanentGalaxies.size;
+    for(const id of objects)if(COMET_COLLECTIBLE_BY_ID?.[id])permanentObjects.add(id);
+    for(const id of galaxies)if(GALAXY_IDS.has(id))permanentGalaxies.add(id);
+    if(permanentObjects.size===oldObjects&&permanentGalaxies.size===oldGalaxies)return;
+    try {
+      localStorage.setItem(DISCOVERY_KEY,JSON.stringify({
+        version:1,objects:[...permanentObjects],galaxies:[...permanentGalaxies]
+      }));
+    }catch(_){}
   }
+
+  function hydrateDiscoveries(scene){
+    const objects=[],galaxies=[];
+    const collect=record=>{
+      if(!record||typeof record!=='object')return;
+      objects.push(...scoreObjectIds(record));
+      galaxies.push(...scoreGalaxyIds(record));
+    };
+
+    // Backfill from existing scores and saved checkpoints before either is replaced.
+    scores(scene).forEach(collect);
+    for(const key of [...SAVE_KEYS,`${typeof SAVE_KEY!=='undefined'?SAVE_KEY:'cometio-save-v2'}:autosave-v2`]){
+      try { collect(JSON.parse(localStorage.getItem(key)||'null')); }catch(_){}
+    }
+
+    // The current run earns discoveries immediately; development/lab runs do not.
+    if(scene&&!scene._devModeActive&&!scene._labSandboxRun&&!scene._labExperimentRunning&&!scene._devPhase4Test){
+      collect(scene);
+    }
+    rememberDiscoveries(objects,galaxies);
+    return {objects:permanentObjects,galaxies:permanentGalaxies};
+  }
+
+  function objectDiscoverySet(scene){return new Set(hydrateDiscoveries(scene).objects);}
+  function galaxyDiscoverySet(scene){return new Set(hydrateDiscoveries(scene).galaxies);}
+  // Migrate on app load, even when the map hasn't been opened yet.
+  hydrateDiscoveries();
+
   function totalDiscoverables(){ return (Array.isArray(COMET_COLLECTIBLE_IDENTITIES)?COMET_COLLECTIBLE_IDENTITIES.length:60)+GALAXY_COLLECTIBLES.length; }
   function totalDiscovered(scene){ return objectDiscoverySet(scene).size+galaxyDiscoverySet(scene).size; }
   function identity(id){ return COMET_COLLECTIBLE_BY_ID?.[id]||COMET_IDENTITY_BY_ID?.[id]||null; }
@@ -206,6 +279,7 @@
   }
 
   proto.resetRun=function(...args){
+    hydrateDiscoveries(this);
     this.phase4GalaxyCollection=[];
     this._atlasGalaxyPickup=null;
     return baseResetRun.apply(this,args);
@@ -213,12 +287,15 @@
 
   proto.resolve=function(...args){
     this._atlasGalaxyPickup=phase4GalaxyPickup(this);
-    return baseResolve.apply(this,args);
+    const result=baseResolve.apply(this,args);
+    hydrateDiscoveries(this);
+    return result;
   };
 
   proto.drawResult=function(result){
     const pickup=this._atlasGalaxyPickup;
     const out=baseDrawResult.call(this,result);
+    hydrateDiscoveries(this);
     if(pickup){
       this.time.delayedCall(120,()=>{try{this.toast('GALAXY MAPPED • '+pickup.name,C.purple);}catch(_){}});
       this._atlasGalaxyPickup=null;
@@ -227,6 +304,7 @@
   };
 
   proto.save=function(silent=false){
+    hydrateDiscoveries(this);
     const out=baseSave.call(this,silent);
     if(!silent && out!==false)patchManualCheckpoint(this);
     return out;
@@ -237,6 +315,7 @@
     this.phase4GalaxyCollection=[...saved];
     const out=baseLoad.apply(this,args);
     if(out!==false)this.phase4GalaxyCollection=[...saved];
+    if(out!==false)hydrateDiscoveries(this);
     return out;
   };
 
@@ -691,7 +770,7 @@
     scene._atlasTitle?.setText(MAPS[map].name);
     scene._atlasSubtitle?.setText(MAPS[map].subtitle);
     scene._atlasScale?.setText(String(map+1)+' / '+MAPS.length);
-    scene._atlasProgress?.setText(String(found)+' / '+String(totalDiscoverables())+' REVEALED FROM TOP 5');
+    scene._atlasProgress?.setText(String(found)+' / '+String(totalDiscoverables())+' PERMANENTLY DISCOVERED');
     scene._atlasInButton?.setAlpha(map===0?.30:1);
     scene._atlasOutButton?.setAlpha(map===MAX_MAP?.30:1);
     updateMapControls(scene);updateSimLabels(scene);
@@ -817,11 +896,12 @@
     text(this,root,103,top+20,item.name,10.5,C.white,{bold:true,width:220});
     text(this,root,103,top+46,item.designation||item.scienceClass,7.1,C.cyan,{bold:true,width:230});
     text(this,root,103,top+70,item.designation?item.scienceClass:(anchorOnly?'ORIENTATION ANCHOR':'DISCOVERED'),6.8,C.muted,{bold:true,width:230});
-    text(this,root,103,top+95,found?'REVEALED BY YOUR HIGH-SCORE COLLECTION':'VISIBLE AS A MAP ANCHOR',6.3,found?C.green:C.muted,{bold:true,width:245});
+    text(this,root,103,top+95,found?'PERMANENT DISCOVERY':'VISIBLE AS A MAP ANCHOR',6.3,found?C.green:C.muted,{bold:true,width:245});
     button(this,root,367,top+25,42,28,'×',C.orange,()=>{try{root.destroy(true);}catch(_){}this._atlasInfoRoot=null;},13);
   };
 
   proto.showUniverseAtlas=function(mapIndex=0,returnTo='home'){
+    hydrateDiscoveries(this);
     stopAtlas(this);this.clearUI();this.state='UNIVERSE_ATLAS';
     this._atlasReturnTo=returnTo;this._atlasMap=clampMap(mapIndex);this._atlasGalaxyKey=this._atlasGalaxyKey||'milky-way';
     this._atlasMotionTweens=[];this._atlasTransitionTweens=[];this._atlasTransitioning=false;this._atlasOrbitNodes=[];
@@ -870,6 +950,7 @@
   }
 
   proto.showScores=function(returnTo='home'){
+    hydrateDiscoveries(this);
     stopAtlas(this);
     const out=baseShowScores.call(this,returnTo),ss=scores(this);
     patchScoreCounts(this,ss);
@@ -879,6 +960,7 @@
 
   window.CometUniverseAtlasV3=Object.freeze({
     version:3,
+    ledgerStorageKey:DISCOVERY_KEY,
     maps:MAPS.map(x=>x.name),
     galaxyCollectibles:GALAXY_COLLECTIBLES.map(x=>x.id),
     total:totalDiscoverables(),
